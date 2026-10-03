@@ -17,3 +17,11 @@ coverage/
 !.env.example
 .DS_Store
 *.log
+
+# Next.js
+out/
+next-env.d.ts
+.vercel
+.pnp
+.pnp.*
+npm-debug.log*
