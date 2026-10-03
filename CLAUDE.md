@@ -15,6 +15,9 @@ members, sessions/devices, audit and kill switches; developer `/me` page; CLI de
 - **Keep `../product.md` current:** any change to structure, tooling, contracts, defaults or behaviour is
   written into the PRD and logged in PRD §20 with a version bump, in the same change.
 
+- **Docs stay local:** everything under `docs/` (plans, specs, trial notes) is gitignored and never
+  pushed. Do not commit plan or design documents anywhere else in the repo.
+
 ## Hard rules for this repo
 
 - **Never holds or displays a real secret.** Secret inputs are write-only; after save show only
@@ -65,7 +68,7 @@ cb-dashboard/
 ├─ test/
 │  ├─ unit/                         # components, forms, role gating (Vitest + Testing Library)
 │  └─ e2e/                          # Playwright: J1–J4, J7, J8 against a local cb-backend
-├─ docs/plans/
+├─ docs/                    # LOCAL ONLY (gitignored): plans/, notes
 ├─ next.config.ts                   # rewrites /api/* → CB_API_URL (dev)
 ├─ README.md  CLAUDE.md
 ├─ biome.json  tsconfig.json  vitest.config.ts  components.json
