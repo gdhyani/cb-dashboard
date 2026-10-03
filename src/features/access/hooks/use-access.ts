@@ -1,0 +1,40 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { notifyError, notifySuccess } from "@/shared/lib/notify";
+import * as api from "../api/access.api";
+import { accessKeys } from "../api/access.keys";
+
+export const useAccessMatrix = (projectId: string, enabled = true) =>
+  useQuery({
+    queryKey: accessKeys.matrix(projectId),
+    queryFn: () => api.getAccess(projectId),
+    enabled,
+    refetchInterval: 10_000,
+  });
+
+export function useAccessMutations(projectId: string) {
+  const client = useQueryClient();
+  const refresh = () =>
+    Promise.all([
+      client.invalidateQueries({ queryKey: accessKeys.matrix(projectId) }),
+      client.invalidateQueries({ queryKey: ["environments"] }),
+    ]);
+  return {
+    grant: useMutation({
+      mutationFn: ({ envId, userId, expiresAt }: { envId: string; userId: string; expiresAt?: string | null }) =>
+        api.grantAccess(envId, { userId, expiresAt }),
+      onSuccess: (g) => {
+        notifySuccess(g.expiresAt ? "Temporary access granted" : "Access granted");
+        return refresh();
+      },
+      onError: (e) => notifyError(e),
+    }),
+    revoke: useMutation({
+      mutationFn: (grantId: string) => api.revokeGrant(grantId),
+      onSuccess: () => {
+        notifySuccess("Access revoked — live connections closed");
+        return refresh();
+      },
+      onError: (e) => notifyError(e),
+    }),
+  };
+}

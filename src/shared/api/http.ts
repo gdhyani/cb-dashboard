@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type AxiosRequestConfig } from "axios";
-import { API_BASE_PATH, CORRELATION_HEADER } from "@/constants";
+import { API_BASE_PATH, CORRELATION_HEADER, CSRF_HEADER } from "@/constants";
 import { ApiError } from "./api-error";
 import { newCorrelationId } from "./correlation";
 import { type ApiPaginated, isApiErrorBody, isApiSuccess, type PaginatedResult } from "./envelope";
@@ -19,8 +19,12 @@ export const http = axios.create({
   headers: { Accept: "application/json" },
 });
 
+const SAFE_METHODS = new Set(["get", "head", "options"]);
+
 http.interceptors.request.use((config) => {
   config.headers.set(CORRELATION_HEADER, config.correlationId ?? newCorrelationId());
+  // Cookie-authenticated mutations must carry the CSRF header (backend M0-D4).
+  if (!SAFE_METHODS.has((config.method ?? "get").toLowerCase())) config.headers.set(CSRF_HEADER, "1");
   return config;
 });
 
