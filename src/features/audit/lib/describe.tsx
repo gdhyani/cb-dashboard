@@ -21,18 +21,12 @@ import {
   UserPlus,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { KINDS } from "@/features/resources";
 import type { AuditEvent } from "../types";
 
-const KIND_LABEL: Record<string, string> = {
-  mongodb: "MongoDB",
-  redis: "Redis",
-  http: "API",
-  postgres: "Postgres",
-  mysql: "MySQL",
-  aws: "AWS",
-  smtp: "SMTP",
-  oauth: "OAuth",
-};
+const KIND_LABEL: Record<string, string> = Object.fromEntries(
+  Object.entries(KINDS).map(([kind, spec]) => [kind, spec.label]),
+);
 
 const B = ({ children }: { children: ReactNode }) => (
   <strong className="font-medium text-foreground">{children}</strong>
@@ -62,7 +56,7 @@ export function describe(e: AuditEvent): Described {
       <B>{e.resource.name}</B> <span className="text-subtle">({KIND_LABEL[e.resource.kind] ?? e.resource.kind})</span>
     </>
   ) : (
-    "a resource"
+    "a service"
   );
   const denied = e.outcome !== "success";
 
@@ -220,7 +214,7 @@ export function describe(e: AuditEvent): Described {
         icon: Database,
         text: (
           <>
-            {who} deleted resource <B>{target}</B> from {env}
+            {who} deleted service <B>{target}</B> from {env}
           </>
         ),
         alert: true,

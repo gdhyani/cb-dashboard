@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useOrgDevices } from "@/features/devices/hooks/use-devices";
 import { useMembers } from "@/features/members/hooks/use-members";
 import { useProjects } from "@/features/projects/hooks/use-projects";
-import { useResources } from "@/features/resources/hooks/use-resources";
+import { KINDS, useResources } from "@/features/resources";
 import { FormField } from "@/shared/components/form-field";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
@@ -107,10 +107,10 @@ function TargetPicker({
           "stop-env",
         )}
       </FormField>
-      <FormField id="stop-target" label="Resource">
+      <FormField id="stop-target" label="Service">
         {select(
-          (resources.data ?? []).map((r) => ({ id: r.id, label: r.name })),
-          envForResource ? "Choose a resource" : "Pick an environment first",
+          (resources.data ?? []).map((r) => ({ id: r.id, label: `${r.name} (${KINDS[r.kind]?.label ?? r.kind})` })),
+          envForResource ? "Choose a service" : "Pick an environment first",
         )}
       </FormField>
     </div>

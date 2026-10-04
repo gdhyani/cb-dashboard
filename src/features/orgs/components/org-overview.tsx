@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { ActivityFeed } from "@/features/audit/components/activity-feed";
 import { HealthStatus } from "@/features/health";
 import { useProjects } from "@/features/projects/hooks/use-projects";
-import { KINDS } from "@/features/resources/lib/kinds";
+import { KINDS } from "@/features/resources";
 import { useOrgStats } from "@/features/stats";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { BlockBars } from "@/shared/components/charts/block-bars";
@@ -139,14 +139,14 @@ export function OrgOverview({ orgId }: { orgId: string }) {
             />
           </QueryState>
         </Panel>
-        <Panel title="Resources by type" description="Services whose credentials stay on the server.">
+        <Panel title="Services by type" description="Services whose credentials stay on the server.">
           <QueryState isPending={stats.isPending} error={stats.error} skeleton={<SkeletonRows rows={2} />}>
             <Waffle
               groups={(stats.data?.resourcesByKind ?? []).map((r) => ({
                 label: KINDS[r.kind as keyof typeof KINDS]?.label ?? r.kind,
                 count: r.count,
               }))}
-              empty="No resources yet."
+              empty="No services yet."
             />
             {stats.data && (
               <div className="flex flex-col gap-2 border-t border-border pt-4">

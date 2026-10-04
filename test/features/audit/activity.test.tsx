@@ -77,4 +77,25 @@ suite("activity feed", () => {
     render(<p>{describe(base({ action: "tunnel.opened" })).text}</p>);
     expect(screen.getByText("shop-db")).toBeInTheDocument();
   });
+
+  it("says service, and labels every kind (v1.26)", () => {
+    const { container } = render(
+      <p>
+        {
+          describe(
+            base({
+              action: "resource.created",
+              category: "config",
+              resource: { id: "r3", name: "FIREBASE_SERVICE_ACCOUNT", kind: "google-sa" },
+            }),
+          ).text
+        }
+      </p>,
+    );
+    expect(container.textContent).not.toContain("google-sa");
+    render(
+      <p>{describe(base({ action: "resource.deleted", category: "config", target: "STRIPE_SECRET_KEY" })).text}</p>,
+    );
+    expect(screen.getByText(/deleted service/)).toBeInTheDocument();
+  });
 });

@@ -17,7 +17,7 @@ import { StopAccessDialog } from "./stop-access-dialog";
 const SCOPE_LABEL: Record<EmergencyStop["scope"], string> = {
   org: "Everyone",
   environment: "Environment",
-  resource: "Resource",
+  resource: "Service",
   user: "Person",
   device: "Device",
 };
@@ -68,7 +68,7 @@ export function EmergencyStopView({ orgId }: { orgId: string }) {
       <PageHeader
         breadcrumb="Security"
         title="Emergency stop"
-        description="Cut access at once for a person, a device, a resource, an environment or everyone — for incidents, lost laptops or leaked keys."
+        description="Cut access at once for a person, a device, a service, an environment or everyone — for incidents, lost laptops or leaked keys."
         actions={<StopAccessDialog orgId={orgId} />}
       />
       <Section title="Active">

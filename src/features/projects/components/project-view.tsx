@@ -56,7 +56,7 @@ export function ProjectView({ orgId, projectId }: { orgId: string; projectId: st
                       confirm: {
                         title: `Delete ${project.data.name}?`,
                         description:
-                          "All environments, resources, variables and grants are deleted. Running apps lose access.",
+                          "All environments, variables, services and grants are deleted. Running apps lose access.",
                         confirmLabel: "Delete project",
                         requireReason: true,
                         onConfirm: () =>
@@ -68,7 +68,7 @@ export function ProjectView({ orgId, projectId }: { orgId: string; projectId: st
               )
             }
           />
-          <Section title="Environments" description="Each has its own variables, resources and access.">
+          <Section title="Environments" description="Each has its own variables, services and access.">
             <EnvironmentList project={project.data} isAdmin={org.isAdmin} />
           </Section>
           {org.isAdmin && (

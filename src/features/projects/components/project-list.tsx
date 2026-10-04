@@ -22,7 +22,7 @@ export function ProjectList({ orgId, isAdmin }: { orgId: string; isAdmin: boolea
           title="No projects yet"
           description={
             isAdmin
-              ? "Create a project, add resources and variables, then invite developers."
+              ? "Create a project, add its variables, then invite developers."
               : "An admin hasn't created any projects yet."
           }
         />

@@ -12,7 +12,7 @@ export function ProjectsView({ orgId }: { orgId: string }) {
       <PageHeader
         breadcrumb="Projects"
         title="Projects"
-        description="Each project holds environments, their variables and the resources they reach."
+        description="Each project holds environments, their variables and the services they reach."
         actions={org.isAdmin && <CreateProjectDialog orgId={orgId} />}
       />
       <ProjectList orgId={orgId} isAdmin={org.isAdmin} />
