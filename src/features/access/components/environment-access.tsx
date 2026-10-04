@@ -1,7 +1,8 @@
 "use client";
 
-import { Pencil, ShieldOff } from "lucide-react";
+import { Eye, Pencil, ShieldOff } from "lucide-react";
 import { useState } from "react";
+import { AccessPreviewSheet, type PreviewPerson } from "@/features/variables";
 import { AvatarInitials } from "@/shared/components/avatar-initials";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { EmptyState } from "@/shared/components/empty-state";
@@ -32,6 +33,7 @@ export function EnvironmentAccess({
   const { revoke } = useAccessMutations(projectId);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<PersonAccess | null>(null);
+  const [previewing, setPreviewing] = useState<PreviewPerson | null>(null);
   const data = matrix.data;
   const people = data ? environmentPeople(data, envId) : [];
   const personOf = (userId: string) =>
@@ -78,6 +80,11 @@ export function EnvironmentAccess({
                 <RowActions
                   label={`Access actions for ${p.member.name}`}
                   actions={[
+                    {
+                      label: "Preview access",
+                      icon: Eye,
+                      onSelect: () => setPreviewing({ userId: p.member.userId, name: p.member.name }),
+                    },
                     {
                       label: p.via === "project" ? "Edit project access" : "Edit access",
                       icon: Pencil,
@@ -136,6 +143,7 @@ export function EnvironmentAccess({
           initial={toInput(editing)}
         />
       )}
+      <AccessPreviewSheet envId={envId} envName={envName} person={previewing} onClose={() => setPreviewing(null)} />
     </div>
   );
 }
