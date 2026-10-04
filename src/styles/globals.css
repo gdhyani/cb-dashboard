@@ -104,14 +104,15 @@
     transform: translateX(-100%);
   }
 }
+/* Horizontal centering comes from Tailwind's separate `translate` property; animate only transform so they compose. */
 @keyframes cb-pop {
   from {
     opacity: 0;
-    transform: translate(-50%, -4px) scale(0.98);
+    transform: translateY(-4px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, 0) scale(1);
+    transform: none;
   }
 }
 
