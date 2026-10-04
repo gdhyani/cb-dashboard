@@ -45,7 +45,6 @@ export function EnvironmentView({ orgId, projectId, envId }: { orgId: string; pr
                 ]}
               />
             }
-            pattern
             title={env.data.name}
             description={
               env.data.killed ? (

@@ -83,7 +83,7 @@ export function OrgOverview({ orgId }: { orgId: string }) {
 
   return (
     <>
-      <PageHeader pattern breadcrumb="Organization" title={org.data?.name ?? "…"} description={<HealthStatus />} />
+      <PageHeader breadcrumb="Organization" title={org.data?.name ?? "…"} description={<HealthStatus />} />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {stats.isPending ? (

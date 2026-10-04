@@ -68,7 +68,7 @@ export function MembersTable({
                   </span>
                 </div>
               </div>
-              <span className="hidden w-28 shrink-0 text-right font-mono text-xs text-subtle sm:block">
+              <span className="hidden w-36 shrink-0 truncate whitespace-nowrap text-right font-mono text-xs text-subtle sm:block">
                 joined {timeAgo(m.joinedAt)}
               </span>
               <div className="hidden w-32 shrink-0 justify-end sm:flex">

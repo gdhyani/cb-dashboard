@@ -40,7 +40,6 @@ export function ProjectView({ orgId, projectId }: { orgId: string; projectId: st
                 items={[{ label: "Projects", href: `/orgs/${orgId}/projects` }, { label: project.data.name }]}
               />
             }
-            pattern
             title={project.data.name}
             description={project.data.description || <span className="font-mono">{project.data.slug}</span>}
             actions={
