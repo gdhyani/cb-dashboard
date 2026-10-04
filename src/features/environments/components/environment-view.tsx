@@ -4,6 +4,7 @@ import { EnvironmentAccess } from "@/features/access";
 import { useOrg } from "@/features/orgs/hooks/use-orgs";
 import { useProject } from "@/features/projects/hooks/use-projects";
 import { VariablesPanel } from "@/features/variables";
+import { WebhookEvents } from "@/features/webhooks";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { Breadcrumb } from "@/shared/components/breadcrumb";
 import { CopyCommand } from "@/shared/components/copy-command";
@@ -67,10 +68,16 @@ export function EnvironmentView({ orgId, projectId, envId }: { orgId: string; pr
             <TabsList className="max-w-full overflow-x-auto">
               <TabsTrigger value="variables">Variables</TabsTrigger>
               {org.isAdmin && <TabsTrigger value="access">Access</TabsTrigger>}
+              {org.isAdmin && <TabsTrigger value="webhooks">Webhooks</TabsTrigger>}
             </TabsList>
             <TabsContent value="variables" className="pt-4">
               <VariablesPanel projectId={projectId} envId={envId} isAdmin={org.isAdmin} />
             </TabsContent>
+            {org.isAdmin && (
+              <TabsContent value="webhooks" className="pt-4">
+                <WebhookEvents envId={envId} />
+              </TabsContent>
+            )}
             {org.isAdmin && (
               <TabsContent value="access" className="pt-4">
                 <EnvironmentAccess

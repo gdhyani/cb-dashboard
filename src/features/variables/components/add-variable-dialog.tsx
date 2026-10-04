@@ -3,6 +3,7 @@
 import { AlertTriangle, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ApiError } from "@/shared/api/api-error";
+import { CopyCommand } from "@/shared/components/copy-command";
 import { FormError } from "@/shared/components/form-error";
 import { FormField } from "@/shared/components/form-field";
 import { Button } from "@/shared/ui/button";
@@ -14,11 +15,14 @@ import {
   type DraftState,
   dialogTitle,
   type FieldDef,
+  fieldError,
   initialExtras,
   KEY_PATTERN,
   normalizeKey,
   TYPES,
   type TypeId,
+  WEBHOOK_PROVIDERS,
+  WEBHOOK_SETUP,
 } from "../lib/catalog";
 import { GENERATED_FORMATS } from "../types";
 import { AdvancedSection } from "./advanced-section";
@@ -64,6 +68,8 @@ export function AddVariableDialog({
   const [draft, setDraft] = useState<DraftState>(() => freshDraft(initialType, initialProvider));
   const [error, setError] = useState<unknown>(null);
   const [keyError, setKeyError] = useState<string>();
+  /** Webhook services: shown after saving — the URL the admin pastes into the provider. */
+  const [created, setCreated] = useState<{ key: string; url: string; provider: string } | null>(null);
 
   // Each opening starts clean (secrets never outlive the dialog — FR-UI-001).
   useEffect(() => {
@@ -71,6 +77,7 @@ export function AddVariableDialog({
       setDraft(freshDraft(initialType, initialProvider));
       setError(null);
       setKeyError(undefined);
+      setCreated(null);
     }
   }, [open, initialType, initialProvider]);
 
@@ -91,7 +98,9 @@ export function AddVariableDialog({
     const ed = extraDefs.find((x) => x.suggestedKey === e.suggestedKey);
     return Boolean(ed && !ed.field && !e.value?.trim() && !(ed.defaultFrom && draft.fields[ed.defaultFrom]?.trim()));
   });
-  const canSave = KEY_PATTERN.test(draft.key) && !valueMissing && !requiredMissing && !extrasInvalid && !pending;
+  const fieldsInvalid = Boolean(fieldError([...required, ...advanced], draft.fields));
+  const canSave =
+    KEY_PATTERN.test(draft.key) && !valueMissing && !requiredMissing && !extrasInvalid && !fieldsInvalid && !pending;
 
   const update = (patch: Partial<DraftState>) => setDraft((d) => ({ ...d, ...patch }));
   const setField = (name: string, value: string) => setDraft((d) => ({ ...d, fields: { ...d.fields, [name]: value } }));
@@ -114,11 +123,20 @@ export function AddVariableDialog({
       return;
     }
     try {
-      if (req.endpoint === "services") await createService.mutateAsync(req.body);
-      else await create.mutateAsync(req.body as Parameters<typeof create.mutateAsync>[0]);
+      const result =
+        req.endpoint === "services"
+          ? await createService.mutateAsync(req.body)
+          : await create.mutateAsync(req.body as Parameters<typeof create.mutateAsync>[0]);
       // FR-UI-001: drop the request body (it holds the real value) from the mutation cache.
       createService.reset();
       create.reset();
+      const url =
+        req.endpoint === "services" ? (result as { service?: { webhookUrl?: string } }).service?.webhookUrl : undefined;
+      if (url) {
+        setDraft((d) => ({ ...d, value: "" }));
+        setCreated({ key: draft.key, url, provider: draft.provider ?? "stripe" });
+        return;
+      }
       onOpenChange(false);
     } catch (err) {
       const onKey =
@@ -128,6 +146,33 @@ export function AddVariableDialog({
       if (onKey) setKeyError(err.message);
       else setError(err);
     }
+  }
+
+  if (created) {
+    const providerName = WEBHOOK_PROVIDERS.find((p) => p.id === created.provider)?.name ?? "the provider";
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ServiceLogo icon={def.icon} />
+              Add this URL in {providerName}
+            </DialogTitle>
+            <DialogDescription>
+              {created.key} is saved. {providerName} sends webhooks to cb; cb checks them with the real secret and
+              delivers each one only to the developer whose app caused it.
+            </DialogDescription>
+          </DialogHeader>
+          <CopyCommand command={created.url} prompt={false} label="Copy webhook URL" toastLabel="Webhook URL copied" />
+          <p className="text-sm text-subtle">{WEBHOOK_SETUP[created.provider]}</p>
+          <DialogFooter>
+            <Button type="button" onClick={() => onOpenChange(false)}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
   }
 
   return (
@@ -195,7 +240,7 @@ export function AddVariableDialog({
             >
               <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0" />
               The real value goes to every developer with access. Use it only when your app must compute with the secret
-              itself (e.g. a webhook signing secret).
+              itself. Payment webhook secrets don't need this — use the Webhook signing secret type.
             </p>
           )}
           {draft.type === "gen" ? (

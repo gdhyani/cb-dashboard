@@ -40,6 +40,7 @@ export function AdvancedSection({
               def={f}
               value={values[f.name] ?? ""}
               onChange={(v) => onChange(f.name, v)}
+              error={values[f.name]?.trim() ? f.validate?.(values[f.name]?.trim() ?? "") : undefined}
             />
           ))}
         </div>

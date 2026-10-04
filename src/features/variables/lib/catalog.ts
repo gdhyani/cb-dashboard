@@ -15,6 +15,7 @@ export type TypeId =
   | "redis"
   | "stripe"
   | "razorpay"
+  | "webhook"
   | "ai"
   | "oauth"
   | "gcp"
@@ -46,6 +47,8 @@ export interface FieldDef {
   hint?: string;
   optional?: boolean;
   defaultValue?: string;
+  /** A message when the value is unusable (shown under the field; Save stays off). Empty values are not checked. */
+  validate?: (value: string) => string | undefined;
   /** Only shown when another field has this value (e.g. authHeader when authScheme is "header"). */
   showWhen?: { field: string; equals: string };
 }
@@ -99,6 +102,7 @@ export const MAIN_FIELD: Record<ResourceKind, string> = {
   aws: "secretAccessKey",
   "google-sa": "credentialsJson",
   apns: "key",
+  webhook: "secret",
 };
 
 const none = () => [];
@@ -227,6 +231,25 @@ export const OAUTH_PROVIDERS: ProviderDef[] = [
 
 const providerOf = (list: ProviderDef[], id?: string) => list.find((p) => p.id === id) ?? list[0];
 
+/** FR-WH-001: where each provider shows the signing secret (and takes the URL). */
+export const WEBHOOK_PROVIDERS: ProviderDef[] = [
+  { id: "stripe", name: "Stripe", icon: "stripe", placeholder: "whsec_…", baseUrlKey: "" },
+  {
+    id: "razorpay",
+    name: "Razorpay",
+    icon: "razorpay",
+    placeholder: "the secret you set on the webhook",
+    baseUrlKey: "",
+  },
+];
+
+export const WEBHOOK_SETUP: Record<string, string> = {
+  stripe:
+    "In the Stripe Dashboard, open Developers → Webhooks, add a destination with this URL, then copy its signing secret.",
+  razorpay:
+    "In the Razorpay Dashboard, open Account & Settings → Webhooks, add this URL and the same secret you saved here.",
+};
+
 export const TYPES: Record<TypeId, TypeDef> = {
   plain: {
     id: "plain",
@@ -315,6 +338,37 @@ export const TYPES: Record<TypeId, TypeDef> = {
       },
     ],
     advanced: none,
+  },
+  webhook: {
+    id: "webhook",
+    name: "Webhook signing secret",
+    title: "webhook",
+    group: "Payments",
+    desc: "verifies payment webhooks",
+    icon: "letter:WH",
+    kind: "webhook",
+    providers: WEBHOOK_PROVIDERS,
+    value: { name: "signingSecret", label: "Signing secret", secret: true },
+    required: () => [
+      {
+        name: "path",
+        label: "Path in your app",
+        placeholder: "/api/webhooks/stripe",
+        hint: "cb posts each webhook here on the developer's machine, signed so your usual verify code accepts it.",
+      },
+    ],
+    extras: none,
+    advanced: () => [
+      {
+        name: "port",
+        label: "App port",
+        optional: true,
+        validate: (v) =>
+          /^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 65_535 ? undefined : "Use a port from 1 to 65535.",
+        placeholder: "3000",
+        hint: "Only if your app doesn't read PORT. Developers can also run cb run --webhook-port <port>.",
+      },
+    ],
   },
   ai: {
     id: "ai",
@@ -533,7 +587,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
 export const TYPE_GROUPS: { group: TypeGroup; ids: TypeId[] }[] = [
   { group: "Basic", ids: ["plain", "gen", "visible"] },
   { group: "Databases", ids: ["mongodb", "postgres", "mysql", "redis"] },
-  { group: "Payments", ids: ["stripe", "razorpay"] },
+  { group: "Payments", ids: ["stripe", "razorpay", "webhook"] },
   { group: "AI", ids: ["ai"] },
   { group: "Sign-in & push", ids: ["oauth", "gcp", "apns"] },
   { group: "Cloud & email", ids: ["aws", "smtp"] },
@@ -610,6 +664,16 @@ function filledFields(def: TypeDef, d: DraftState): Record<string, string> {
   return out;
 }
 
+/** The first validation message among these fields, if any (empty values are not checked). */
+export function fieldError(defs: FieldDef[], values: Record<string, string>): string | undefined {
+  for (const f of defs) {
+    const v = (values[f.name] ?? "").trim();
+    const msg = v && f.validate ? f.validate(v) : undefined;
+    if (msg) return msg;
+  }
+  return undefined;
+}
+
 /** Maps a finished draft to the API call: /variables for basic types, /services for anything with a service. */
 export function buildCreateRequest(d: DraftState): CreateRequest {
   if (d.type === "plain") return { endpoint: "variables", body: { type: "plain", key: d.key, value: d.value } };
@@ -641,6 +705,10 @@ export function buildCreateRequest(d: DraftState): CreateRequest {
     }
   }
   if (d.type === "oauth") preset = providerOf(OAUTH_PROVIDERS, d.provider)?.presetId;
+  if (d.type === "webhook") {
+    resource.provider = d.provider ?? "stripe";
+    if (fields.port) resource.port = Number(fields.port);
+  }
   if (d.type === "gcp") mainField = d.fields.readsAs === "privateKey" ? "privateKey" : "credentialsJson";
   if (d.type === "aws" && !fields.endpoint && fields.region)
     resource.endpoint = `https://s3.${fields.region}.amazonaws.com`;
