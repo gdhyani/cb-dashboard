@@ -1,11 +1,9 @@
 "use client";
 
 import { EnvironmentAccess } from "@/features/access";
-import { useMembers } from "@/features/members/hooks/use-members";
 import { useOrg } from "@/features/orgs/hooks/use-orgs";
 import { useProject } from "@/features/projects/hooks/use-projects";
 import { ResourcesPanel } from "@/features/resources/components/resources-panel";
-import { PreviewPanel } from "@/features/variables/components/preview-panel";
 import { VariablesPanel } from "@/features/variables/components/variables-panel";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { Breadcrumb } from "@/shared/components/breadcrumb";
@@ -21,7 +19,6 @@ export function EnvironmentView({ orgId, projectId, envId }: { orgId: string; pr
   const org = useOrg(orgId);
   const project = useProject(projectId);
   const env = useEnvironment(envId);
-  const members = useMembers(orgId);
   return (
     <QueryState
       isPending={env.isPending}
@@ -72,7 +69,6 @@ export function EnvironmentView({ orgId, projectId, envId }: { orgId: string; pr
               <TabsTrigger value="variables">Variables</TabsTrigger>
               <TabsTrigger value="resources">Resources</TabsTrigger>
               {org.isAdmin && <TabsTrigger value="access">Access</TabsTrigger>}
-              {org.isAdmin && <TabsTrigger value="preview">Access preview</TabsTrigger>}
             </TabsList>
             <TabsContent value="variables" className="pt-4">
               <VariablesPanel envId={envId} isAdmin={org.isAdmin} />
@@ -88,11 +84,6 @@ export function EnvironmentView({ orgId, projectId, envId }: { orgId: string; pr
                   envId={envId}
                   envName={env.data.name}
                 />
-              </TabsContent>
-            )}
-            {org.isAdmin && (
-              <TabsContent value="preview" className="pt-4">
-                <PreviewPanel envId={envId} members={members.data ?? []} />
               </TabsContent>
             )}
           </Tabs>
