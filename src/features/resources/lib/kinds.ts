@@ -208,6 +208,16 @@ export const KINDS: Record<ResourceKind, KindSpec> = {
     ],
     summary: (c) => [c.keyId && `key ${c.keyId}`, c.teamId && `team ${c.teamId}`].filter(Boolean).join(" · "),
   },
+  webhook: {
+    label: "Webhook signing secret",
+    description: "Providers post to cb; each developer's app gets the webhooks it caused, signed with its stand-in.",
+    namePlaceholder: "stripe-webhooks",
+    settings: [
+      { name: "path", label: "Path in your app", type: "text", mono: true, placeholder: "/api/webhooks/stripe" },
+    ],
+    secrets: [{ name: "signingSecret", label: "Signing secret", type: "secret", placeholder: "whsec_…" }],
+    summary: (c) => [c.provider, c.path].filter(Boolean).join(" · "),
+  },
 };
 
 export const KIND_ORDER = Object.keys(KINDS) as ResourceKind[];

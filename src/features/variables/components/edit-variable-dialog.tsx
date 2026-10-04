@@ -10,7 +10,7 @@ import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { useVariableMutations } from "../hooks/use-variables";
-import { dialogTitle, type FieldDef, KEY_PATTERN, normalizeKey, TYPES, type TypeId } from "../lib/catalog";
+import { dialogTitle, type FieldDef, fieldError, KEY_PATTERN, normalizeKey, TYPES, type TypeId } from "../lib/catalog";
 import type { ServiceGroup } from "../lib/group";
 import { GENERATED_FORMATS, type Variable } from "../types";
 import { FieldInput } from "./field-input";
@@ -117,7 +117,14 @@ export function EditVariableDialog({
     const k = extraKeys[x.id] ?? x.key;
     return !KEY_PATTERN.test(k) || (k !== x.key && taken.has(k));
   });
-  const canSave = (!variable || KEY_PATTERN.test(key)) && !keyTaken && !secretMissing && !extraInvalid && !pending;
+  const settingsInvalid = Boolean(fieldError(settingsDefs, settings));
+  const canSave =
+    (!variable || KEY_PATTERN.test(key)) &&
+    !keyTaken &&
+    !secretMissing &&
+    !extraInvalid &&
+    !settingsInvalid &&
+    !pending;
 
   async function save() {
     setError(null);
@@ -137,7 +144,11 @@ export function EditVariableDialog({
                   .split(",")
                   .map((h) => h.trim())
                   .filter(Boolean)
-              : next;
+              : f.name === "port" && group.resource.kind === "webhook"
+                ? next.trim()
+                  ? Number(next)
+                  : null
+                : next;
         }
         if (Object.keys(body).length > 0)
           await services.update.mutateAsync({ id: group.resource.id, body: { ...body, test: true } });
@@ -269,6 +280,7 @@ export function EditVariableDialog({
                 def={f}
                 value={settings[f.name] ?? ""}
                 onChange={(v) => setSettings((s) => ({ ...s, [f.name]: v }))}
+                error={settings[f.name]?.trim() ? f.validate?.(settings[f.name]?.trim() ?? "") : undefined}
               />
             ))}
 

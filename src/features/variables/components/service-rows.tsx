@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, KeyRound, Pencil, PlugZap, Trash2, Users } from "lucide-react";
+import { Copy, KeyRound, Link2, Pencil, PlugZap, Trash2, Users } from "lucide-react";
 import { useServiceMutations, useTestResource } from "@/features/resources";
 import type { RowAction } from "@/shared/components/row-actions";
 import { useCopy } from "@/shared/hooks/use-copy";
@@ -104,6 +104,15 @@ export function ServiceRows({
               { label: "Replace value", icon: KeyRound, onSelect: () => onEdit(row.variable, group, true) },
               { label: "Who can use it", icon: Users, onSelect: () => onAccess(group, row.variable.key) },
               copyKey,
+              ...(group.resource.webhookUrl
+                ? [
+                    {
+                      label: "Copy webhook URL",
+                      icon: Link2,
+                      onSelect: () => void copy(group.resource.webhookUrl ?? ""),
+                    } satisfies RowAction,
+                  ]
+                : []),
               testAction,
               removeService,
             ];

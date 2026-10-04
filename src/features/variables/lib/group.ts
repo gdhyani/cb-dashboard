@@ -1,6 +1,6 @@
 import type { Resource } from "@/features/resources";
 import type { Variable } from "../types";
-import { AI_PROVIDERS, MAIN_FIELD, OAUTH_PROVIDERS, TYPES, type TypeId } from "./catalog";
+import { AI_PROVIDERS, MAIN_FIELD, OAUTH_PROVIDERS, TYPES, type TypeId, WEBHOOK_PROVIDERS } from "./catalog";
 
 export interface Row {
   variable: Variable;
@@ -56,6 +56,8 @@ export function typeOfResource(r: Resource): { type: TypeId; provider?: string }
       return { type: r.kind };
     case "google-sa":
       return { type: "gcp" };
+    case "webhook":
+      return { type: "webhook", provider: String(r.config.provider ?? "stripe") };
     case "oauth": {
       const host = hostOf(r.config.tokenUrl);
       if (host === "oauth2.googleapis.com") return { type: "oauth", provider: "google" };
@@ -80,6 +82,10 @@ export function chipLabel(type: TypeId, provider?: string): string {
   if (type === "ai") {
     const p = AI_PROVIDERS.find((x) => x.id === provider);
     return `AI · ${!p || p.id === "custom" ? "Custom" : p.name}`;
+  }
+  if (type === "webhook") {
+    const p = WEBHOOK_PROVIDERS.find((x) => x.id === provider);
+    return `Webhook · ${p?.name ?? "Other"}`;
   }
   if (type === "oauth") {
     const p = OAUTH_PROVIDERS.find((x) => x.id === provider);

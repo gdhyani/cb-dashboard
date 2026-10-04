@@ -8,7 +8,8 @@ export type ResourceKind =
   | "oauth"
   | "aws"
   | "google-sa"
-  | "apns";
+  | "apns"
+  | "webhook";
 
 export interface Resource {
   id: string;
@@ -21,6 +22,8 @@ export interface Resource {
   disabled: boolean;
   brokeredFields: string[];
   createdAt: string;
+  /** Webhook services: the URL to paste into the provider's webhook settings. */
+  webhookUrl?: string;
 }
 
 /** Fields depend on the kind (see lib/kinds.ts); secrets are write-only. */

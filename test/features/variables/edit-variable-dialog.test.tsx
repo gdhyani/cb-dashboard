@@ -252,3 +252,40 @@ describe("Edit variable dialog (D9, FR-UI-001)", () => {
     await waitFor(() => expect(resources.deleteProfile).toHaveBeenCalledWith("r1", "readonly"));
   });
 });
+
+describe("FR-WH-001 editing a webhook signing secret", () => {
+  const WH_VAR = variable({ key: "STRIPE_WEBHOOK_SECRET", resourceId: "r9", field: "secret" });
+  const WH: ServiceGroup = {
+    resource: resource({
+      id: "r9",
+      kind: "webhook",
+      name: "STRIPE_WEBHOOK_SECRET",
+      config: { provider: "stripe", path: "/api/webhooks/stripe", port: 3060 },
+      webhookUrl: "https://cb.example/api/hooks/r9",
+    }),
+    type: "webhook",
+    provider: "stripe",
+    main: WH_VAR,
+    rows: [{ variable: WH_VAR, extra: false }],
+  };
+
+  it("sends a new port as a number and an emptied port as null (back to PORT / 3000)", async () => {
+    renderEdit({ variable: WH_VAR, group: WH });
+    const port = await screen.findByLabelText(/App port/);
+    expect(port).toHaveValue("3060");
+    fireEvent.change(port, { target: { value: "4000" } });
+    fireEvent.click(screen.getByRole("button", { name: /Save/ }));
+    await waitFor(() =>
+      expect(resources.updateResource).toHaveBeenCalledWith("r9", expect.objectContaining({ port: 4000, test: true })),
+    );
+  });
+
+  it("an emptied port is cleared", async () => {
+    renderEdit({ variable: WH_VAR, group: WH });
+    fireEvent.change(await screen.findByLabelText(/App port/), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: /Save/ }));
+    await waitFor(() =>
+      expect(resources.updateResource).toHaveBeenCalledWith("r9", expect.objectContaining({ port: null })),
+    );
+  });
+});
