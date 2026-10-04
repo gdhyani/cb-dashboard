@@ -27,6 +27,7 @@ export function ServiceRows({
   onRemoveVariable,
   onEdit,
   onAccess,
+  onEditService,
 }: {
   envId: string;
   group: ServiceGroup;
@@ -35,6 +36,8 @@ export function ServiceRows({
   onRemoveVariable: (id: string) => Promise<unknown>;
   onEdit: (variable: Variable, group: ServiceGroup, replace?: boolean) => void;
   onAccess: (group: ServiceGroup, keyName: string) => void;
+  /** Services no variable uses: settings and value only (review I4). */
+  onEditService: (group: ServiceGroup) => void;
 }) {
   const services = useServiceMutations(envId);
   const test = useTestResource(group.resource.id);
@@ -63,7 +66,15 @@ export function ServiceRows({
         resource={group.resource}
         index={startIndex}
         chip={chip}
-        actions={isAdmin ? [testAction, removeService] : undefined}
+        actions={
+          isAdmin
+            ? [
+                { label: "Edit settings", icon: Pencil, onSelect: () => onEditService(group) },
+                testAction,
+                removeService,
+              ]
+            : undefined
+        }
       />
     );
 

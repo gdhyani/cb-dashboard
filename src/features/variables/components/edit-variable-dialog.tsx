@@ -31,6 +31,13 @@ const FORMAT: FieldDef = {
 };
 const KEY_HINT = "Use UPPER_SNAKE_CASE: letters, digits and _, not starting with a digit.";
 
+const hostOf = (u: unknown) => {
+  try {
+    return new URL(String(u)).host;
+  } catch {
+    return "";
+  }
+};
 const asText = (v: unknown) => (Array.isArray(v) ? v.join(", ") : v == null ? "" : String(v));
 const basicType = (v: Variable): TypeId =>
   v.type === "generated" ? "gen" : v.type === "visible" ? "visible" : "plain";
@@ -47,18 +54,22 @@ export function EditVariableDialog({
   variable,
   group,
   startReplacing = false,
+  takenKeys = [],
 }: {
   envId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  variable: Variable;
+  /** Absent for a service no variable uses (legacy data): settings and value only. */
+  variable?: Variable;
   group?: ServiceGroup;
   startReplacing?: boolean;
+  /** Keys already used in the environment, so a clashing rename is refused before any write (review I2). */
+  takenKeys?: string[];
 }) {
   const { update } = useVariableMutations(envId);
   const services = useServiceMutations(envId);
-  const isMain = Boolean(group && group.main?.id === variable.id);
-  const type: TypeId = isMain && group ? group.type : basicType(variable);
+  const isMain = Boolean(group && (!variable || group.main?.id === variable.id));
+  const type: TypeId = isMain && group ? group.type : variable ? basicType(variable) : "plain";
   const def = TYPES[type];
   const config = group?.resource.config ?? {};
 
@@ -81,9 +92,9 @@ export function EditVariableDialog({
   );
   const extras = isMain && group ? group.rows.filter((r) => r.extra).map((r) => r.variable) : [];
 
-  const [key, setKey] = useState(variable.key);
-  const [value, setValue] = useState(variable.value ?? "");
-  const [format, setFormat] = useState(variable.format ?? "");
+  const [key, setKey] = useState(variable?.key ?? "");
+  const [value, setValue] = useState(variable?.value ?? "");
+  const [format, setFormat] = useState(variable?.format ?? "");
   const [replacing, setReplacing] = useState(startReplacing);
   const [secrets, setSecrets] = useState<Record<string, string>>({});
   const [settings, setSettings] = useState<Record<string, string>>(initialSettings);
@@ -94,9 +105,19 @@ export function EditVariableDialog({
   const [keyError, setKeyError] = useState<string>();
   const [pending, setPending] = useState(false);
 
-  const secretMissing = replacing && secretDefs.some((f) => !(secrets[f.name] ?? "").trim());
-  const extraInvalid = Object.values(extraKeys).some((k) => !KEY_PATTERN.test(k));
-  const canSave = KEY_PATTERN.test(key) && !secretMissing && !extraInvalid && !pending;
+  // review I5: a new address for the service needs the key again (the backend refuses it otherwise).
+  const moved = ["upstreamUrl", "endpoint", "tokenUrl"].some(
+    (k) => k in initialSettings && hostOf(settings[k]) !== hostOf(initialSettings[k]),
+  );
+  const replacingNow = replacing || (isMain && moved);
+  const secretMissing = replacingNow && secretDefs.some((f) => !(secrets[f.name] ?? "").trim());
+  const taken = new Set(takenKeys);
+  const keyTaken = Boolean(variable && key !== variable.key && taken.has(key));
+  const extraInvalid = extras.some((x) => {
+    const k = extraKeys[x.id] ?? x.key;
+    return !KEY_PATTERN.test(k) || (k !== x.key && taken.has(k));
+  });
+  const canSave = (!variable || KEY_PATTERN.test(key)) && !keyTaken && !secretMissing && !extraInvalid && !pending;
 
   async function save() {
     setError(null);
@@ -106,7 +127,7 @@ export function EditVariableDialog({
       // 1. The service first: it is tested, so it is the step most likely to be refused.
       if (isMain && group) {
         const body: Record<string, unknown> = {};
-        if (replacing) for (const f of secretDefs) body[f.name] = secrets[f.name];
+        if (replacingNow) for (const f of secretDefs) body[f.name] = secrets[f.name];
         for (const f of settingsDefs) {
           const next = settings[f.name] ?? "";
           if (next === (initialSettings[f.name] ?? "")) continue;
@@ -123,11 +144,11 @@ export function EditVariableDialog({
       }
       // 2. The variable itself: key, and value/format for basic types.
       const own: { key?: string; value?: string; format?: string } = {};
-      if (key !== variable.key) own.key = key;
-      if (variable.type === "plain" && value !== (variable.value ?? "")) own.value = value;
-      if (variable.type === "visible" && replacing && secrets.value) own.value = secrets.value;
-      if (variable.type === "generated" && format && format !== variable.format) own.format = format;
-      if (Object.keys(own).length > 0) {
+      if (variable && key !== variable.key) own.key = key;
+      if (variable?.type === "plain" && value !== (variable.value ?? "")) own.value = value;
+      if (variable?.type === "visible" && replacingNow && secrets.value) own.value = secrets.value;
+      if (variable?.type === "generated" && format && format !== variable.format) own.format = format;
+      if (variable && Object.keys(own).length > 0) {
         try {
           await update.mutateAsync({ id: variable.id, ...own });
         } catch (err) {
@@ -159,7 +180,9 @@ export function EditVariableDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {type !== "plain" && <ServiceLogo icon={def.icon} />}
-            {`${dialogTitle("Edit", type)} · ${variable.key}`}
+            {variable
+              ? `${dialogTitle("Edit", type)} · ${variable.key}`
+              : `Edit ${def.title} service · ${group?.resource.name ?? ""}`}
           </DialogTitle>
           <DialogDescription>Rename the key, replace the value or change settings at any time.</DialogDescription>
         </DialogHeader>
@@ -170,51 +193,61 @@ export function EditVariableDialog({
             if (canSave) void save();
           }}
         >
-          <FormField
-            id="edit-key"
-            label="Key"
-            hint="Apps under cb run restart with the new name — make sure your code reads it."
-            error={keyError ?? (KEY_PATTERN.test(key) ? undefined : KEY_HINT)}
-          >
-            <Input
+          {variable && (
+            <FormField
               id="edit-key"
-              value={key}
-              autoComplete="off"
-              spellCheck={false}
-              className="font-mono"
-              onChange={(e) => {
-                setKeyError(undefined);
-                setKey(normalizeKey(e.target.value));
-              }}
-            />
-          </FormField>
-          <p className="flex items-center gap-2 text-xs text-subtle">
-            <ServiceLogo icon={def.icon} />
-            {def.name} — to change the type, add a new variable and remove this one.
-          </p>
+              label="Key"
+              hint="Apps under cb run restart with the new name — make sure your code reads it."
+              error={
+                keyError ??
+                (keyTaken ? `${key} already exists in this environment.` : KEY_PATTERN.test(key) ? undefined : KEY_HINT)
+              }
+            >
+              <Input
+                id="edit-key"
+                value={key}
+                autoComplete="off"
+                spellCheck={false}
+                className="font-mono"
+                onChange={(e) => {
+                  setKeyError(undefined);
+                  setKey(normalizeKey(e.target.value));
+                }}
+              />
+            </FormField>
+          )}
+          {variable && (
+            <p className="flex items-center gap-2 text-xs text-subtle">
+              <ServiceLogo icon={def.icon} />
+              {def.name} — to change the type, add a new variable and remove this one.
+            </p>
+          )}
 
-          {variable.type === "plain" && (
+          {variable?.type === "plain" && (
             <FormField id="edit-value" label="Value">
               <Input id="edit-value" value={value} className="font-mono" onChange={(e) => setValue(e.target.value)} />
             </FormField>
           )}
-          {variable.type === "generated" && (
+          {variable?.type === "generated" && (
             <FieldInput idPrefix="edit" def={FORMAT} value={format} onChange={setFormat} />
           )}
 
-          {(isMain || variable.type === "visible") && (
+          {(isMain || variable?.type === "visible") && (
             <div className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
                 <span className="text-xs text-subtle">
-                  ●●●●●●●● · set {timeAgo(group?.resource.rotatedAt ?? variable.updatedAt)} · can't be viewed
+                  ●●●●●●●● · set {timeAgo(group?.resource.rotatedAt ?? variable?.updatedAt)} · can't be viewed
                 </span>
-                {!replacing && (
+                {!replacingNow && (
                   <Button type="button" size="sm" variant="outline" onClick={() => setReplacing(true)}>
                     Replace value
                   </Button>
                 )}
               </div>
-              {replacing &&
+              {isMain && moved && !replacing && (
+                <p className="text-xs text-subtle">A new address needs the key again, so it isn't sent anywhere new.</p>
+              )}
+              {replacingNow &&
                 (isMain ? secretDefs : [visibleSecretDef]).map((f) => (
                   <FieldInput
                     key={f.name}

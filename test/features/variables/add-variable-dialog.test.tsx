@@ -15,8 +15,9 @@ const api = vi.hoisted(() => ({
 }));
 vi.mock("@/features/variables/api/variables.api", () => api);
 
+let client: QueryClient;
 function renderDialog(props: Partial<ComponentProps<typeof AddVariableDialog>> = {}) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
       <AddVariableDialog envId="e1" open onOpenChange={() => {}} {...props} />
@@ -116,5 +117,70 @@ describe("Add variable dialog (D2, D5, FR-UI-001)", () => {
     expect(screen.queryByText(/prefix/i)).toBeNull();
     expect(screen.queryByText(/fake/i)).toBeNull();
     expect(screen.queryByLabelText(/prefix/i)).toBeNull();
+  });
+
+  it("review I1: Razorpay needs its key ID (Basic auth username) and sends it as the linked extra too", async () => {
+    api.createService.mockResolvedValue({ service: {}, variables: [{ key: "RAZORPAY_KEY_SECRET" }], test: null });
+    renderDialog({ initialType: "razorpay" });
+    fireEvent.change(screen.getByLabelText("Key"), { target: { value: "RAZORPAY_KEY_SECRET" } });
+    fireEvent.change(screen.getByLabelText(/Key secret/), { target: { value: "s3cret" } });
+    expect(screen.getByRole("button", { name: "Save & test" })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("Key ID"), { target: { value: "rzp_live_ABC" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save & test" }));
+    await waitFor(() => expect(api.createService).toHaveBeenCalled());
+    expect(api.createService.mock.calls[0]?.[1]).toMatchObject({
+      resource: { kind: "http", basicUser: "rzp_live_ABC", apiKey: "s3cret" },
+      extras: [{ key: "RAZORPAY_KEY_ID", value: "rzp_live_ABC" }],
+    });
+  });
+
+  it("review M7: a malformed base URL shows an error instead of doing nothing", async () => {
+    renderDialog({ initialType: "http" });
+    fireEvent.change(screen.getByLabelText("Key"), { target: { value: "X_API_KEY" } });
+    fireEvent.change(screen.getByLabelText("API key"), { target: { value: "k" } });
+    fireEvent.change(screen.getByLabelText("API base URL"), { target: { value: "https://exa mple" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save & test" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/URL/);
+    expect(api.createService).not.toHaveBeenCalled();
+  });
+
+  it("review I3: no pasted secret stays in the mutation cache after a successful save", async () => {
+    api.createService.mockResolvedValue({ service: {}, variables: [{ key: "MONGODB_URI" }], test: null });
+    renderDialog({ initialType: "mongodb" });
+    fireEvent.change(screen.getByLabelText("Key"), { target: { value: "MONGODB_URI" } });
+    fireEvent.change(screen.getByLabelText(/Connection URL/), { target: { value: "mongodb://u:SEKRIT_99@h/x" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save & test" }));
+    await waitFor(() => expect(api.createService).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(
+        JSON.stringify(
+          client
+            .getMutationCache()
+            .getAll()
+            .map((m) => m.state.variables),
+        ),
+      ).not.toContain("SEKRIT_99"),
+    );
+  });
+
+  it("review M8: a conflict on an extra key is not shown on the main key", async () => {
+    api.createService.mockRejectedValue(
+      new ApiError({
+        code: "CONFLICT",
+        message: "A_URL already exists in this environment.",
+        statusCode: 409,
+        correlationId: "c",
+      }),
+    );
+    renderDialog({ initialType: "mongodb" });
+    fireEvent.change(screen.getByLabelText("Key"), { target: { value: "A" } });
+    fireEvent.change(screen.getByLabelText(/Connection URL/), { target: { value: "mongodb://h/x" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save & test" }));
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("A_URL already exists");
+    expect(alert.closest("form")?.querySelector("#add-key")?.getAttribute("aria-invalid")).not.toBe("true");
+    expect(
+      screen.queryByText("A_URL already exists in this environment.", { selector: "p.text-destructive" }),
+    ).toBeNull();
   });
 });

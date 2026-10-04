@@ -83,7 +83,14 @@ export function AddVariableDialog({
   const keyInvalid = draft.key !== "" && !KEY_PATTERN.test(draft.key);
   const valueMissing = draft.type !== "plain" && draft.type !== "gen" && !draft.value.trim();
   const requiredMissing = required.some((f) => !f.optional && !f.select && !(draft.fields[f.name] ?? "").trim());
-  const extrasInvalid = draft.extras.some((e) => e.on && !KEY_PATTERN.test(e.key));
+  const extraDefs = def.extras(draft.provider);
+  const extrasInvalid = draft.extras.some((e) => {
+    if (!e.on) return false;
+    if (!KEY_PATTERN.test(e.key)) return true;
+    // A ticked plain extra needs a value (its own, or the field it defaults from).
+    const ed = extraDefs.find((x) => x.suggestedKey === e.suggestedKey);
+    return Boolean(ed && !ed.field && !e.value?.trim() && !(ed.defaultFrom && draft.fields[ed.defaultFrom]?.trim()));
+  });
   const canSave = KEY_PATTERN.test(draft.key) && !valueMissing && !requiredMissing && !extrasInvalid && !pending;
 
   const update = (patch: Partial<DraftState>) => setDraft((d) => ({ ...d, ...patch }));
@@ -92,15 +99,32 @@ export function AddVariableDialog({
   async function submit() {
     setError(null);
     setKeyError(undefined);
-    const req = buildCreateRequest(draft);
+    let req: ReturnType<typeof buildCreateRequest>;
+    try {
+      req = buildCreateRequest(draft);
+    } catch {
+      setError(
+        new ApiError({
+          code: "VALIDATION_FAILED",
+          message: "That URL isn't valid. Use a full address such as https://api.example.com.",
+          statusCode: 400,
+          correlationId: "",
+        }),
+      );
+      return;
+    }
     try {
       if (req.endpoint === "services") await createService.mutateAsync(req.body);
       else await create.mutateAsync(req.body as Parameters<typeof create.mutateAsync>[0]);
+      // FR-UI-001: drop the request body (it holds the real value) from the mutation cache.
+      createService.reset();
+      create.reset();
       onOpenChange(false);
     } catch (err) {
       const onKey =
         err instanceof ApiError &&
-        (err.details?.some((d) => d.path === "key") || (err.code === "CONFLICT" && err.message.includes(draft.key)));
+        (err.details?.some((d) => d.path === "key") ||
+          (err.code === "CONFLICT" && err.message.startsWith(`${draft.key} already exists`)));
       if (onKey) setKeyError(err.message);
       else setError(err);
     }
@@ -210,11 +234,7 @@ export function AddVariableDialog({
               onChange={(v) => setField(f.name, v)}
             />
           ))}
-          <ExtrasSection
-            defs={def.extras(draft.provider)}
-            extras={draft.extras}
-            onChange={(extras) => update({ extras })}
-          />
+          <ExtrasSection defs={extraDefs} extras={draft.extras} onChange={(extras) => update({ extras })} />
           <AdvancedSection idPrefix="add-adv" fields={advanced} values={draft.fields} onChange={setField} />
           {protectedType && draft.type !== "visible" && (
             <p className="flex items-start gap-2 rounded-md border border-border p-3 text-xs text-subtle">

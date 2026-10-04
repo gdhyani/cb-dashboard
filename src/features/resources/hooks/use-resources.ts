@@ -69,6 +69,7 @@ export function useProfileMutations(resourceId: string) {
   const refresh = () => client.invalidateQueries({ queryKey: resourceKeys.profiles(resourceId) });
   return {
     create: useMutation({
+      gcTime: 0,
       mutationFn: (body: CredentialsInput & { name: string }) => api.createProfile(resourceId, body),
       onSuccess: (p) => {
         notifySuccess(`Profile ${p.name} added`);
@@ -77,6 +78,7 @@ export function useProfileMutations(resourceId: string) {
       onError: (e) => notifyError(e),
     }),
     rotate: useMutation({
+      gcTime: 0,
       mutationFn: ({ name, body }: { name: string; body: CredentialsInput }) =>
         api.rotateProfile(resourceId, name, body),
       onSuccess: (p) => {
@@ -103,6 +105,8 @@ export function useServiceMutations(envId: string) {
   return {
     /** Errors (e.g. SERVICE_TEST_FAILED) are shown inline by the dialog, not as toasts. */
     update: useMutation({
+      // FR-UI-001: request bodies can hold real values; never keep them in the mutation cache.
+      gcTime: 0,
       mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) => api.updateResource(id, body),
       onSuccess: () => {
         notifySuccess("Saved — running apps reconnect automatically");

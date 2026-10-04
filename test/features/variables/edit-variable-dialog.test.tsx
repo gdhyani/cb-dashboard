@@ -170,9 +170,16 @@ describe("Edit variable dialog (D9, FR-UI-001)", () => {
     const base = screen.getByLabelText("Base URL");
     expect(base).toHaveValue("http://10.0.4.12:8000");
     fireEvent.change(base, { target: { value: "http://10.0.4.20:8000" } });
+    // review I5: a new address needs the key again.
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText(/API key \(new value\)/), { target: { value: "k2" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() =>
-      expect(resources.updateResource).toHaveBeenCalledWith("r2", { upstreamUrl: "http://10.0.4.20:8000", test: true }),
+      expect(resources.updateResource).toHaveBeenCalledWith("r2", {
+        apiKey: "k2",
+        upstreamUrl: "http://10.0.4.20:8000",
+        test: true,
+      }),
     );
   });
 
@@ -201,5 +208,47 @@ describe("Edit variable dialog (D9, FR-UI-001)", () => {
     fireEvent.change(screen.getByLabelText("Value"), { target: { value: "4000" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(vars.updateVariable).toHaveBeenCalledWith("v-PORT", { value: "4000" }));
+  });
+
+  it("review I2: renaming to a key that already exists changes nothing — no request at all", async () => {
+    renderEdit({ takenKeys: ["DATABASE_URL"] });
+    fireEvent.click(screen.getByRole("button", { name: "Replace value" }));
+    fireEvent.change(screen.getByLabelText(/Connection URL/), { target: { value: "mongodb://u:new@h/shop" } });
+    fireEvent.change(screen.getByLabelText("Key"), { target: { value: "DATABASE_URL" } });
+    expect(screen.getByText(/DATABASE_URL already exists/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    expect(resources.updateResource).not.toHaveBeenCalled();
+    expect(vars.updateVariable).not.toHaveBeenCalled();
+  });
+
+  it("review I4: a service no variable uses can be edited (settings, value) without a key", async () => {
+    const orphan: ServiceGroup = {
+      resource: resource({ id: "o1", kind: "redis", name: "cache" }),
+      type: "redis",
+      rows: [],
+    };
+    renderEdit({ variable: undefined, group: orphan });
+    expect(screen.getByRole("heading", { name: "Edit Redis service · cache" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Key")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Replace value" }));
+    fireEvent.change(screen.getByLabelText(/Connection URL/), { target: { value: "redis://h:6379" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() =>
+      expect(resources.updateResource).toHaveBeenCalledWith("o1", { connectionUri: "redis://h:6379", test: true }),
+    );
+  });
+
+  it("review M9: removing the read-only login asks first", async () => {
+    resources.listProfiles.mockResolvedValue([
+      { name: "default", rotatedAt: null, isDefault: true },
+      { name: "readonly", rotatedAt: "2026-10-01T00:00:00.000Z", isDefault: false },
+    ]);
+    resources.deleteProfile.mockResolvedValue({ deleted: true });
+    renderEdit();
+    fireEvent.click(await screen.findByRole("button", { name: "Remove" }));
+    expect(resources.deleteProfile).not.toHaveBeenCalled();
+    const confirm = await screen.findByRole("button", { name: "Remove login" });
+    fireEvent.click(confirm);
+    await waitFor(() => expect(resources.deleteProfile).toHaveBeenCalledWith("r1", "readonly"));
   });
 });

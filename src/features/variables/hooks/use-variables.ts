@@ -19,6 +19,8 @@ export function useVariableMutations(envId: string) {
   const refresh = () => client.invalidateQueries({ queryKey: ["environments", envId] });
   return {
     create: useMutation({
+      // FR-UI-001: request bodies can hold real values; never keep them in the mutation cache.
+      gcTime: 0,
       mutationFn: (body: CreateVariableInput) => api.createVariable(envId, body),
       onSuccess: (v) => {
         notifySuccess(`${v.key} saved — running apps restart automatically`);
@@ -48,6 +50,8 @@ export function useVariableMutations(envId: string) {
     }),
     /** D1: one step for a key with its service. Errors are shown inline by the dialog, not as toasts. */
     createService: useMutation({
+      // FR-UI-001: request bodies can hold real values; never keep them in the mutation cache.
+      gcTime: 0,
       mutationFn: (body: Record<string, unknown>) => api.createService(envId, body),
       onSuccess: (r) => {
         notifySuccess(`${r.variables[0]?.key ?? "Variable"} saved — running apps restart automatically`);
@@ -56,6 +60,8 @@ export function useVariableMutations(envId: string) {
     }),
     /** D9: rename, value or format; errors (e.g. a taken key) are shown inline by the dialog. */
     update: useMutation({
+      // FR-UI-001: request bodies can hold real values; never keep them in the mutation cache.
+      gcTime: 0,
       mutationFn: ({ id, ...body }: { id: string; key?: string; value?: string; format?: string }) =>
         api.updateVariable(id, body),
       onSuccess: refresh,

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useProfileMutations, useProfiles } from "@/features/resources";
+import { ConfirmDialog } from "@/shared/components/confirm-dialog";
 import { timeAgo } from "@/shared/lib/format-time";
 import { Button } from "@/shared/ui/button";
 import type { FieldDef } from "../lib/catalog";
@@ -54,15 +55,18 @@ export function ReadonlyLogin({
               {existing ? "Replace" : "Add"}
             </Button>
             {existing && (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                disabled={pending}
-                onClick={() => void remove.mutateAsync(NAME)}
-              >
-                Remove
-              </Button>
+              <ConfirmDialog
+                trigger={
+                  <Button type="button" size="sm" variant="ghost" disabled={pending}>
+                    Remove
+                  </Button>
+                }
+                title={`Remove the ${label.toLowerCase()}?`}
+                description="People who use it fall back to the default login; their apps reconnect automatically."
+                confirmLabel="Remove login"
+                destructive
+                onConfirm={() => remove.mutateAsync(NAME)}
+              />
             )}
           </div>
         )}
@@ -76,10 +80,23 @@ export function ReadonlyLogin({
             onChange={setValue}
           />
           <div className="flex justify-end gap-2">
-            <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setValue("");
+                setEditing(false);
+              }}
+            >
               Cancel
             </Button>
-            <Button type="button" size="sm" disabled={!value.trim() || pending} onClick={() => void save()}>
+            <Button
+              type="button"
+              size="sm"
+              disabled={!value.trim() || pending}
+              onClick={() => save().catch(() => undefined)}
+            >
               Save login
             </Button>
           </div>

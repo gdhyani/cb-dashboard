@@ -35,7 +35,7 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
   const { remove } = useVariableMutations(envId);
   const { copy } = useCopy("Key copied");
   const [adding, setAdding] = useState<{ type: TypeId; provider?: string } | null>(null);
-  const [editing, setEditing] = useState<{ variable: Variable; group?: ServiceGroup; replace?: boolean } | null>(null);
+  const [editing, setEditing] = useState<{ variable?: Variable; group?: ServiceGroup; replace?: boolean } | null>(null);
   const onEdit = (variable: Variable, group?: ServiceGroup, replace?: boolean) =>
     setEditing({ variable, group, replace });
   const [sharing, setSharing] = useState<{ resourceId: string; keyName: string } | null>(null);
@@ -99,6 +99,7 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
                     onRemoveVariable={(id) => remove.mutateAsync(id)}
                     onEdit={onEdit}
                     onAccess={onAccess}
+                    onEditService={(group) => setEditing({ group })}
                   />
                 );
               }
@@ -129,6 +130,7 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
                 onRemoveVariable={(id) => remove.mutateAsync(id)}
                 onEdit={onEdit}
                 onAccess={onAccess}
+                onEditService={(group) => setEditing({ group })}
               />
             ))}
           </ul>
@@ -154,19 +156,21 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
       )}
       {isAdmin && editing && (
         <EditVariableDialog
-          key={editing.variable.id}
+          key={editing.variable?.id ?? editing.group?.resource.id}
           envId={envId}
           open
           onOpenChange={(open) => !open && setEditing(null)}
           variable={editing.variable}
           group={editing.group}
           startReplacing={editing.replace}
+          takenKeys={(variables.data ?? []).map((v) => v.key)}
         />
       )}
-      {isAdmin && (
+      {isAdmin && adding && (
         <AddVariableDialog
+          key={`${adding.type}-${adding.provider ?? ""}`}
           envId={envId}
-          open={adding !== null}
+          open
           onOpenChange={(open) => !open && setAdding(null)}
           initialType={adding?.type}
           initialProvider={adding?.provider}

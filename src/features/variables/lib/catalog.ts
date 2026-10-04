@@ -57,6 +57,8 @@ export interface ExtraDef {
   field?: string;
   preticked?: boolean;
   placeholder?: string;
+  /** A plain extra left empty takes this field's value (e.g. RAZORPAY_KEY_ID ← the Key ID). */
+  defaultFrom?: string;
 }
 
 export type TypeGroup = "Basic" | "Databases" | "Payments" | "AI" | "Sign-in & push" | "Cloud & email" | "Other";
@@ -123,6 +125,13 @@ const AUTH_HEADER: FieldDef = {
   label: "Header name",
   placeholder: "x-goog-api-key",
   showWhen: { field: "authScheme", equals: "header" },
+};
+const BASIC_USER: FieldDef = {
+  name: "basicUser",
+  label: "Username",
+  optional: true,
+  hint: "Public part of Basic auth (often a key ID); the key above is the password.",
+  showWhen: { field: "authScheme", equals: "basic-password" },
 };
 
 const db = (id: TypeId, name: string, kind: ResourceKind, icon: IconId, placeholder: string): TypeDef => ({
@@ -288,9 +297,22 @@ export const TYPES: Record<TypeId, TypeDef> = {
     kind: "http",
     presetId: "razorpay",
     value: { name: "apiKey", label: "Key secret", secret: true },
-    required: none,
+    required: () => [
+      {
+        name: "basicUser",
+        label: "Key ID",
+        placeholder: "rzp_live_…",
+        hint: "Public. Razorpay checks it together with the key secret.",
+      },
+    ],
     extras: () => [
-      { suggestedKey: "RAZORPAY_KEY_ID", what: "Key ID (public)", preticked: true, placeholder: "rzp_live_…" },
+      {
+        suggestedKey: "RAZORPAY_KEY_ID",
+        what: "Key ID (public) — same as above unless you type another",
+        preticked: true,
+        placeholder: "rzp_live_…",
+        defaultFrom: "basicUser",
+      },
     ],
     advanced: none,
   },
@@ -315,6 +337,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
             },
             AUTH_SCHEME,
             AUTH_HEADER,
+            BASIC_USER,
           ]
         : [],
     extras: (p) => [
@@ -492,6 +515,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
       },
       AUTH_SCHEME,
       AUTH_HEADER,
+      BASIC_USER,
     ],
     extras: () => [{ suggestedKey: "API_BASE_URL", what: "Base URL, only if the SDK accepts one", field: "baseUrl" }],
     advanced: () => [
@@ -633,7 +657,9 @@ export function buildCreateRequest(d: DraftState): CreateRequest {
     .flatMap((e): ({ key: string; field: string } | { key: string; value: string })[] => {
       const ed = defs.find((x) => x.suggestedKey === e.suggestedKey);
       if (!ed) return [];
-      return ed.field ? [{ key: e.key, field: ed.field }] : [{ key: e.key, value: e.value ?? "" }];
+      if (ed.field) return [{ key: e.key, field: ed.field }];
+      const value = e.value?.trim() || (ed.defaultFrom ? (d.fields[ed.defaultFrom] ?? "").trim() : "");
+      return [{ key: e.key, value }];
     });
 
   const body: Record<string, unknown> = { key: d.key, test: true, resource, extras };

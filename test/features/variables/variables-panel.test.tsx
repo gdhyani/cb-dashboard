@@ -177,6 +177,19 @@ describe("Variables tab (D1, D4)", () => {
     expect(dialog).toHaveAttribute("data-resource", "s");
   });
 
+  it("review I4: orphan services can be edited too", async () => {
+    renderPanel();
+    const menu = await openMenu("Actions for cache");
+    fireEvent.click(within(menu).getByRole("menuitem", { name: /Edit settings/ }));
+    expect(await screen.findByRole("heading", { name: "Edit Redis service · cache" })).toBeInTheDocument();
+  });
+
+  it("review I3: the Add dialog is only mounted while open", async () => {
+    renderPanel();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(document.querySelectorAll("input[type=password]").length).toBe(0);
+  });
+
   it("FR-UI-004 developers see a read-only table", () => {
     renderPanel(false);
     expect(screen.queryByText("Quick add")).toBeNull();
