@@ -69,7 +69,7 @@ export function EnvironmentView({ orgId, projectId, envId }: { orgId: string; pr
               {org.isAdmin && <TabsTrigger value="access">Access</TabsTrigger>}
             </TabsList>
             <TabsContent value="variables" className="pt-4">
-              <VariablesPanel envId={envId} isAdmin={org.isAdmin} />
+              <VariablesPanel projectId={projectId} envId={envId} isAdmin={org.isAdmin} />
             </TabsContent>
             {org.isAdmin && (
               <TabsContent value="access" className="pt-4">

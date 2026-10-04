@@ -2,6 +2,7 @@
 
 import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { KeyAccessDialog } from "@/features/access";
 import { useResources } from "@/features/resources";
 import { EmptyState } from "@/shared/components/empty-state";
 import { QueryState } from "@/shared/components/query-state";
@@ -28,7 +29,7 @@ const BASIC_CHIP: Record<string, { icon: string; type: TypeId }> = {
 };
 
 /** D1: every key of the environment in one place — quick add, grouped keys, and how apps reach each service. */
-export function VariablesPanel({ envId, isAdmin }: { envId: string; isAdmin: boolean }) {
+export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: string; envId: string; isAdmin: boolean }) {
   const variables = useVariables(envId);
   const resources = useResources(envId);
   const { remove } = useVariableMutations(envId);
@@ -37,6 +38,8 @@ export function VariablesPanel({ envId, isAdmin }: { envId: string; isAdmin: boo
   const [editing, setEditing] = useState<{ variable: Variable; group?: ServiceGroup; replace?: boolean } | null>(null);
   const onEdit = (variable: Variable, group?: ServiceGroup, replace?: boolean) =>
     setEditing({ variable, group, replace });
+  const [sharing, setSharing] = useState<{ resourceId: string; keyName: string } | null>(null);
+  const onAccess = (group: ServiceGroup, keyName: string) => setSharing({ resourceId: group.resource.id, keyName });
   const grouped = useMemo(
     () => groupVariables(variables.data ?? [], resources.data ?? []),
     [variables.data, resources.data],
@@ -95,6 +98,7 @@ export function VariablesPanel({ envId, isAdmin }: { envId: string; isAdmin: boo
                     isAdmin={isAdmin}
                     onRemoveVariable={(id) => remove.mutateAsync(id)}
                     onEdit={onEdit}
+                    onAccess={onAccess}
                   />
                 );
               }
@@ -124,6 +128,7 @@ export function VariablesPanel({ envId, isAdmin }: { envId: string; isAdmin: boo
                 isAdmin={isAdmin}
                 onRemoveVariable={(id) => remove.mutateAsync(id)}
                 onEdit={onEdit}
+                onAccess={onAccess}
               />
             ))}
           </ul>
@@ -137,6 +142,16 @@ export function VariablesPanel({ envId, isAdmin }: { envId: string; isAdmin: boo
           icon: serviceIcon(g),
         }))}
       />
+      {isAdmin && sharing && (
+        <KeyAccessDialog
+          projectId={projectId}
+          envId={envId}
+          resourceId={sharing.resourceId}
+          keyName={sharing.keyName}
+          open
+          onOpenChange={(open) => !open && setSharing(null)}
+        />
+      )}
       {isAdmin && editing && (
         <EditVariableDialog
           key={editing.variable.id}

@@ -63,6 +63,11 @@ vi.mock("@/features/variables/hooks/use-variables", () => ({
     remove: mutation(m.removeVariable),
   }),
 }));
+vi.mock("@/features/access", () => ({
+  KeyAccessDialog: ({ keyName, resourceId }: { keyName: string; resourceId: string }) => (
+    <div role="dialog" aria-label={`Who can use ${keyName}`} data-resource={resourceId} />
+  ),
+}));
 vi.mock("@/features/resources", () => ({
   useProfiles: () => ({ data: [], isPending: false, error: null }),
   useProfileMutations: () => ({ create: mutation(vi.fn()), rotate: mutation(vi.fn()), remove: mutation(vi.fn()) }),
@@ -88,7 +93,7 @@ function renderPanel(isAdmin = true) {
   const client = new QueryClient();
   return render(
     <QueryClientProvider client={client}>
-      <VariablesPanel envId="e1" isAdmin={isAdmin} />
+      <VariablesPanel projectId="p1" envId="e1" isAdmin={isAdmin} />
     </QueryClientProvider>,
   );
 }
@@ -162,6 +167,14 @@ describe("Variables tab (D1, D4)", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     fireEvent.click(screen.getByRole("button", { name: "Edit PORT" }));
     expect(await screen.findByRole("heading", { name: "Edit variable · PORT" })).toBeInTheDocument();
+  });
+
+  it("D10 Who can use it opens the per-person login dialog for that service", async () => {
+    renderPanel();
+    const menu = await openMenu("Actions for STRIPE_SECRET_KEY");
+    fireEvent.click(within(menu).getByRole("menuitem", { name: /Who can use it/ }));
+    const dialog = await screen.findByRole("dialog", { name: "Who can use STRIPE_SECRET_KEY" });
+    expect(dialog).toHaveAttribute("data-resource", "s");
   });
 
   it("FR-UI-004 developers see a read-only table", () => {

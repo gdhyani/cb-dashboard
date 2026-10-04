@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, KeyRound, Pencil, PlugZap, Trash2 } from "lucide-react";
+import { Copy, KeyRound, Pencil, PlugZap, Trash2, Users } from "lucide-react";
 import { useServiceMutations, useTestResource } from "@/features/resources";
 import type { RowAction } from "@/shared/components/row-actions";
 import { useCopy } from "@/shared/hooks/use-copy";
@@ -26,6 +26,7 @@ export function ServiceRows({
   isAdmin,
   onRemoveVariable,
   onEdit,
+  onAccess,
 }: {
   envId: string;
   group: ServiceGroup;
@@ -33,6 +34,7 @@ export function ServiceRows({
   isAdmin: boolean;
   onRemoveVariable: (id: string) => Promise<unknown>;
   onEdit: (variable: Variable, group: ServiceGroup, replace?: boolean) => void;
+  onAccess: (group: ServiceGroup, keyName: string) => void;
 }) {
   const services = useServiceMutations(envId);
   const test = useTestResource(group.resource.id);
@@ -89,6 +91,7 @@ export function ServiceRows({
           : [
               editAction,
               { label: "Replace value", icon: KeyRound, onSelect: () => onEdit(row.variable, group, true) },
+              { label: "Who can use it", icon: Users, onSelect: () => onAccess(group, row.variable.key) },
               copyKey,
               testAction,
               removeService,
