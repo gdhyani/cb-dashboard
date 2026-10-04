@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ApiError } from "@/shared/api/api-error";
 import { notifyError, notifySuccess } from "@/shared/lib/notify";
 import * as api from "../api/variables.api";
 import { variableKeys } from "../api/variables.keys";
@@ -21,6 +22,26 @@ export function useVariableMutations(envId: string) {
       mutationFn: (body: CreateVariableInput) => api.createVariable(envId, body),
       onSuccess: (v) => {
         notifySuccess(`${v.key} saved — running apps restart automatically`);
+        return refresh();
+      },
+      onError: (e) => notifyError(e),
+    }),
+    /** Several at once (resource presets); existing keys are skipped. One toast for the batch. */
+    createMany: useMutation({
+      mutationFn: async (bodies: CreateVariableInput[]) => {
+        let created = 0;
+        for (const body of bodies) {
+          try {
+            await api.createVariable(envId, body);
+            created += 1;
+          } catch (err) {
+            if (!(err instanceof ApiError && err.code === "CONFLICT")) throw err;
+          }
+        }
+        return created;
+      },
+      onSuccess: (n) => {
+        if (n) notifySuccess(`${n} variable${n > 1 ? "s" : ""} added`);
         return refresh();
       },
       onError: (e) => notifyError(e),

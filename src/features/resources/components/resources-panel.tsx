@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyRound, Trash2 } from "lucide-react";
+import { KeyRound, PlugZap, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { EmptyState } from "@/shared/components/empty-state";
@@ -9,7 +9,7 @@ import { RowActions } from "@/shared/components/row-actions";
 import { SkeletonCards } from "@/shared/components/skeletons";
 import { StaggerItem } from "@/shared/components/stagger";
 import { timeAgo } from "@/shared/lib/format-time";
-import { useProfileMutations, useResourceMutations, useResources } from "../hooks/use-resources";
+import { useProfileMutations, useResourceMutations, useResources, useTestResource } from "../hooks/use-resources";
 import { KINDS } from "../lib/kinds";
 import type { Resource } from "../types";
 import { ConnectionMap } from "./connection-map";
@@ -30,6 +30,8 @@ function ResourceCard({
 }) {
   const { remove } = useResourceMutations(envId);
   const profiles = useProfileMutations(r.id);
+  const tester = useTestResource(r.id);
+  const last = tester.data;
   const [adding, setAdding] = useState(false);
   const spec = KINDS[r.kind];
   const redirects = Array.isArray(r.config.redirectHosts) ? (r.config.redirectHosts as string[]) : [];
@@ -46,11 +48,22 @@ function ResourceCard({
           {redirects.length > 0 && (
             <span className="truncate font-mono text-xs text-subtle">redirects {redirects.join(", ")}</span>
           )}
+          {(tester.isPending || last) && (
+            <span
+              role="status"
+              className={`truncate text-xs ${tester.isPending ? "text-subtle" : last?.ok ? "text-muted-foreground" : "text-destructive"}`}
+            >
+              {tester.isPending
+                ? "Testing connection…"
+                : `${last?.ok ? "✓" : "✗"} ${last?.profile !== "default" ? `${last?.profile}: ` : ""}${last?.message} · ${last?.latencyMs} ms`}
+            </span>
+          )}
         </div>
         {isAdmin && (
           <RowActions
             label={`Actions for ${r.name}`}
             actions={[
+              { label: "Test connection", icon: PlugZap, onSelect: () => tester.mutate(undefined) },
               { label: "Add credential profile", icon: KeyRound, onSelect: () => setAdding(true) },
               {
                 label: "Delete resource",
@@ -68,7 +81,7 @@ function ResourceCard({
         )}
       </div>
       {isAdmin ? (
-        <ResourceProfiles resource={r} envId={envId} />
+        <ResourceProfiles resource={r} envId={envId} onTest={(profile) => tester.mutate(profile)} />
       ) : (
         <span className="font-mono text-xs text-subtle">•••• set · rotated {timeAgo(r.rotatedAt)}</span>
       )}

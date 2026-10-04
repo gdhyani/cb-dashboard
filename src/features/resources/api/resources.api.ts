@@ -1,5 +1,12 @@
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/shared/api/http";
-import type { CreateResourceInput, CredentialProfile, CredentialsInput, Resource } from "../types";
+import type {
+  CreateResourceInput,
+  CredentialProfile,
+  CredentialsInput,
+  Preset,
+  Resource,
+  ResourceTestResult,
+} from "../types";
 
 export const listResources = (envId: string) => apiGet<Resource[]>(`/environments/${envId}/resources`);
 export const createResource = (envId: string, body: CreateResourceInput) =>
@@ -15,3 +22,7 @@ export const rotateProfile = (resourceId: string, name: string, body: Credential
   apiPut<CredentialProfile>(`/resources/${resourceId}/profiles/${encodeURIComponent(name)}`, body);
 export const deleteProfile = (resourceId: string, name: string) =>
   apiDelete<{ deleted: true }>(`/resources/${resourceId}/profiles/${encodeURIComponent(name)}`);
+
+export const listPresets = () => apiGet<Preset[]>("/presets");
+export const testResource = (resourceId: string, profile?: string) =>
+  apiPost<ResourceTestResult>(`/resources/${resourceId}/test`, profile ? { profile } : {});

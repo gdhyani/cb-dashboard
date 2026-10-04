@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Provider presets (templates for new resources, §10.8) */
+        get: operations["listPresets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -123,7 +140,7 @@ export interface paths {
         put?: never;
         /**
          * Accept an invite (FR-AUTH-005)
-         * @description With a session cookie the current user joins the organization. Without one, name, email and password create the account and a session cookie is set.
+         * @description With a session cookie the current user joins the organization (the `x-cb-csrf` header is then required). Without one, name, email and password create the account and a session cookie is set.
          */
         post: operations["acceptInvite"];
         delete?: never;
@@ -166,7 +183,7 @@ export interface paths {
          *     | event | data | meaning |
          *     |---|---|---|
          *     | `ready` | `{"environmentId":"…"}` | Sent once when the stream opens. |
-         *     | `config.changed` | `{"environmentId":"…"}` | The snapshot changed; re-fetch `/api/agent/bootstrap`. |
+         *     | `config.changed` | `{"environmentId":"…","version":3}` | The snapshot changed; re-fetch `/api/agent/bootstrap`. |
          *     | `access.revoked` | `{"scope":"grant\|device\|membership\|environment\|project","reason":"…"}` | Access is gone (re-checked against the database before sending). |
          *     | `heartbeat` | `{}` | Every 15 s. |
          */
@@ -702,6 +719,26 @@ export interface paths {
         patch: operations["updateResource"];
         trace?: never;
     };
+    "/api/resources/{resourceId}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test a resource's real credentials from the gateway (admin)
+         * @description Connects to the real service with the credentials of `profile` (default "default") and reports the outcome. The credential is never returned, and is scrubbed from error messages.
+         */
+        post: operations["testResource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/resources/{resourceId}/profiles": {
         parameters: {
             query?: never;
@@ -781,6 +818,35 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ResourceTestResult: {
+            ok: boolean;
+            profile: string;
+            latencyMs: number;
+            /** @description Outcome in plain words; never contains the credential. */
+            message: string;
+        };
+        Preset: {
+            id: string;
+            name: string;
+            /** @enum {string} */
+            category: "AI" | "Payments" | "Auth" | "Push" | "Storage" | "Email" | "Database";
+            /** @enum {string} */
+            kind: "mongodb" | "redis" | "postgres" | "mysql" | "smtp" | "http" | "oauth" | "aws" | "google-sa" | "apns";
+            description: string;
+            /** @description Non-secret create fields for the kind. */
+            defaults: {
+                [key: string]: unknown;
+            };
+            secretPlaceholder: string;
+            variables: {
+                key: string;
+                field: string;
+            }[];
+            plainVariables?: {
+                key: string;
+                hint: string;
+            }[];
+        };
         /** @example 665f1c2ab3e4d5f6a7b8c9d0 */
         ObjectId: string;
         /** @enum {string} */
@@ -1717,6 +1783,32 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listPresets: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional; generated when absent and echoed in the response header and meta. */
+                "x-correlation-id"?: components["parameters"]["CorrelationId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data: components["schemas"]["Preset"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
     getHealth: {
         parameters: {
             query?: never;
@@ -1897,6 +1989,8 @@ export interface operations {
             header?: {
                 /** @description Optional; generated when absent and echoed in the response header and meta. */
                 "x-correlation-id"?: components["parameters"]["CorrelationId"];
+                /** @description Required (`1`) when a session cookie is sent; otherwise 403 CSRF_REQUIRED. */
+                "x-cb-csrf"?: "1";
             };
             path?: never;
             cookie?: never;
@@ -3389,6 +3483,49 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    testResource: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Optional; generated when absent and echoed in the response header and meta. */
+                "x-correlation-id"?: components["parameters"]["CorrelationId"];
+                /** @description Must be `1` on every mutating request authenticated with the session cookie (otherwise 403 CSRF_REQUIRED). Ignored for device bearer tokens. */
+                "x-cb-csrf": components["parameters"]["CsrfHeader"];
+            };
+            path: {
+                /** @description Resource id */
+                resourceId: components["parameters"]["resourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Credential profile to test.
+                     * @default default
+                     */
+                    profile?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Test finished (check `ok`) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data: components["schemas"]["ResourceTestResult"];
+                    };
+                };
+            };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
