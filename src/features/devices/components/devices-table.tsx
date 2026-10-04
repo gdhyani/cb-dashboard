@@ -26,6 +26,15 @@ function DeviceRows({ devices, showOwner }: { devices: Device[]; showOwner: bool
               {[showOwner ? d.user.name : null, d.os, `seen ${timeAgo(d.lastSeenAt)}`].filter(Boolean).join(" · ")}
             </span>
           </div>
+          <span
+            className="hidden shrink-0 items-center gap-1.5 text-xs text-subtle sm:flex"
+            title={d.agent.seenAt ? `Last heartbeat ${timeAgo(d.agent.seenAt)}` : "No heartbeat yet"}
+          >
+            <span className={`size-1.5 rounded-full ${d.agent.online ? "bg-foreground" : "bg-border-strong"}`} />
+            {d.agent.online
+              ? `Agent online${d.agent.activeTunnels ? ` · ${d.agent.activeTunnels} open` : ""}`
+              : "Agent offline"}
+          </span>
           <RowActions
             label={`Actions for ${d.name}`}
             actions={[

@@ -1,6 +1,17 @@
 "use client";
 
-import { Activity, FolderKanban, KeyRound, Laptop, LayoutGrid, LogOut, type LucideIcon, Users, X } from "lucide-react";
+import {
+  Activity,
+  FolderKanban,
+  KeyRound,
+  Laptop,
+  LayoutGrid,
+  LogOut,
+  type LucideIcon,
+  ShieldAlert,
+  Users,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { PRODUCT_NAME } from "@/constants";
@@ -33,8 +44,9 @@ export function orgNav(orgId: string, isAdmin: boolean): NavItem[] {
     { href: `${base}/members`, label: "Members", icon: Users },
     ...(isAdmin
       ? [
-          { href: `${base}/devices`, label: "Devices", icon: Laptop },
+          { href: `${base}/devices`, label: "Devices & sessions", icon: Laptop },
           { href: `${base}/audit`, label: "Activity", icon: Activity },
+          { href: `${base}/emergency`, label: "Emergency stop", icon: ShieldAlert },
         ]
       : []),
     { href: `${base}/me`, label: "My access", icon: KeyRound },

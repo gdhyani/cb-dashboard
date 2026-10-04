@@ -24,6 +24,8 @@ export interface RowAction {
     description: ReactNode;
     confirmLabel: string;
     requireReason?: boolean;
+    /** Defaults to true; false for confirmations of safe actions (e.g. restoring access). */
+    destructive?: boolean;
     onConfirm: (reason: string) => Promise<unknown>;
   };
   destructive?: boolean;
@@ -80,6 +82,7 @@ export function RowActions({
           description={pending.confirm.description}
           confirmLabel={pending.confirm.confirmLabel}
           requireReason={pending.confirm.requireReason}
+          destructive={pending.confirm.destructive ?? true}
           onConfirm={pending.confirm.onConfirm}
         />
       )}
