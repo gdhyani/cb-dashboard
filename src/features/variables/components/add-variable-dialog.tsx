@@ -1,0 +1,239 @@
+"use client";
+
+import { AlertTriangle, Lock } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ApiError } from "@/shared/api/api-error";
+import { FormError } from "@/shared/components/form-error";
+import { FormField } from "@/shared/components/form-field";
+import { Button } from "@/shared/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { Input } from "@/shared/ui/input";
+import { useVariableMutations } from "../hooks/use-variables";
+import {
+  buildCreateRequest,
+  type DraftState,
+  dialogTitle,
+  type FieldDef,
+  initialExtras,
+  KEY_PATTERN,
+  normalizeKey,
+  TYPES,
+  type TypeId,
+} from "../lib/catalog";
+import { GENERATED_FORMATS } from "../types";
+import { AdvancedSection } from "./advanced-section";
+import { ExtrasSection } from "./extras-section";
+import { FieldInput } from "./field-input";
+import { ProviderSelect } from "./provider-select";
+import { ServiceLogo } from "./service-logo";
+import { TypeSelect } from "./type-select";
+
+const BASIC: TypeId[] = ["plain", "gen", "visible"];
+const FORMAT: FieldDef = {
+  name: "format",
+  label: "Format",
+  defaultValue: "base64:32",
+  select: GENERATED_FORMATS.map((f) => ({ value: f, label: f })),
+};
+const KEY_HINT = "Use UPPER_SNAKE_CASE: letters, digits and _, not starting with a digit.";
+
+function freshDraft(type: TypeId, provider?: string, key = ""): DraftState {
+  const p = provider ?? TYPES[type].providers?.[0]?.id;
+  return { key, type, provider: p, value: "", fields: {}, extras: initialExtras(type, p) };
+}
+
+/** Fields that depend on another (authHeader only for the named-header style). */
+const visible = (f: FieldDef, fields: Record<string, string>) =>
+  !f.showWhen || (fields[f.showWhen.field] ?? "") === f.showWhen.equals;
+
+/** D1–D8: one dialog for every key — key, "What is this?", the real value, extras, advanced, Save & test. */
+export function AddVariableDialog({
+  envId,
+  open,
+  onOpenChange,
+  initialType = "plain",
+  initialProvider,
+}: {
+  envId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  initialType?: TypeId;
+  initialProvider?: string;
+}) {
+  const { create, createService } = useVariableMutations(envId);
+  const [draft, setDraft] = useState<DraftState>(() => freshDraft(initialType, initialProvider));
+  const [error, setError] = useState<unknown>(null);
+  const [keyError, setKeyError] = useState<string>();
+
+  // Each opening starts clean (secrets never outlive the dialog — FR-UI-001).
+  useEffect(() => {
+    if (open) {
+      setDraft(freshDraft(initialType, initialProvider));
+      setError(null);
+      setKeyError(undefined);
+    }
+  }, [open, initialType, initialProvider]);
+
+  const def = TYPES[draft.type];
+  const required = def.required(draft.provider).filter((f) => visible(f, draft.fields));
+  const advanced = def.advanced(draft.provider);
+  const protectedType = !BASIC.includes(draft.type);
+  const pending = create.isPending || createService.isPending;
+
+  const keyInvalid = draft.key !== "" && !KEY_PATTERN.test(draft.key);
+  const valueMissing = draft.type !== "plain" && draft.type !== "gen" && !draft.value.trim();
+  const requiredMissing = required.some((f) => !f.optional && !f.select && !(draft.fields[f.name] ?? "").trim());
+  const extrasInvalid = draft.extras.some((e) => e.on && !KEY_PATTERN.test(e.key));
+  const canSave = KEY_PATTERN.test(draft.key) && !valueMissing && !requiredMissing && !extrasInvalid && !pending;
+
+  const update = (patch: Partial<DraftState>) => setDraft((d) => ({ ...d, ...patch }));
+  const setField = (name: string, value: string) => setDraft((d) => ({ ...d, fields: { ...d.fields, [name]: value } }));
+
+  async function submit() {
+    setError(null);
+    setKeyError(undefined);
+    const req = buildCreateRequest(draft);
+    try {
+      if (req.endpoint === "services") await createService.mutateAsync(req.body);
+      else await create.mutateAsync(req.body as Parameters<typeof create.mutateAsync>[0]);
+      onOpenChange(false);
+    } catch (err) {
+      const onKey =
+        err instanceof ApiError &&
+        (err.details?.some((d) => d.path === "key") || (err.code === "CONFLICT" && err.message.includes(draft.key)));
+      if (onKey) setKeyError(err.message);
+      else setError(err);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {draft.type !== "plain" && <ServiceLogo icon={def.icon} />}
+            {dialogTitle("Add", draft.type)}
+          </DialogTitle>
+          <DialogDescription>
+            {protectedType
+              ? "Paste the real value once. cb keeps it on the server and tests it before saving."
+              : "Every key your app reads from process.env lives here."}
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (canSave) void submit();
+          }}
+        >
+          <FormField
+            id="add-key"
+            label="Key"
+            hint="The name your code reads, e.g. DATABASE_URL."
+            error={keyError ?? (keyInvalid ? KEY_HINT : undefined)}
+          >
+            <Input
+              id="add-key"
+              value={draft.key}
+              autoFocus
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="DATABASE_URL"
+              className="font-mono"
+              onChange={(e) => {
+                setKeyError(undefined);
+                update({ key: normalizeKey(e.target.value) });
+              }}
+            />
+          </FormField>
+          <FormField id="add-type" label="What is this?">
+            <TypeSelect
+              id="add-type"
+              value={draft.type}
+              onChange={(t) => setDraft((d) => freshDraft(t, undefined, d.key))}
+            />
+          </FormField>
+          {def.providers && (
+            <FormField id="add-provider" label="Provider">
+              <ProviderSelect
+                id="add-provider"
+                providers={def.providers}
+                value={draft.provider ?? ""}
+                onChange={(p) => setDraft((d) => ({ ...freshDraft(d.type, p, d.key), value: d.value }))}
+              />
+            </FormField>
+          )}
+          {draft.type === "visible" && (
+            <p
+              role="note"
+              className="flex items-start gap-2 rounded-md border border-destructive/40 p-3 text-xs text-destructive"
+            >
+              <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0" />
+              The real value goes to every developer with access. Use it only when your app must compute with the secret
+              itself (e.g. a webhook signing secret).
+            </p>
+          )}
+          {draft.type === "gen" ? (
+            <>
+              <FieldInput
+                idPrefix="add"
+                def={FORMAT}
+                value={draft.format ?? ""}
+                onChange={(v) => update({ format: v })}
+              />
+              <p className="text-xs text-subtle">
+                Nothing to paste. Each developer gets their own value — use it for secrets your app invents
+                (AUTH_SECRET, JWT_SECRET, SESSION_SECRET).
+              </p>
+            </>
+          ) : (
+            def.value && (
+              <FieldInput
+                idPrefix="add"
+                def={{
+                  ...def.value,
+                  placeholder:
+                    def.providers?.find((p) => p.id === draft.provider)?.placeholder ?? def.value.placeholder,
+                }}
+                value={draft.value}
+                onChange={(v) => update({ value: v })}
+              />
+            )
+          )}
+          {required.map((f) => (
+            <FieldInput
+              key={f.name}
+              idPrefix="add"
+              def={f}
+              value={draft.fields[f.name] ?? ""}
+              onChange={(v) => setField(f.name, v)}
+            />
+          ))}
+          <ExtrasSection
+            defs={def.extras(draft.provider)}
+            extras={draft.extras}
+            onChange={(extras) => update({ extras })}
+          />
+          <AdvancedSection idPrefix="add-adv" fields={advanced} values={draft.fields} onChange={setField} />
+          {protectedType && draft.type !== "visible" && (
+            <p className="flex items-start gap-2 rounded-md border border-border p-3 text-xs text-subtle">
+              <Lock aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+              Developers get a stand-in value that cb makes for each device — there is nothing to enter for it. The real
+              value is encrypted on cb's server; nobody can view it again, but you can replace it any time.
+            </p>
+          )}
+          <FormError error={error} />
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!canSave} loading={pending}>
+              {protectedType && draft.type !== "visible" ? "Save & test" : "Save"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
