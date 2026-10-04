@@ -7,13 +7,17 @@ export function QueryState({
   isPending,
   error,
   rows = 3,
+  skeleton,
   children,
 }: {
   isPending: boolean;
   error: ApiError | null;
   rows?: number;
+  /** Content-shaped placeholder (SkeletonRows, SkeletonCards…); defaults to plain bars. */
+  skeleton?: ReactNode;
   children: ReactNode;
 }) {
+  if (isPending && skeleton) return <>{skeleton}</>;
   if (isPending) {
     return (
       <div className="flex flex-col gap-2" aria-busy="true">

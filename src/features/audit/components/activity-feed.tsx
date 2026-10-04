@@ -7,6 +7,7 @@ import { BadgeLabel } from "@/shared/components/badge-label";
 import { EmptyState } from "@/shared/components/empty-state";
 import { PaginationBar } from "@/shared/components/pagination-bar";
 import { QueryState } from "@/shared/components/query-state";
+import { SkeletonRows } from "@/shared/components/skeletons";
 import { timeAgo } from "@/shared/lib/format-time";
 import { cn } from "@/shared/lib/utils";
 import { useAudit } from "../hooks/use-audit";
@@ -166,7 +167,7 @@ export function ActivityFeed({
           ))}
         </div>
       )}
-      <QueryState isPending={audit.isPending} error={audit.error} rows={compact ? 4 : 8}>
+      <QueryState isPending={audit.isPending} error={audit.error} skeleton={<SkeletonRows rows={compact ? 4 : 8} />}>
         {items.length === 0 ? (
           <EmptyState
             title="Nothing here yet"

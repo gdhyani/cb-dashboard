@@ -29,8 +29,19 @@ export interface RowAction {
   destructive?: boolean;
 }
 
-/** The "…" menu at the end of a row. Destructive items are separated and open a confirmation. */
-export function RowActions({ label, actions }: { label: string; actions: RowAction[] }) {
+/**
+ * The "…" menu at the end of a row or page header. Destructive items are separated and open a confirmation.
+ * `prominent` gives it an outlined trigger for page headers.
+ */
+export function RowActions({
+  label,
+  actions,
+  prominent = false,
+}: {
+  label: string;
+  actions: RowAction[];
+  prominent?: boolean;
+}) {
   const [pending, setPending] = useState<RowAction | null>(null);
   const safe = actions.filter((a) => !a.destructive);
   const danger = actions.filter((a) => a.destructive);
@@ -51,7 +62,7 @@ export function RowActions({ label, actions }: { label: string; actions: RowActi
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" aria-label={label}>
+          <Button variant={prominent ? "outline" : "ghost"} size={prominent ? "icon" : "icon-sm"} aria-label={label}>
             <MoreHorizontal />
           </Button>
         </DropdownMenuTrigger>

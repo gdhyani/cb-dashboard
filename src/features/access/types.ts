@@ -5,6 +5,8 @@ export interface Grant {
   environmentId: string;
   userId: string;
   expiresAt: string | null;
+  /** Resources not listed use the "default" credential profile. */
+  resourceProfiles: { resourceId: string; profile: string }[];
   createdAt: string;
   createdBy: string;
 }

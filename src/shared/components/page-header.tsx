@@ -3,8 +3,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 /**
- * Small mono label (breadcrumb / section name) with an optional back link,
- * then a large, tight display title with generous space below.
+ * One-line mono breadcrumb (optional back link), then the display title with its actions on the
+ * same row — vertically centred on the title — and the description below.
  */
 export function PageHeader({
   breadcrumb,
@@ -20,28 +20,26 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 pb-2">
-      <div className="flex min-w-0 flex-col gap-3">
-        {(breadcrumb || backHref) && (
-          <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-[0.2em] text-subtle">
-            {backHref && (
-              <Link
-                href={backHref}
-                aria-label="Back"
-                className="-ml-1 inline-flex size-6 items-center justify-center rounded-md transition-colors hover:bg-white/[0.06] hover:text-foreground"
-              >
-                <ArrowLeft className="size-3.5" />
-              </Link>
-            )}
-            {breadcrumb}
-          </div>
-        )}
-        <h1 className="truncate text-display font-semibold">{title}</h1>
-        {description && (
-          <div className="max-w-2xl text-[15px] leading-relaxed text-muted-foreground">{description}</div>
-        )}
+    <header className="flex flex-col gap-3 pb-2">
+      {(breadcrumb || backHref) && (
+        <div className="flex min-w-0 items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-subtle">
+          {backHref && (
+            <Link
+              href={backHref}
+              aria-label="Back"
+              className="-ml-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-white/[0.06] hover:text-foreground"
+            >
+              <ArrowLeft className="size-3.5" />
+            </Link>
+          )}
+          <div className="min-w-0 flex-1">{breadcrumb}</div>
+        </div>
+      )}
+      <div className="flex min-w-0 items-center justify-between gap-4">
+        <h1 className="min-w-0 truncate text-display font-semibold">{title}</h1>
+        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
       </div>
-      {actions && <div className="flex items-center gap-2 pb-1">{actions}</div>}
+      {description && <div className="max-w-2xl text-[15px] leading-relaxed text-muted-foreground">{description}</div>}
     </header>
   );
 }

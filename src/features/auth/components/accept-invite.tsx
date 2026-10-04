@@ -9,6 +9,7 @@ import type { z } from "zod";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { FormField } from "@/shared/components/form-field";
 import { QueryState } from "@/shared/components/query-state";
+import { SkeletonRows } from "@/shared/components/skeletons";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { useAcceptInvite, useInvitePreview, useMe } from "../hooks/use-auth";
@@ -43,7 +44,7 @@ export function AcceptInvite({ token }: { token: string }) {
         )
       }
     >
-      <QueryState isPending={preview.isPending} error={preview.error}>
+      <QueryState isPending={preview.isPending} error={preview.error} skeleton={<SkeletonRows rows={1} />}>
         {me.data ? (
           <div className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">

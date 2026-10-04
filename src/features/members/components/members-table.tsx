@@ -1,18 +1,20 @@
 "use client";
 
-import { Trash2, UserMinus } from "lucide-react";
-
+import { UserMinus } from "lucide-react";
 import type { Role } from "@/features/auth/types";
+import { AvatarInitials } from "@/shared/components/avatar-initials";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { QueryState } from "@/shared/components/query-state";
 import { RowActions } from "@/shared/components/row-actions";
+import { SkeletonRows } from "@/shared/components/skeletons";
+import { StaggerItem } from "@/shared/components/stagger";
 import { timeAgo } from "@/shared/lib/format-time";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { useMemberMutations, useMembers } from "../hooks/use-members";
 
 const ROLES: Role[] = ["owner", "admin", "developer"];
 
+/** People list: identity takes the flexible space; role, joined and actions keep a fixed width. */
 export function MembersTable({
   orgId,
   canManage,
@@ -27,34 +29,55 @@ export function MembersTable({
   const members = useMembers(orgId);
   const { updateRole, remove } = useMemberMutations(orgId);
   return (
-    <QueryState isPending={members.isPending} error={members.error}>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Member</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Joined</TableHead>
-            {canManage && <TableHead className="w-28" />}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {members.data?.map((m) => (
-            <TableRow key={m.userId}>
-              <TableCell>
-                <div className="flex flex-col">
-                  <span className="font-medium">
-                    {m.name} {m.userId === currentUserId && <span className="text-subtle">(you)</span>}
+    <QueryState isPending={members.isPending} error={members.error} skeleton={<SkeletonRows rows={2} />}>
+      <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
+        {members.data?.map((m, i) => {
+          const editable = canManage && (isOwner || m.role !== "owner");
+          const removable = editable && m.userId !== currentUserId;
+          return (
+            <StaggerItem key={m.userId} index={i} className="flex items-start gap-3 px-3 py-3 sm:items-center sm:px-4">
+              <AvatarInitials name={m.name} />
+              <div className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-sm font-medium">
+                  {m.name} {m.userId === currentUserId && <span className="font-normal text-subtle">(you)</span>}
+                </span>
+                <span className="truncate font-mono text-xs text-subtle">{m.email}</span>
+                {/* Phones: role and joined on their own line so the name keeps the full width. */}
+                <div className="mt-2 flex items-center gap-3 sm:hidden">
+                  {editable ? (
+                    <Select
+                      value={m.role}
+                      onValueChange={(role) => updateRole.mutate({ userId: m.userId, role: role as Role })}
+                    >
+                      <SelectTrigger className="h-7 w-28 text-xs" aria-label={`Role for ${m.name}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLES.filter((r) => isOwner || r !== "owner").map((r) => (
+                          <SelectItem key={r} value={r}>
+                            {r}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <BadgeLabel tone={m.role === "developer" ? "default" : "strong"}>{m.role}</BadgeLabel>
+                  )}
+                  <span className="min-w-0 truncate whitespace-nowrap font-mono text-[11px] text-subtle">
+                    joined {timeAgo(m.joinedAt)}
                   </span>
-                  <span className="font-mono text-xs text-subtle">{m.email}</span>
                 </div>
-              </TableCell>
-              <TableCell>
-                {canManage && (isOwner || m.role !== "owner") ? (
+              </div>
+              <span className="hidden w-28 shrink-0 text-right font-mono text-xs text-subtle sm:block">
+                joined {timeAgo(m.joinedAt)}
+              </span>
+              <div className="hidden w-32 shrink-0 justify-end sm:flex">
+                {editable ? (
                   <Select
                     value={m.role}
                     onValueChange={(role) => updateRole.mutate({ userId: m.userId, role: role as Role })}
                   >
-                    <SelectTrigger className="h-8 w-32" aria-label={`Role for ${m.name}`}>
+                    <SelectTrigger className="h-8 w-full text-xs sm:text-sm" aria-label={`Role for ${m.name}`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -68,11 +91,10 @@ export function MembersTable({
                 ) : (
                   <BadgeLabel tone={m.role === "developer" ? "default" : "strong"}>{m.role}</BadgeLabel>
                 )}
-              </TableCell>
-              <TableCell className="font-mono text-xs text-subtle">{timeAgo(m.joinedAt)}</TableCell>
+              </div>
               {canManage && (
-                <TableCell className="text-right">
-                  {m.userId !== currentUserId && (isOwner || m.role !== "owner") && (
+                <div className="flex w-8 shrink-0 justify-end">
+                  {removable && (
                     <RowActions
                       label={`Actions for ${m.name}`}
                       actions={[
@@ -91,12 +113,12 @@ export function MembersTable({
                       ]}
                     />
                   )}
-                </TableCell>
+                </div>
               )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+            </StaggerItem>
+          );
+        })}
+      </ul>
     </QueryState>
   );
 }

@@ -1,10 +1,8 @@
 "use client";
 
-import { Ban, Trash2 } from "lucide-react";
-
+import { Ban } from "lucide-react";
 import { useState } from "react";
 import type { Role } from "@/features/auth/types";
-import { BadgeLabel } from "@/shared/components/badge-label";
 import { CopyCommand } from "@/shared/components/copy-command";
 import { FormField } from "@/shared/components/form-field";
 import { RowActions } from "@/shared/components/row-actions";
@@ -22,9 +20,9 @@ export function InvitePanel({ orgId, isOwner }: { orgId: string; isOwner: boolea
   const invites = useInvites(orgId);
   const { createInvite, revokeInvite } = useMemberMutations(orgId);
   return (
-    <div className="flex flex-col gap-6 rounded-lg border border-border p-5">
+    <div className="flex flex-col gap-6 rounded-lg border border-border p-4 sm:p-5">
       <form
-        className="flex flex-wrap items-end gap-3"
+        className="grid gap-3 sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-end"
         onSubmit={(e) => {
           e.preventDefault();
           createInvite.mutate(
@@ -33,7 +31,7 @@ export function InvitePanel({ orgId, isOwner }: { orgId: string; isOwner: boolea
           );
         }}
       >
-        <div className="w-36">
+        <div>
           <FormField id="invite-role" label="Role">
             <Select value={role} onValueChange={(v) => setRole(v as Role)}>
               <SelectTrigger id="invite-role">
@@ -49,18 +47,18 @@ export function InvitePanel({ orgId, isOwner }: { orgId: string; isOwner: boolea
             </Select>
           </FormField>
         </div>
-        <div className="min-w-56 flex-1">
-          <FormField id="invite-email" label="Email (optional — restricts who can use it)">
+        <div className="min-w-0">
+          <FormField id="invite-email" label="Email (optional)">
             <Input
               id="invite-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="dev@company.com"
+              placeholder="Only this address can accept"
             />
           </FormField>
         </div>
-        <Button type="submit" disabled={createInvite.isPending}>
+        <Button type="submit" loading={createInvite.isPending} className="w-full sm:w-auto">
           Generate invite link
         </Button>
       </form>
@@ -75,24 +73,27 @@ export function InvitePanel({ orgId, isOwner }: { orgId: string; isOwner: boolea
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-subtle">Pending invites</p>
           <ul className="flex flex-col divide-y divide-border">
             {invites.data.map((inv) => (
-              <li key={inv.id} className="flex items-center justify-between py-2 text-sm">
-                <span className="flex items-center gap-2">
-                  <BadgeLabel>{inv.role}</BadgeLabel>
-                  {inv.email ?? <span className="text-subtle">anyone with the link</span>}
+              <li key={inv.id} className="flex items-center gap-3 py-2 text-sm">
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+                  <span className="truncate">
+                    {inv.email ?? <span className="text-subtle">Anyone with the link</span>}
+                  </span>
+                  <span className="font-mono text-xs text-subtle">
+                    {inv.role} · expires {timeUntil(inv.expiresAt)}
+                  </span>
                 </span>
-                <span className="flex items-center gap-3 font-mono text-xs text-subtle">
-                  expires {timeUntil(inv.expiresAt)}
+                <span className="shrink-0">
                   <RowActions
-                    label={"Invite actions"}
+                    label="Invite actions"
                     actions={[
                       {
-                        label: "Revoke",
+                        label: "Revoke invite",
                         icon: Ban,
                         destructive: true,
                         confirm: {
                           title: "Revoke invite?",
                           description: "The link stops working.",
-                          confirmLabel: "Revoke",
+                          confirmLabel: "Revoke invite",
                           onConfirm: () => revokeInvite.mutateAsync(inv.id),
                         },
                       },

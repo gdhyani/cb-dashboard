@@ -1,55 +1,93 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { KeyRound, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { EmptyState } from "@/shared/components/empty-state";
 import { QueryState } from "@/shared/components/query-state";
 import { RowActions } from "@/shared/components/row-actions";
-import { SecretInput } from "@/shared/components/secret-input";
+import { SkeletonCards } from "@/shared/components/skeletons";
+import { StaggerItem } from "@/shared/components/stagger";
 import { timeAgo } from "@/shared/lib/format-time";
-import { Button } from "@/shared/ui/button";
-import { useResourceMutations, useResources } from "../hooks/use-resources";
+import { useProfileMutations, useResourceMutations, useResources } from "../hooks/use-resources";
+import { KINDS } from "../lib/kinds";
 import type { Resource } from "../types";
+import { ConnectionMap } from "./connection-map";
+import { CredentialsDialog } from "./credentials-dialog";
 import { ResourceFormDialog } from "./resource-form-dialog";
+import { ResourceProfiles } from "./resource-profiles";
 
-function summary(r: Resource): string {
-  if (r.kind === "http") return String(r.config.upstreamUrl ?? "");
-  return `${String(r.config.host ?? "")} · ${String(r.config.database ?? "")}`;
-}
-
-function RotateForm({ resource, envId }: { resource: Resource; envId: string }) {
-  const [value, setValue] = useState("");
-  const { rotate } = useResourceMutations(envId);
+function ResourceCard({
+  resource: r,
+  envId,
+  isAdmin,
+  index,
+}: {
+  resource: Resource;
+  envId: string;
+  isAdmin: boolean;
+  index: number;
+}) {
+  const { remove } = useResourceMutations(envId);
+  const profiles = useProfileMutations(r.id);
+  const [adding, setAdding] = useState(false);
+  const spec = KINDS[r.kind];
+  const redirects = Array.isArray(r.config.redirectHosts) ? (r.config.redirectHosts as string[]) : [];
   return (
-    <form
-      className="flex gap-2"
-      onSubmit={(e) => {
-        e.preventDefault();
-        rotate.mutate(
-          { id: resource.id, ...(resource.kind === "http" ? { apiKey: value } : { connectionUri: value }) },
-          { onSuccess: () => setValue("") },
-        );
-      }}
-    >
-      <div className="flex-1">
-        <SecretInput
-          isSet
-          aria-label={`New credentials for ${resource.name}`}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-        />
+    <StaggerItem index={index} className="flex min-w-0 flex-col gap-4 rounded-lg border border-border p-4">
+      <div className="flex items-start gap-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="flex min-w-0 flex-wrap items-center gap-2">
+            <span className="truncate font-medium">{r.name}</span>
+            <BadgeLabel>{spec?.label ?? r.kind}</BadgeLabel>
+            {r.disabled && <BadgeLabel tone="muted">Disabled</BadgeLabel>}
+          </span>
+          <span className="truncate font-mono text-xs text-subtle">{spec?.summary(r.config) || "—"}</span>
+          {redirects.length > 0 && (
+            <span className="truncate font-mono text-xs text-subtle">redirects {redirects.join(", ")}</span>
+          )}
+        </div>
+        {isAdmin && (
+          <RowActions
+            label={`Actions for ${r.name}`}
+            actions={[
+              { label: "Add credential profile", icon: KeyRound, onSelect: () => setAdding(true) },
+              {
+                label: "Delete resource",
+                icon: Trash2,
+                destructive: true,
+                confirm: {
+                  title: `Delete ${r.name}?`,
+                  description: "Variables brokered through it are deleted too, and running apps lose this connection.",
+                  confirmLabel: "Delete resource",
+                  onConfirm: () => remove.mutateAsync(r.id),
+                },
+              },
+            ]}
+          />
+        )}
       </div>
-      <Button size="sm" variant="outline" type="submit" disabled={!value || rotate.isPending}>
-        Rotate
-      </Button>
-    </form>
+      {isAdmin ? (
+        <ResourceProfiles resource={r} envId={envId} />
+      ) : (
+        <span className="font-mono text-xs text-subtle">•••• set · rotated {timeAgo(r.rotatedAt)}</span>
+      )}
+      {adding && (
+        <CredentialsDialog
+          open
+          onOpenChange={setAdding}
+          resource={r}
+          mode="add-profile"
+          pending={profiles.create.isPending}
+          onSubmit={(body) => profiles.create.mutateAsync({ ...body, name: String(body.name ?? "") })}
+        />
+      )}
+    </StaggerItem>
   );
 }
 
 export function ResourcesPanel({ envId, isAdmin }: { envId: string; isAdmin: boolean }) {
   const resources = useResources(envId);
-  const { remove } = useResourceMutations(envId);
   return (
     <div className="flex flex-col gap-4">
       {isAdmin && (
@@ -57,58 +95,25 @@ export function ResourcesPanel({ envId, isAdmin }: { envId: string; isAdmin: boo
           <ResourceFormDialog envId={envId} />
         </div>
       )}
-      <QueryState isPending={resources.isPending} error={resources.error}>
+      <QueryState
+        isPending={resources.isPending}
+        error={resources.error}
+        skeleton={<SkeletonCards cards={2} columns={1} />}
+      >
         {resources.data?.length === 0 ? (
           <EmptyState
-            title="No resources"
+            title="No resources yet"
             description="Add the databases and APIs this environment talks to. Their credentials never leave the server."
           />
         ) : (
-          <ul className="flex flex-col gap-3">
-            {resources.data?.map((r) => (
-              <li key={r.id} className="flex flex-col gap-3 rounded-lg border border-border p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex flex-col gap-1">
-                    <span className="flex items-center gap-2">
-                      <span className="font-medium">{r.name}</span>
-                      <BadgeLabel>{r.kind}</BadgeLabel>
-                    </span>
-                    <span className="font-mono text-xs text-subtle">{summary(r)}</span>
-                  </div>
-                  <span className="font-mono text-xs text-subtle">•••• set · rotated {timeAgo(r.rotatedAt)}</span>
-                </div>
-                {Array.isArray(r.config.redirectHosts) && r.config.redirectHosts.length > 0 && (
-                  <p className="font-mono text-xs text-subtle">
-                    redirects {(r.config.redirectHosts as string[]).join(", ")}
-                  </p>
-                )}
-                {isAdmin && (
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="min-w-64 flex-1">
-                      <RotateForm resource={r} envId={envId} />
-                    </div>
-                    <RowActions
-                      label={`Actions for ${r.name}`}
-                      actions={[
-                        {
-                          label: "Delete resource",
-                          icon: Trash2,
-                          destructive: true,
-                          confirm: {
-                            title: `Delete ${r.name}?`,
-                            description:
-                              "Variables brokered through it are deleted too, and running apps lose this connection.",
-                            confirmLabel: "Delete resource",
-                            onConfirm: () => remove.mutateAsync(r.id),
-                          },
-                        },
-                      ]}
-                    />
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
+          <>
+            <ConnectionMap resources={resources.data ?? []} />
+            <ul className="grid gap-3 lg:grid-cols-2">
+              {resources.data?.map((r, i) => (
+                <ResourceCard key={r.id} resource={r} envId={envId} isAdmin={isAdmin} index={i} />
+              ))}
+            </ul>
+          </>
         )}
       </QueryState>
     </div>

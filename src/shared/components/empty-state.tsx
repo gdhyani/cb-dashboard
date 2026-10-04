@@ -14,7 +14,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-start gap-5 rounded-lg border border-dashed border-border-strong px-8 py-10">
+    <div className="flex flex-col items-start gap-5 rounded-lg border border-dashed border-border-strong px-5 py-8 sm:px-8 sm:py-10">
       <div className="flex flex-col gap-1.5">
         <p className="text-title font-semibold">{title}</p>
         {description && <div className="max-w-md text-sm text-muted-foreground">{description}</div>}

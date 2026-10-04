@@ -27,8 +27,8 @@
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   /* Type scale: hierarchy by size and weight, not colour. */
-  --text-display: 2.5rem;
-  --text-display--line-height: 1.1;
+  --text-display: 2rem;
+  --text-display--line-height: 1.15;
   --text-display--letter-spacing: -0.045em;
   --text-title: 1.125rem;
   --text-title--line-height: 1.4;
@@ -66,5 +66,79 @@
   ::selection {
     background: var(--color-foreground);
     color: var(--color-background);
+  }
+}
+
+/* Motion: one subtle language everywhere (transform-led, never hides content for long). */
+@keyframes cb-enter {
+  from {
+    opacity: 0.4;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cb-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes cb-sheet-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes cb-sheet-out {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+@keyframes cb-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@layer utilities {
+  .cb-enter {
+    animation: cb-enter 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .cb-overlay[data-state="open"] {
+    animation: cb-fade 160ms ease-out;
+  }
+  .cb-overlay[data-state="closed"] {
+    animation: cb-fade 140ms ease-in reverse;
+  }
+  .cb-sheet[data-state="open"] {
+    animation: cb-sheet-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .cb-sheet[data-state="closed"] {
+    animation: cb-sheet-out 160ms ease-in;
+  }
+  .cb-pop[data-state="open"] {
+    animation: cb-pop 160ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+}
+
+/* Display titles scale up from phones to desktop. */
+@media (min-width: 640px) {
+  :root {
+    --text-display: 2.5rem;
   }
 }

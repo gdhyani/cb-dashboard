@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { notifyError, notifySuccess } from "@/shared/lib/notify";
 import * as api from "../api/access.api";
 import { accessKeys } from "../api/access.keys";
+import type { Grant } from "../types";
 
 export const useAccessMatrix = (projectId: string, enabled = true) =>
   useQuery({
@@ -24,6 +25,15 @@ export function useAccessMutations(projectId: string) {
         api.grantAccess(envId, { userId, expiresAt }),
       onSuccess: (g) => {
         notifySuccess(g.expiresAt ? "Time-limited access granted" : "Access granted");
+        return refresh();
+      },
+      onError: (e) => notifyError(e),
+    }),
+    setProfiles: useMutation({
+      mutationFn: ({ grantId, resourceProfiles }: { grantId: string; resourceProfiles: Grant["resourceProfiles"] }) =>
+        api.updateGrantProfiles(grantId, resourceProfiles),
+      onSuccess: () => {
+        notifySuccess("Credential profiles updated. Live connections reconnect with them.");
         return refresh();
       },
       onError: (e) => notifyError(e),

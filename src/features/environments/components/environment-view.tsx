@@ -11,6 +11,7 @@ import { Breadcrumb } from "@/shared/components/breadcrumb";
 import { CopyCommand } from "@/shared/components/copy-command";
 import { PageHeader } from "@/shared/components/page-header";
 import { QueryState } from "@/shared/components/query-state";
+import { SkeletonHeader, SkeletonRows } from "@/shared/components/skeletons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { useEnvironment } from "../hooks/use-environment";
 import { SuspensionControl } from "./suspension-control";
@@ -21,7 +22,16 @@ export function EnvironmentView({ orgId, projectId, envId }: { orgId: string; pr
   const env = useEnvironment(envId);
   const members = useMembers(orgId);
   return (
-    <QueryState isPending={env.isPending} error={env.error}>
+    <QueryState
+      isPending={env.isPending}
+      error={env.error}
+      skeleton={
+        <>
+          <SkeletonHeader />
+          <SkeletonRows rows={4} />
+        </>
+      }
+    >
       {env.data && (
         <>
           <PageHeader
@@ -57,7 +67,7 @@ export function EnvironmentView({ orgId, projectId, envId }: { orgId: string; pr
             </div>
           )}
           <Tabs defaultValue="variables">
-            <TabsList>
+            <TabsList className="max-w-full overflow-x-auto">
               <TabsTrigger value="variables">Variables</TabsTrigger>
               <TabsTrigger value="resources">Resources</TabsTrigger>
               {org.isAdmin && <TabsTrigger value="preview">Access preview</TabsTrigger>}

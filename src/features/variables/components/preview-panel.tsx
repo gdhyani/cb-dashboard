@@ -5,6 +5,7 @@ import type { Member } from "@/features/members/types";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { FormField } from "@/shared/components/form-field";
 import { QueryState } from "@/shared/components/query-state";
+import { SkeletonRows } from "@/shared/components/skeletons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { usePreview } from "../hooks/use-variables";
 
@@ -35,7 +36,7 @@ export function PreviewPanel({ envId, members }: { envId: string; members: Membe
         </FormField>
       </div>
       {userId && (
-        <QueryState isPending={preview.isPending} error={preview.error}>
+        <QueryState isPending={preview.isPending} error={preview.error} skeleton={<SkeletonRows rows={4} />}>
           {preview.data && (
             <div className="flex flex-col gap-3">
               <p className="text-sm">

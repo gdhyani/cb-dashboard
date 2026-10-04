@@ -1,17 +1,22 @@
 "use client";
 
-import { motion } from "motion/react";
 import Link from "next/link";
 import { CLI_COMMANDS } from "@/constants";
+import { useOrgStats } from "@/features/stats";
 import { BadgeLabel } from "@/shared/components/badge-label";
+import { SegmentMeter } from "@/shared/components/charts/segment-meter";
 import { EmptyState } from "@/shared/components/empty-state";
 import { QueryState } from "@/shared/components/query-state";
+import { SkeletonCards } from "@/shared/components/skeletons";
+import { StaggerItem } from "@/shared/components/stagger";
 import { useProjects } from "../hooks/use-projects";
 
 export function ProjectList({ orgId, isAdmin }: { orgId: string; isAdmin: boolean }) {
   const projects = useProjects(orgId);
+  const stats = useOrgStats(orgId);
+  const trendOf = (id: string) => stats.data?.connectionsByProject.find((p) => p.projectId === id);
   return (
-    <QueryState isPending={projects.isPending} error={projects.error}>
+    <QueryState isPending={projects.isPending} error={projects.error} skeleton={<SkeletonCards cards={2} />}>
       {projects.data?.length === 0 ? (
         <EmptyState
           title="No projects yet"
@@ -24,16 +29,28 @@ export function ProjectList({ orgId, isAdmin }: { orgId: string; isAdmin: boolea
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {projects.data?.map((p, i) => (
-            <motion.li key={p.id} initial={{ y: 4 }} animate={{ y: 0 }} transition={{ delay: i * 0.03 }}>
+            <StaggerItem key={p.id} index={i}>
               <Link
                 href={`/orgs/${orgId}/projects/${p.id}`}
-                className="flex h-full flex-col gap-4 rounded-lg border border-border p-5 transition-colors hover:border-ring"
+                className="flex h-full flex-col gap-4 rounded-lg border border-border p-4 transition-colors hover:border-ring sm:p-5"
               >
                 <div className="flex flex-col gap-1">
                   <span className="text-lg font-medium tracking-tight">{p.name}</span>
                   <span className="font-mono text-xs text-subtle">{p.slug}</span>
                   {p.description && <span className="text-sm text-muted-foreground">{p.description}</span>}
                 </div>
+                {trendOf(p.id) && (
+                  <div className="flex items-end gap-3">
+                    <SegmentMeter
+                      values={trendOf(p.id)?.daily ?? []}
+                      segments={4}
+                      className="flex h-6 flex-1 items-end gap-[2px]"
+                    />
+                    <span className="shrink-0 font-mono text-[11px] text-subtle">
+                      {trendOf(p.id)?.connections} conn · 14d
+                    </span>
+                  </div>
+                )}
                 <div className="mt-auto flex flex-wrap gap-2">
                   {p.environments.map((e) => (
                     <BadgeLabel key={e.id} tone={e.killed ? "warning" : e.hasAccess ? "strong" : "muted"}>
@@ -42,7 +59,7 @@ export function ProjectList({ orgId, isAdmin }: { orgId: string; isAdmin: boolea
                   ))}
                 </div>
               </Link>
-            </motion.li>
+            </StaggerItem>
           ))}
         </ul>
       )}

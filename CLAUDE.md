@@ -87,6 +87,8 @@ cb-dashboard/
   (via `QueryState` / shared skeleton components). No spinners-only pages, no blank screens.
 - **Mobile first:** every page must work at 375px wide — no text wrapping mid-word, tables collapse to stacked
   rows or scroll horizontally, forms stack, actions stay reachable. Check phone width in the browser for every change.
+- **Destructive actions are never primary buttons on a page.** Delete project, suspend environment, remove member,
+  revoke device… live in a row's "…" menu or a Settings section/tab, always behind a confirmation.
 - Keep the design system simple; correctness and the npm package come first.
 
 ## Browser testing (required)
