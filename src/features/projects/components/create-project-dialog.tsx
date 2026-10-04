@@ -15,17 +15,37 @@ import {
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
 import { useProjectMutations } from "../hooks/use-projects";
+import type { Project } from "../types";
 
-export function CreateProjectDialog({ orgId }: { orgId: string }) {
-  const [open, setOpen] = useState(false);
+/**
+ * Without `open`/`onOpenChange` it renders its own "New project" button. Controlled, it renders no trigger
+ * (the project switcher opens it). `onCreated` runs with the new project after a successful create.
+ */
+export function CreateProjectDialog({
+  orgId,
+  open: controlledOpen,
+  onOpenChange,
+  onCreated,
+}: {
+  orgId: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onCreated?: (project: Project) => void;
+}) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const controlled = controlledOpen !== undefined;
+  const open = controlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = (next: boolean) => (controlled ? onOpenChange?.(next) : setUncontrolledOpen(next));
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const { create } = useProjectMutations(orgId);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>New project</Button>
-      </DialogTrigger>
+      {!controlled && (
+        <DialogTrigger asChild>
+          <Button>New project</Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>New project</DialogTitle>
@@ -38,10 +58,11 @@ export function CreateProjectDialog({ orgId }: { orgId: string }) {
             create.mutate(
               { name, ...(description ? { description } : {}) },
               {
-                onSuccess: () => {
+                onSuccess: (project) => {
                   setOpen(false);
                   setName("");
                   setDescription("");
+                  onCreated?.(project);
                 },
               },
             );

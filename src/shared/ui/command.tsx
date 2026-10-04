@@ -38,7 +38,12 @@ function CommandDialog({
   );
 }
 
-function CommandInput({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Input>) {
+/** `trailing` sits at the right end of the input row (e.g. an Esc hint or a close button). */
+function CommandInput({
+  className,
+  trailing,
+  ...props
+}: React.ComponentProps<typeof CommandPrimitive.Input> & { trailing?: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 border-b border-border px-4">
       <Search className="size-4 shrink-0 text-subtle" />
@@ -49,6 +54,7 @@ function CommandInput({ className, ...props }: React.ComponentProps<typeof Comma
         )}
         {...props}
       />
+      {trailing}
     </div>
   );
 }
