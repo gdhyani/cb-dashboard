@@ -93,9 +93,9 @@ cb-dashboard/
 
 ## Browser testing (required)
 
-- Verify every page and flow in a real browser with the Claude in Chrome tools (`mcp__claude-in-chrome__*`):
+- Verify every page and flow in a real browser using browser automation:
   navigate to `http://localhost:4201`, perform the user journey (sign up, invite, grant access, revoke…), read the
-  console (`read_console_messages`) and network requests (`read_network_requests`) for errors.
+  browser console and network requests for errors.
 - Unit tests cover logic; the browser pass covers the real journey. A feature is done only after both pass.
 - Requires cb-backend running on :4200 and the dashboard on :4201.
 
