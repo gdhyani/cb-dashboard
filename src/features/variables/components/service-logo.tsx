@@ -44,7 +44,7 @@ export function ServiceLogo({ icon, className = "" }: { icon: string; className?
       className={`inline-grid size-5 shrink-0 place-items-center rounded-md border border-border-strong bg-card text-foreground ${className}`}
     >
       {known ? (
-        <svg viewBox="0 0 24 24" className="size-3" fill="currentColor">
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="size-3" fill="currentColor">
           <path d={known.path} />
         </svg>
       ) : (
