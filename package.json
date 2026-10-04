@@ -8,7 +8,8 @@
     "start": "next start -p 4201",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "lint": "biome check ."
+    "lint": "biome check .",
+    "sync:contract": "node scripts/sync-contract.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
