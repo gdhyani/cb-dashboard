@@ -1,4 +1,3 @@
-export { ResourcesPanel } from "./components/resources-panel";
 export {
   useProfileMutations,
   useProfiles,

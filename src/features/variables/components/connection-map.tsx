@@ -1,5 +1,11 @@
-import { KINDS } from "../lib/kinds";
-import type { Resource } from "../types";
+import { ServiceLogo } from "./service-logo";
+
+export interface MapService {
+  id: string;
+  label: string;
+  detail: string;
+  icon: string;
+}
 
 function Node({ title, detail, strong = false }: { title: string; detail: string; strong?: boolean }) {
   return (
@@ -24,8 +30,8 @@ function Link({ solid = false }: { solid?: boolean }) {
 }
 
 /** How an app in this environment reaches each service: fake values locally, real credentials only server-side. */
-export function ConnectionMap({ resources }: { resources: Resource[] }) {
-  if (resources.length === 0) return null;
+export function ConnectionMap({ services }: { services: MapService[] }) {
+  if (services.length === 0) return null;
   return (
     <figure className="cb-grid-wide flex flex-col gap-3 rounded-lg border border-border p-4">
       <figcaption className="flex flex-wrap items-baseline justify-between gap-2">
@@ -47,12 +53,11 @@ export function ConnectionMap({ resources }: { resources: Resource[] }) {
         <Node title="Gateway" detail="verifies, injects secrets" strong />
         <Link solid />
         <ul className="flex flex-col gap-1.5 border-l border-foreground/50 pl-3">
-          {resources.map((r) => (
-            <li key={r.id} className="flex min-w-0 items-center gap-2 rounded-md border border-border px-3 py-1.5">
-              <span className="min-w-[40%] flex-1 truncate text-sm">{r.name}</span>
-              <span className="max-w-[55%] truncate text-right font-mono text-[11px] text-subtle">
-                {KINDS[r.kind]?.label ?? r.kind}
-              </span>
+          {services.map((s) => (
+            <li key={s.id} className="flex min-w-0 items-center gap-2 rounded-md border border-border px-3 py-1.5">
+              <ServiceLogo icon={s.icon} />
+              <span className="min-w-[40%] flex-1 truncate font-mono text-sm">{s.label}</span>
+              <span className="max-w-[55%] truncate text-right font-mono text-[11px] text-subtle">{s.detail}</span>
             </li>
           ))}
         </ul>

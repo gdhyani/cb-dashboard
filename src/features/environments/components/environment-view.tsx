@@ -3,8 +3,7 @@
 import { EnvironmentAccess } from "@/features/access";
 import { useOrg } from "@/features/orgs/hooks/use-orgs";
 import { useProject } from "@/features/projects/hooks/use-projects";
-import { ResourcesPanel } from "@/features/resources/components/resources-panel";
-import { VariablesPanel } from "@/features/variables/components/variables-panel";
+import { VariablesPanel } from "@/features/variables";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { Breadcrumb } from "@/shared/components/breadcrumb";
 import { CopyCommand } from "@/shared/components/copy-command";
@@ -53,7 +52,7 @@ export function EnvironmentView({ orgId, projectId, envId }: { orgId: string; pr
                   {env.data.killedReason}
                 </span>
               ) : (
-                "Configuration delivered to applications in this environment, and the services it connects to."
+                "Every key your apps read in this environment, and the services behind them."
               )
             }
             actions={org.isAdmin && <SuspensionControl env={env.data} />}
@@ -67,14 +66,10 @@ export function EnvironmentView({ orgId, projectId, envId }: { orgId: string; pr
           <Tabs defaultValue="variables">
             <TabsList className="max-w-full overflow-x-auto">
               <TabsTrigger value="variables">Variables</TabsTrigger>
-              <TabsTrigger value="resources">Resources</TabsTrigger>
               {org.isAdmin && <TabsTrigger value="access">Access</TabsTrigger>}
             </TabsList>
             <TabsContent value="variables" className="pt-4">
               <VariablesPanel envId={envId} isAdmin={org.isAdmin} />
-            </TabsContent>
-            <TabsContent value="resources" className="pt-4">
-              <ResourcesPanel envId={envId} isAdmin={org.isAdmin} />
             </TabsContent>
             {org.isAdmin && (
               <TabsContent value="access" className="pt-4">
