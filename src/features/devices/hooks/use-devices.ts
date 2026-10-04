@@ -7,6 +7,25 @@ export const useMyDevices = () => useQuery({ queryKey: deviceKeys.mine, queryFn:
 export const useOrgDevices = (orgId: string, enabled = true) =>
   useQuery({ queryKey: deviceKeys.org(orgId), queryFn: () => api.listOrgDevices(orgId), enabled });
 
+export const useOrgSessions = (orgId: string) =>
+  useQuery({
+    queryKey: deviceKeys.sessions(orgId),
+    queryFn: () => api.listOrgSessions(orgId),
+    refetchInterval: 30_000,
+  });
+
+export function useRevokeSession(orgId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: api.revokeSession,
+    onSuccess: () => {
+      notifySuccess("Signed out — that browser must log in again");
+      return client.invalidateQueries({ queryKey: deviceKeys.sessions(orgId) });
+    },
+    onError: (e) => notifyError(e),
+  });
+}
+
 export function useRevokeDevice() {
   const client = useQueryClient();
   return useMutation({
