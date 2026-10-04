@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AuditFeed } from "@/features/audit/components/audit-feed";
+import { ActivityFeed } from "@/features/audit/components/activity-feed";
 import { HealthStatus } from "@/features/health";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { BadgeLabel } from "@/shared/components/badge-label";
@@ -54,7 +54,7 @@ export function OrgOverview({ orgId }: { orgId: string }) {
       </Section>
       {org.isAdmin && (
         <Section title="Recent activity" description="Logins, grants, revocations and connections.">
-          <AuditFeed orgId={orgId} pageSize={10} compact />
+          <ActivityFeed orgId={orgId} pageSize={30} compact />
         </Section>
       )}
     </>

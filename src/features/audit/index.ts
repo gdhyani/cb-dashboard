@@ -1,1 +1,1 @@
-export { AuditFeed } from "./components/audit-feed";
+export { ActivityFeed } from "./components/activity-feed";

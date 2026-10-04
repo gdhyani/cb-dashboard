@@ -1,4 +1,4 @@
-import { AuditFeed } from "@/features/audit";
+import { ActivityFeed } from "@/features/audit";
 import { PageHeader } from "@/shared/components/page-header";
 
 export default async function AuditPage({ params }: { params: Promise<{ orgId: string }> }) {
@@ -10,7 +10,7 @@ export default async function AuditPage({ params }: { params: Promise<{ orgId: s
         title="Audit log"
         description="Every login, grant, revocation, tunnel and gateway request."
       />
-      <AuditFeed orgId={orgId} />
+      <ActivityFeed orgId={orgId} />
     </>
   );
 }
