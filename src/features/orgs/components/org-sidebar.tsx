@@ -1,22 +1,10 @@
 "use client";
 
-import {
-  Activity,
-  ChevronsUpDown,
-  FolderKanban,
-  KeyRound,
-  Laptop,
-  LayoutGrid,
-  LogOut,
-  type LucideIcon,
-  Users,
-  X,
-} from "lucide-react";
+import { Activity, FolderKanban, KeyRound, Laptop, LayoutGrid, LogOut, type LucideIcon, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { PRODUCT_NAME } from "@/constants";
 import { useLogout, useMe } from "@/features/auth/hooks/use-auth";
-import { useProjects } from "@/features/projects/hooks/use-projects";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { cn } from "@/shared/lib/utils";
 import {
@@ -28,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { Skeleton } from "@/shared/ui/skeleton";
-import { useOrg, useOrgs } from "../hooks/use-orgs";
+import { useOrg } from "../hooks/use-orgs";
 
 export interface NavItem {
   href: string;
@@ -68,32 +56,17 @@ export function OrgSidebar({ orgId, onClose }: { orgId: string; onClose?: () => 
   const pathname = usePathname();
   const router = useRouter();
   const me = useMe();
-  const orgs = useOrgs();
   const org = useOrg(orgId);
-  const projects = useProjects(orgId);
   const logout = useLogout();
 
   return (
     <div className="flex h-full flex-col gap-6 p-3">
       <div className="flex items-center gap-1">
-        <DropdownMenu>
-          <DropdownMenuTrigger className="flex h-11 min-w-0 flex-1 items-center justify-between gap-2 rounded-md px-2 text-left hover:bg-white/[0.04]">
-            <span className="flex min-w-0 flex-col">
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">{PRODUCT_NAME}</span>
-              <span className="truncate font-medium">{org.data?.name ?? <Skeleton className="mt-1 h-4 w-28" />}</span>
-            </span>
-            <ChevronsUpDown className="size-4 shrink-0 text-subtle" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-60">
-            <DropdownMenuLabel>Organizations</DropdownMenuLabel>
-            {orgs.data?.map((o) => (
-              <DropdownMenuItem key={o.id} onSelect={() => router.push(`/orgs/${o.id}`)}>
-                <span className="flex-1 truncate">{o.name}</span>
-                <span className="font-mono text-[10px] text-subtle">{o.role}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* One org per user: shown as a label, not a switcher. Projects are switched from the navbar. */}
+        <Link href={`/orgs/${orgId}`} className="flex h-11 min-w-0 flex-1 flex-col justify-center rounded-md px-2">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">{PRODUCT_NAME}</span>
+          <span className="truncate font-medium">{org.data?.name ?? <Skeleton className="mt-1 h-4 w-28" />}</span>
+        </Link>
         {onClose && (
           <button
             type="button"
@@ -115,37 +88,8 @@ export function OrgSidebar({ orgId, onClose }: { orgId: string; onClose?: () => 
         ))}
       </nav>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-1">
-        <p className="px-2 font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">Projects</p>
-        <nav className="flex min-h-0 flex-col gap-0.5 overflow-y-auto" aria-label="Projects">
-          {projects.isPending && [0, 1].map((i) => <Skeleton key={i} className="mx-2 my-1 h-5 w-32" />)}
-          {projects.data?.map((p) => {
-            const href = `/orgs/${orgId}/projects/${p.id}`;
-            const suspended = p.environments.some((e) => e.killed);
-            return (
-              <Link key={p.id} href={href} className={rowClass(isActive(pathname, href))}>
-                <span
-                  aria-hidden
-                  className="flex size-4 shrink-0 items-center justify-center rounded-[3px] border border-border-strong font-mono text-[9px] leading-none uppercase"
-                >
-                  {p.name.slice(0, 1)}
-                </span>
-                <span className="truncate">{p.name}</span>
-                {suspended && (
-                  <span
-                    className="ml-auto size-1.5 shrink-0 rounded-full bg-muted-foreground"
-                    title="Has a suspended environment"
-                  />
-                )}
-              </Link>
-            );
-          })}
-          {projects.data?.length === 0 && <p className="px-2 py-1 text-sm text-subtle">No projects yet</p>}
-        </nav>
-      </div>
-
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-white/[0.04]">
+        <DropdownMenuTrigger className="mt-auto flex items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-white/[0.04]">
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="truncate text-sm">{me.data?.user.name}</span>
             <span className="truncate font-mono text-xs text-subtle">{me.data?.user.email}</span>

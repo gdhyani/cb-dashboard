@@ -3,6 +3,7 @@
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { ProjectSwitcher } from "@/features/projects";
 import { CommandMenu, SearchButton, useCommandShortcut } from "@/features/search/components/command-menu";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/shared/ui/sheet";
 import { useOrg } from "../hooks/use-orgs";
@@ -38,10 +39,16 @@ export function OrgShell({ orgId, children }: { orgId: string; children: ReactNo
               <OrgSidebar orgId={orgId} onClose={() => setMenuOpen(false)} />
             </SheetContent>
           </Sheet>
-          <span className="min-w-0 flex-1 truncate font-medium md:hidden">{org.data?.name}</span>
+          <div className="flex min-w-0 flex-1 flex-col items-start md:-ml-2">
+            {/* Phones have no sidebar rail, so the org name sits above the switcher. */}
+            <span className="max-w-full truncate px-2 font-mono text-[10px] leading-none uppercase tracking-[0.2em] text-subtle md:hidden">
+              {org.data?.name}
+            </span>
+            <ProjectSwitcher orgId={orgId} canCreate={org.isAdmin} />
+          </div>
           <SearchButton
             onClick={openSearch}
-            className="w-10 justify-center px-0 sm:w-64 sm:justify-start sm:px-3 md:ml-auto [&>span:first-of-type]:hidden sm:[&>span:first-of-type]:inline"
+            className="w-10 shrink-0 justify-center px-0 sm:w-64 sm:justify-start sm:px-3 [&>span:first-of-type]:hidden sm:[&>span:first-of-type]:inline"
           />
         </header>
         <main className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-10 px-4 py-8 sm:px-6 md:py-10">
