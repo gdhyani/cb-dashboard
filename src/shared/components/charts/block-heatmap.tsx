@@ -7,30 +7,27 @@ export interface HeatmapRow {
 }
 
 /**
- * Rows × days of square blocks; brightness = activity that day relative to that row's busiest day
+ * Rows × days of blocks (full width, fixed height); brightness = activity that day relative to that row's busiest day
  * (so quiet rows still show their pattern), with each row's total on the right.
  * Each block carries its count in a native tooltip and in the accessible label.
  */
 export function BlockHeatmap({ rows, columns }: { rows: HeatmapRow[]; columns: string[] }) {
   return (
-    <div className="flex max-w-[40rem] flex-col gap-3">
-      <div className="grid grid-cols-[5.5rem_minmax(0,1fr)_2.5rem] items-center gap-x-3 gap-y-[3px] sm:grid-cols-[7rem_minmax(0,1fr)_3rem]">
+    <div className="flex w-full flex-col gap-3">
+      <div className="grid grid-cols-[5.5rem_minmax(0,1fr)_2.5rem] items-center gap-x-3 gap-y-1 sm:grid-cols-[7rem_minmax(0,1fr)_3rem]">
         {rows.map((row) => {
           const max = Math.max(0, ...row.values);
           return (
             <div key={row.label} className="contents">
               <span className="truncate text-xs text-muted-foreground">{row.label}</span>
-              <div
-                className="grid gap-[3px]"
-                style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}
-              >
+              <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}>
                 {row.values.map((v, i) => (
                   <span
                     key={columns[i]}
                     role="img"
                     title={`${row.label} · ${columns[i]}: ${v}`}
                     aria-label={`${row.label} on ${columns[i]}: ${v}`}
-                    className="aspect-square rounded-[3px] transition-colors"
+                    className="h-5 rounded-[3px] transition-colors sm:h-7"
                     style={{ background: BLOCK_SHADES[shadeStep(v, max)] }}
                   />
                 ))}
