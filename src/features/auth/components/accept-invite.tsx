@@ -7,7 +7,9 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { BadgeLabel } from "@/shared/components/badge-label";
+import { FormError } from "@/shared/components/form-error";
 import { FormField } from "@/shared/components/form-field";
+import { PasswordInput } from "@/shared/components/password-input";
 import { QueryState } from "@/shared/components/query-state";
 import { SkeletonRows } from "@/shared/components/skeletons";
 import { Button } from "@/shared/ui/button";
@@ -19,7 +21,7 @@ import { AuthCard } from "./auth-card";
 export function AcceptInvite({ token }: { token: string }) {
   const router = useRouter();
   const preview = useInvitePreview(token);
-  const me = useMe();
+  const me = useMe({ allowSignedOut: true });
   const accept = useAcceptInvite();
   const form = useForm<z.infer<typeof AcceptInviteSchema>>({
     resolver: zodResolver(AcceptInviteSchema),
@@ -50,6 +52,7 @@ export function AcceptInvite({ token }: { token: string }) {
             <p className="text-sm text-muted-foreground">
               Signed in as <span className="text-foreground">{me.data.user.email}</span>.
             </p>
+            <FormError error={accept.error} />
             <Button
               disabled={accept.isPending}
               onClick={() => accept.mutate({ token }, { onSuccess: (r) => goToOrg(r.orgId) })}
@@ -75,10 +78,11 @@ export function AcceptInvite({ token }: { token: string }) {
               />
             </FormField>
             <FormField id="password" label="Password" error={errors.password?.message} hint="At least 8 characters.">
-              <Input id="password" type="password" autoComplete="new-password" {...form.register("password")} />
+              <PasswordInput id="password" autoComplete="new-password" {...form.register("password")} />
             </FormField>
+            <FormError error={accept.error} />
             <Button type="submit" disabled={accept.isPending}>
-              Create account and join
+              {accept.isPending ? "Joining…" : "Create account and join"}
             </Button>
             <p className="text-sm text-muted-foreground">
               Already have an account?{" "}

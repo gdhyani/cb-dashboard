@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
+import { FormError } from "@/shared/components/form-error";
 import { FormField } from "@/shared/components/form-field";
+import { PasswordInput } from "@/shared/components/password-input";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { useSignup } from "../hooks/use-auth";
@@ -46,11 +48,12 @@ export function SignupForm() {
           <Input id="email" type="email" autoComplete="email" {...form.register("email")} />
         </FormField>
         <FormField id="password" label="Password" error={errors.password?.message} hint="At least 8 characters.">
-          <Input id="password" type="password" autoComplete="new-password" {...form.register("password")} />
+          <PasswordInput id="password" autoComplete="new-password" {...form.register("password")} />
         </FormField>
         <FormField id="orgName" label="Organization" error={errors.orgName?.message}>
           <Input id="orgName" autoComplete="organization" {...form.register("orgName")} />
         </FormField>
+        <FormError error={signup.error} />
         <Button type="submit" disabled={signup.isPending}>
           {signup.isPending ? "Creating…" : "Create organization"}
         </Button>

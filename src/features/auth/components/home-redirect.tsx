@@ -7,7 +7,7 @@ import { useMe } from "../hooks/use-auth";
 /** "/" → first organization when logged in, otherwise the login page. */
 export function HomeRedirect() {
   const router = useRouter();
-  const me = useMe();
+  const me = useMe({ allowSignedOut: true });
   useEffect(() => {
     if (me.data) {
       const first = me.data.memberships[0];
