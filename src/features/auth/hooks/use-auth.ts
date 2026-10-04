@@ -1,18 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { notifyError } from "@/shared/lib/notify";
 import * as api from "../api/auth.api";
 import { authKeys } from "../api/auth.keys";
 
-export function useMe(options: { enabled?: boolean } = {}) {
-  return useQuery({ queryKey: authKeys.me, queryFn: api.getMe, retry: false, staleTime: 60_000, ...options });
+/** `allowSignedOut`: on public pages a 401 just means "not logged in" — don't bounce to /login. */
+export function useMe({ allowSignedOut, ...options }: { enabled?: boolean; allowSignedOut?: boolean } = {}) {
+  return useQuery({
+    queryKey: authKeys.me,
+    queryFn: api.getMe,
+    retry: false,
+    staleTime: 60_000,
+    meta: { allowSignedOut },
+    ...options,
+  });
 }
 
+/** Login, signup and invite forms show failures inline (FormError) — no toast, and a 401 is not "session expired". */
 function useSessionMutation<TBody, TResult>(fn: (body: TBody) => Promise<TResult>) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: fn,
+    meta: { allowSignedOut: true },
     onSuccess: () => client.invalidateQueries(),
-    onError: (error) => notifyError(error),
   });
 }
 
