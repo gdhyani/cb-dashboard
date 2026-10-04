@@ -33,3 +33,23 @@ export interface CredentialProfile {
   rotatedAt: string | null;
   isDefault: boolean;
 }
+
+/** §10.8 provider template (served by the backend as data). */
+export interface Preset {
+  id: string;
+  name: string;
+  category: "AI" | "Payments" | "Auth" | "Push" | "Storage" | "Email" | "Database";
+  kind: ResourceKind;
+  description: string;
+  defaults: Record<string, unknown>;
+  secretPlaceholder: string;
+  variables: { key: string; field: string }[];
+  plainVariables?: { key: string; hint: string }[];
+}
+
+export interface ResourceTestResult {
+  ok: boolean;
+  profile: string;
+  latencyMs: number;
+  message: string;
+}

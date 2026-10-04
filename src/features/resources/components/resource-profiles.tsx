@@ -1,6 +1,6 @@
 "use client";
 
-import { RefreshCw, Trash2 } from "lucide-react";
+import { PlugZap, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { RowActions } from "@/shared/components/row-actions";
 import { timeAgo } from "@/shared/lib/format-time";
@@ -10,7 +10,16 @@ import type { Resource } from "../types";
 import { CredentialsDialog } from "./credentials-dialog";
 
 /** J2: the resource's credential sets. "default" is the resource's own; others are assigned per grant. */
-export function ResourceProfiles({ resource, envId }: { resource: Resource; envId: string }) {
+export function ResourceProfiles({
+  resource,
+  envId,
+  onTest,
+}: {
+  resource: Resource;
+  envId: string;
+  /** Runs a gateway-side connection test with this profile's credentials. */
+  onTest?: (profile: string) => void;
+}) {
   const profiles = useProfiles(resource.id);
   const { rotate: rotateDefault } = useResourceMutations(envId);
   const { rotate, remove } = useProfileMutations(resource.id);
@@ -28,6 +37,7 @@ export function ResourceProfiles({ resource, envId }: { resource: Resource; envI
             <RowActions
               label={`Actions for profile ${p.name}`}
               actions={[
+                ...(onTest ? [{ label: "Test connection", icon: PlugZap, onSelect: () => onTest(p.name) }] : []),
                 { label: "Rotate credentials", icon: RefreshCw, onSelect: () => setRotating(p.name) },
                 ...(p.isDefault
                   ? []
