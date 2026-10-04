@@ -1,6 +1,6 @@
 "use client";
 
-import { UserMinus } from "lucide-react";
+import { KeyRound, UserMinus } from "lucide-react";
 import type { Role } from "@/features/auth/types";
 import { AvatarInitials } from "@/shared/components/avatar-initials";
 import { BadgeLabel } from "@/shared/components/badge-label";
@@ -11,6 +11,7 @@ import { StaggerItem } from "@/shared/components/stagger";
 import { timeAgo } from "@/shared/lib/format-time";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { useMemberMutations, useMembers } from "../hooks/use-members";
+import type { Member } from "../types";
 
 const ROLES: Role[] = ["owner", "admin", "developer"];
 
@@ -20,11 +21,14 @@ export function MembersTable({
   canManage,
   isOwner,
   currentUserId,
+  onSelect,
 }: {
   orgId: string;
   canManage: boolean;
   isOwner: boolean;
   currentUserId?: string;
+  /** Opens the member's access panel. */
+  onSelect?: (member: Member) => void;
 }) {
   const members = useMembers(orgId);
   const { updateRole, remove } = useMemberMutations(orgId);
@@ -38,9 +42,19 @@ export function MembersTable({
             <StaggerItem key={m.userId} index={i} className="flex items-start gap-3 px-3 py-3 sm:items-center sm:px-4">
               <AvatarInitials name={m.name} />
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm font-medium">
-                  {m.name} {m.userId === currentUserId && <span className="font-normal text-subtle">(you)</span>}
-                </span>
+                {onSelect ? (
+                  <button
+                    type="button"
+                    onClick={() => onSelect(m)}
+                    className="truncate text-left text-sm font-medium hover:underline"
+                  >
+                    {m.name} {m.userId === currentUserId && <span className="font-normal text-subtle">(you)</span>}
+                  </button>
+                ) : (
+                  <span className="truncate text-sm font-medium">
+                    {m.name} {m.userId === currentUserId && <span className="font-normal text-subtle">(you)</span>}
+                  </span>
+                )}
                 <span className="truncate font-mono text-xs text-subtle">{m.email}</span>
                 {/* Phones: role and joined on their own line so the name keeps the full width. */}
                 <div className="mt-2 flex items-center gap-3 sm:hidden">
@@ -94,22 +108,27 @@ export function MembersTable({
               </div>
               {canManage && (
                 <div className="flex w-8 shrink-0 justify-end">
-                  {removable && (
+                  {(removable || onSelect) && (
                     <RowActions
                       label={`Actions for ${m.name}`}
                       actions={[
-                        {
-                          label: "Remove member",
-                          icon: UserMinus,
-                          destructive: true,
-                          confirm: {
-                            title: `Remove ${m.name}?`,
-                            description:
-                              "They lose access to every project in this organization and their live connections are closed.",
-                            confirmLabel: "Remove member",
-                            onConfirm: () => remove.mutateAsync(m.userId),
-                          },
-                        },
+                        ...(onSelect ? [{ label: "View access", icon: KeyRound, onSelect: () => onSelect(m) }] : []),
+                        ...(removable
+                          ? [
+                              {
+                                label: "Remove member",
+                                icon: UserMinus,
+                                destructive: true,
+                                confirm: {
+                                  title: `Remove ${m.name}?`,
+                                  description:
+                                    "They lose access to every project in this organization and their live connections are closed.",
+                                  confirmLabel: "Remove member",
+                                  onConfirm: () => remove.mutateAsync(m.userId),
+                                },
+                              },
+                            ]
+                          : []),
                       ]}
                     />
                   )}

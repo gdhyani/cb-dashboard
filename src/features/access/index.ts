@@ -1,1 +1,3 @@
-export { AccessMatrix } from "./components/access-matrix";
+export { EnvironmentAccess } from "./components/environment-access";
+export { MemberAccessSheet } from "./components/member-access-sheet";
+export { ProjectAccess } from "./components/project-access";

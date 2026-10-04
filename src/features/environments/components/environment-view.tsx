@@ -1,5 +1,6 @@
 "use client";
 
+import { EnvironmentAccess } from "@/features/access";
 import { useMembers } from "@/features/members/hooks/use-members";
 import { useOrg } from "@/features/orgs/hooks/use-orgs";
 import { useProject } from "@/features/projects/hooks/use-projects";
@@ -70,6 +71,7 @@ export function EnvironmentView({ orgId, projectId, envId }: { orgId: string; pr
             <TabsList className="max-w-full overflow-x-auto">
               <TabsTrigger value="variables">Variables</TabsTrigger>
               <TabsTrigger value="resources">Resources</TabsTrigger>
+              {org.isAdmin && <TabsTrigger value="access">Access</TabsTrigger>}
               {org.isAdmin && <TabsTrigger value="preview">Access preview</TabsTrigger>}
             </TabsList>
             <TabsContent value="variables" className="pt-4">
@@ -78,6 +80,16 @@ export function EnvironmentView({ orgId, projectId, envId }: { orgId: string; pr
             <TabsContent value="resources" className="pt-4">
               <ResourcesPanel envId={envId} isAdmin={org.isAdmin} />
             </TabsContent>
+            {org.isAdmin && (
+              <TabsContent value="access" className="pt-4">
+                <EnvironmentAccess
+                  projectId={projectId}
+                  projectName={project.data?.name ?? "this project"}
+                  envId={envId}
+                  envName={env.data.name}
+                />
+              </TabsContent>
+            )}
             {org.isAdmin && (
               <TabsContent value="preview" className="pt-4">
                 <PreviewPanel envId={envId} members={members.data ?? []} />

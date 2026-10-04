@@ -2,7 +2,7 @@
 
 import { Copy, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { AccessMatrix } from "@/features/access/components/access-matrix";
+import { ProjectAccess } from "@/features/access";
 import { useOrg } from "@/features/orgs/hooks/use-orgs";
 import { Breadcrumb } from "@/shared/components/breadcrumb";
 import { PageHeader } from "@/shared/components/page-header";
@@ -74,9 +74,9 @@ export function ProjectView({ orgId, projectId }: { orgId: string; projectId: st
           {org.isAdmin && (
             <Section
               title="Access"
-              description="Who can run this project locally. Developers need a grant per environment; temporary grants expire on their own."
+              description="Who can run this project locally — across all environments or only some. Time-limited access ends on its own."
             >
-              <AccessMatrix projectId={projectId} />
+              <ProjectAccess projectId={projectId} projectName={project.data.name} />
             </Section>
           )}
         </>
