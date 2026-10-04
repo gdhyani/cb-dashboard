@@ -45,6 +45,14 @@ export function useResourceMutations(envId: string) {
       },
       onError: (e) => notifyError(e),
     }),
+    updateCa: useMutation({
+      mutationFn: ({ id, caCert }: { id: string; caCert: string }) => api.rotateResource(id, { caCert }),
+      onSuccess: (_r, v) => {
+        notifySuccess(v.caCert ? "CA certificate saved" : "CA certificate removed");
+        return refresh();
+      },
+      onError: (e) => notifyError(e),
+    }),
     remove: useMutation({
       mutationFn: (id: string) => api.deleteResource(id),
       onSuccess: () => {
