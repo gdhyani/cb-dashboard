@@ -64,6 +64,8 @@ vi.mock("@/features/variables/hooks/use-variables", () => ({
   }),
 }));
 vi.mock("@/features/resources", () => ({
+  useProfiles: () => ({ data: [], isPending: false, error: null }),
+  useProfileMutations: () => ({ create: mutation(vi.fn()), rotate: mutation(vi.fn()), remove: mutation(vi.fn()) }),
   useResources: () => ({ data: RESOURCES, isPending: false, error: null }),
   useServiceMutations: () => ({ update: mutation(vi.fn()), remove: mutation(m.removeService) }),
   useTestResource: () => mutation(m.test),
@@ -145,6 +147,21 @@ describe("Variables tab (D1, D4)", () => {
     const confirm = await screen.findByRole("dialog");
     fireEvent.click(within(confirm).getByRole("button", { name: "Remove service" }));
     await waitFor(() => expect(m.removeService).toHaveBeenCalledWith("o"));
+  });
+
+  it("D9 Edit (menu) and a click on the key open the edit dialog for that key", async () => {
+    renderPanel();
+    const menu = await openMenu("Actions for STRIPE_SECRET_KEY");
+    fireEvent.click(within(menu).getByRole("menuitem", { name: /Replace value/ }));
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByRole("heading", { name: "Edit Stripe variable · STRIPE_SECRET_KEY" }),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByLabelText(/Secret key \(new value\)/)).toBeInTheDocument();
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: "Edit PORT" }));
+    expect(await screen.findByRole("heading", { name: "Edit variable · PORT" })).toBeInTheDocument();
   });
 
   it("FR-UI-004 developers see a read-only table", () => {

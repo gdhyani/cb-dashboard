@@ -1,11 +1,12 @@
 "use client";
 
-import { Copy, PlugZap, Trash2 } from "lucide-react";
+import { Copy, KeyRound, Pencil, PlugZap, Trash2 } from "lucide-react";
 import { useServiceMutations, useTestResource } from "@/features/resources";
 import type { RowAction } from "@/shared/components/row-actions";
 import { useCopy } from "@/shared/hooks/use-copy";
 import { AI_PROVIDERS, OAUTH_PROVIDERS, TYPES } from "../lib/catalog";
 import { chipLabel, type ServiceGroup } from "../lib/group";
+import type { Variable } from "../types";
 import { OrphanRow } from "./orphan-row";
 import { VariableRow } from "./variable-row";
 
@@ -24,12 +25,14 @@ export function ServiceRows({
   startIndex,
   isAdmin,
   onRemoveVariable,
+  onEdit,
 }: {
   envId: string;
   group: ServiceGroup;
   startIndex: number;
   isAdmin: boolean;
   onRemoveVariable: (id: string) => Promise<unknown>;
+  onEdit: (variable: Variable, group: ServiceGroup, replace?: boolean) => void;
 }) {
   const services = useServiceMutations(envId);
   const test = useTestResource(group.resource.id);
@@ -66,8 +69,10 @@ export function ServiceRows({
     <>
       {group.rows.map((row, i) => {
         const copyKey: RowAction = { label: "Copy key", icon: Copy, onSelect: () => void copy(row.variable.key) };
+        const editAction: RowAction = { label: "Edit", icon: Pencil, onSelect: () => onEdit(row.variable, group) };
         const actions: RowAction[] = row.extra
           ? [
+              editAction,
               copyKey,
               {
                 label: "Remove",
@@ -81,7 +86,13 @@ export function ServiceRows({
                 },
               },
             ]
-          : [copyKey, testAction, removeService];
+          : [
+              editAction,
+              { label: "Replace value", icon: KeyRound, onSelect: () => onEdit(row.variable, group, true) },
+              copyKey,
+              testAction,
+              removeService,
+            ];
         return (
           <VariableRow
             key={row.variable.id}
@@ -91,6 +102,7 @@ export function ServiceRows({
             parentKey={row.extra ? row.parentKey : undefined}
             chip={chip}
             actions={isAdmin ? actions : undefined}
+            onOpen={isAdmin ? () => onEdit(row.variable, group) : undefined}
           />
         );
       })}

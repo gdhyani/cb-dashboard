@@ -16,6 +16,7 @@ export function VariableRow({
   parentKey,
   chip,
   actions,
+  onOpen,
 }: {
   variable: Variable;
   index: number;
@@ -23,6 +24,8 @@ export function VariableRow({
   parentKey?: string;
   chip?: { icon: string; label: string };
   actions?: RowAction[];
+  /** Admins: clicking the key opens Edit. */
+  onOpen?: () => void;
 }) {
   const value = describeValue(variable, isMain);
   return (
@@ -37,7 +40,18 @@ export function VariableRow({
               ↳{" "}
             </span>
           )}
-          {variable.key}
+          {onOpen ? (
+            <button
+              type="button"
+              aria-label={`Edit ${variable.key}`}
+              onClick={onOpen}
+              className="underline-offset-4 hover:underline"
+            >
+              {variable.key}
+            </button>
+          ) : (
+            variable.key
+          )}
         </span>
         <span className={`truncate text-xs ${value.mono ? "font-mono text-foreground" : "text-subtle"}`}>
           {value.text}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Plus, Trash2 } from "lucide-react";
+import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useResources } from "@/features/resources";
 import { EmptyState } from "@/shared/components/empty-state";
@@ -11,10 +11,11 @@ import { useCopy } from "@/shared/hooks/use-copy";
 import { Button } from "@/shared/ui/button";
 import { useVariableMutations, useVariables } from "../hooks/use-variables";
 import type { TypeId } from "../lib/catalog";
-import { chipLabel, groupVariables } from "../lib/group";
+import { chipLabel, groupVariables, type ServiceGroup } from "../lib/group";
 import type { Variable } from "../types";
 import { AddVariableDialog } from "./add-variable-dialog";
 import { ConnectionMap } from "./connection-map";
+import { EditVariableDialog } from "./edit-variable-dialog";
 import { QuickAdd } from "./quick-add";
 import { ServiceRows, serviceIcon } from "./service-rows";
 import { VariableRow } from "./variable-row";
@@ -33,12 +34,16 @@ export function VariablesPanel({ envId, isAdmin }: { envId: string; isAdmin: boo
   const { remove } = useVariableMutations(envId);
   const { copy } = useCopy("Key copied");
   const [adding, setAdding] = useState<{ type: TypeId; provider?: string } | null>(null);
+  const [editing, setEditing] = useState<{ variable: Variable; group?: ServiceGroup; replace?: boolean } | null>(null);
+  const onEdit = (variable: Variable, group?: ServiceGroup, replace?: boolean) =>
+    setEditing({ variable, group, replace });
   const grouped = useMemo(
     () => groupVariables(variables.data ?? [], resources.data ?? []),
     [variables.data, resources.data],
   );
 
   const standaloneActions = (v: Variable): RowAction[] => [
+    { label: "Edit", icon: Pencil, onSelect: () => onEdit(v) },
     { label: "Copy key", icon: Copy, onSelect: () => void copy(v.key) },
     {
       label: "Remove",
@@ -89,6 +94,7 @@ export function VariablesPanel({ envId, isAdmin }: { envId: string; isAdmin: boo
                     startIndex={start}
                     isAdmin={isAdmin}
                     onRemoveVariable={(id) => remove.mutateAsync(id)}
+                    onEdit={onEdit}
                   />
                 );
               }
@@ -105,6 +111,7 @@ export function VariablesPanel({ envId, isAdmin }: { envId: string; isAdmin: boo
                     label: v.type === "brokered" ? "Protected" : chipLabel(chip?.type ?? "plain"),
                   }}
                   actions={isAdmin ? standaloneActions(v) : undefined}
+                  onOpen={isAdmin ? () => onEdit(v) : undefined}
                 />
               );
             })}
@@ -116,6 +123,7 @@ export function VariablesPanel({ envId, isAdmin }: { envId: string; isAdmin: boo
                 startIndex={index++}
                 isAdmin={isAdmin}
                 onRemoveVariable={(id) => remove.mutateAsync(id)}
+                onEdit={onEdit}
               />
             ))}
           </ul>
@@ -129,6 +137,17 @@ export function VariablesPanel({ envId, isAdmin }: { envId: string; isAdmin: boo
           icon: serviceIcon(g),
         }))}
       />
+      {isAdmin && editing && (
+        <EditVariableDialog
+          key={editing.variable.id}
+          envId={envId}
+          open
+          onOpenChange={(open) => !open && setEditing(null)}
+          variable={editing.variable}
+          group={editing.group}
+          startReplacing={editing.replace}
+        />
+      )}
       {isAdmin && (
         <AddVariableDialog
           envId={envId}
