@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { PRODUCT_NAME, PRODUCT_TAGLINE } from "@/constants";
 import { AppProviders } from "@/shared/providers/app-providers";
+import "lenis/dist/lenis.css";
 import "@/styles/globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
