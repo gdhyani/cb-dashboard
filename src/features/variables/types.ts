@@ -1,3 +1,5 @@
+import type { Resource, ResourceTestResult } from "@/features/resources";
+
 export type VariableType = "plain" | "generated" | "visible" | "brokered";
 
 export interface Variable {
@@ -38,8 +40,15 @@ export const GENERATED_FORMATS = [
 
 /** Display names; the API keeps the short type ids. */
 export const VARIABLE_TYPE_LABEL: Record<VariableType, string> = {
-  plain: "Plain value",
-  brokered: "Managed secret",
-  generated: "Per-user value",
-  visible: "Exposed secret",
+  plain: "Plain",
+  brokered: "Protected",
+  generated: "Random secret",
+  visible: "Shown as-is",
 };
+
+/** POST /environments/:envId/services (D1): the service, its variables and the test that ran first. */
+export interface ServiceCreated {
+  service: Resource;
+  variables: Variable[];
+  test: ResourceTestResult | null;
+}

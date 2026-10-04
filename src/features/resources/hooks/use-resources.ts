@@ -95,3 +95,27 @@ export function useProfileMutations(resourceId: string) {
     }),
   };
 }
+
+/** Unified Variables: replace a value or change settings (tested first), remove or disable a service. */
+export function useServiceMutations(envId: string) {
+  const client = useQueryClient();
+  const refresh = () => client.invalidateQueries({ queryKey: ["environments", envId] });
+  return {
+    /** Errors (e.g. SERVICE_TEST_FAILED) are shown inline by the dialog, not as toasts. */
+    update: useMutation({
+      mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) => api.updateResource(id, body),
+      onSuccess: () => {
+        notifySuccess("Saved — running apps reconnect automatically");
+        return refresh();
+      },
+    }),
+    remove: useMutation({
+      mutationFn: (id: string) => api.deleteResource(id),
+      onSuccess: () => {
+        notifySuccess("Removed — live connections closed");
+        return refresh();
+      },
+      onError: (e) => notifyError(e),
+    }),
+  };
+}

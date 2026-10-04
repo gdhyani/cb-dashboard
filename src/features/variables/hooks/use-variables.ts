@@ -46,10 +46,19 @@ export function useVariableMutations(envId: string) {
       },
       onError: (e) => notifyError(e),
     }),
+    /** D1: one step for a key with its service. Errors are shown inline by the dialog, not as toasts. */
+    createService: useMutation({
+      mutationFn: (body: Record<string, unknown>) => api.createService(envId, body),
+      onSuccess: (r) => {
+        notifySuccess(`${r.variables[0]?.key ?? "Variable"} saved — running apps restart automatically`);
+        return refresh();
+      },
+    }),
+    /** D9: rename, value or format; errors (e.g. a taken key) are shown inline by the dialog. */
     update: useMutation({
-      mutationFn: ({ id, ...body }: { id: string; value?: string; format?: string }) => api.updateVariable(id, body),
+      mutationFn: ({ id, ...body }: { id: string; key?: string; value?: string; format?: string }) =>
+        api.updateVariable(id, body),
       onSuccess: refresh,
-      onError: (e) => notifyError(e),
     }),
     remove: useMutation({
       mutationFn: (id: string) => api.deleteVariable(id),

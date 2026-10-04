@@ -13,6 +13,9 @@ export const createResource = (envId: string, body: CreateResourceInput) =>
   apiPost<Resource>(`/environments/${envId}/resources`, body);
 export const rotateResource = (resourceId: string, body: CredentialsInput) =>
   apiPatch<Resource>(`/resources/${resourceId}`, body);
+/** D9: settings and/or a new secret; `test: true` checks it from the gateway before storing. */
+export const updateResource = (resourceId: string, body: Record<string, unknown> & { test?: boolean }) =>
+  apiPatch<Resource>(`/resources/${resourceId}`, body);
 export const deleteResource = (resourceId: string) => apiDelete<{ deleted: true }>(`/resources/${resourceId}`);
 
 export const listProfiles = (resourceId: string) => apiGet<CredentialProfile[]>(`/resources/${resourceId}/profiles`);
