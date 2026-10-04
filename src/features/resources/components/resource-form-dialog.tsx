@@ -21,7 +21,19 @@ import type { CreateResourceInput, ResourceKind } from "../types";
 const KIND_HINT: Record<ResourceKind, string> = {
   mongodb: "mongodb://user:password@host:27017/db?authSource=admin",
   redis: "redis://user:password@host:6379/0",
+  postgres: "postgresql://user:password@host:5432/db?sslmode=require",
+  mysql: "mysql://user:password@host:3306/db",
+  smtp: "smtp://user:password@smtp.provider.com:587",
   http: "https://api.provider.com",
+};
+
+const KIND_LABEL: Record<ResourceKind, string> = {
+  mongodb: "MongoDB",
+  redis: "Redis",
+  postgres: "PostgreSQL",
+  mysql: "MySQL",
+  smtp: "SMTP",
+  http: "HTTP API",
 };
 
 /** J2: add a resource. Credentials are write-only (FR-UI-001): they go to the backend and are never shown again. */
@@ -95,9 +107,11 @@ export function ResourceFormDialog({ envId }: { envId: string }) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mongodb">MongoDB</SelectItem>
-                  <SelectItem value="redis">Redis</SelectItem>
-                  <SelectItem value="http">HTTP API</SelectItem>
+                  {(Object.keys(KIND_LABEL) as ResourceKind[]).map((k) => (
+                    <SelectItem key={k} value={k}>
+                      {KIND_LABEL[k]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </FormField>

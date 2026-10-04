@@ -1,4 +1,5 @@
-export type ResourceKind = "mongodb" | "redis" | "http";
+export type ResourceKind = "mongodb" | "redis" | "postgres" | "mysql" | "smtp" | "http";
+export type ConnectionKind = Exclude<ResourceKind, "http">;
 
 export interface Resource {
   id: string;
@@ -14,7 +15,7 @@ export interface Resource {
 }
 
 export type CreateResourceInput =
-  | { kind: "mongodb" | "redis"; name: string; connectionUri: string }
+  | { kind: ConnectionKind; name: string; connectionUri: string }
   | {
       kind: "http";
       name: string;

@@ -78,6 +78,17 @@ cb-dashboard/
 └─ package.json
 ```
 
+## Motion, loading and mobile (required on every page)
+
+- **Slide-up entrance everywhere:** lists, cards, rows and sections enter with the same subtle motion used on the
+  projects list (`y: 4 → 0`, small stagger, transform only so content is never invisible). Use one shared helper
+  in `src/shared/components/`, never ad-hoc animations.
+- **Skeleton loading everywhere:** every data view renders skeletons shaped like its content while loading
+  (via `QueryState` / shared skeleton components). No spinners-only pages, no blank screens.
+- **Mobile first:** every page must work at 375px wide — no text wrapping mid-word, tables collapse to stacked
+  rows or scroll horizontally, forms stack, actions stay reachable. Check phone width in the browser for every change.
+- Keep the design system simple; correctness and the npm package come first.
+
 ## Browser testing (required)
 
 - Verify every page and flow in a real browser with the Claude in Chrome tools (`mcp__claude-in-chrome__*`):
