@@ -17,7 +17,7 @@ export function MyAccess({ orgId }: { orgId: string }) {
   return (
     <>
       <PageHeader
-        eyebrow="you"
+        breadcrumb="You"
         title="My access"
         description="What you can run locally, and the devices you are logged in on."
       />
@@ -41,9 +41,13 @@ export function MyAccess({ orgId }: { orgId: string }) {
                   <span className="font-mono">{e.name}</span>
                 </span>
                 {e.killed ? (
-                  <BadgeLabel tone="warning">disabled</BadgeLabel>
+                  <BadgeLabel tone="warning" dot>
+                    Suspended
+                  </BadgeLabel>
                 ) : (
-                  <BadgeLabel tone="strong">access</BadgeLabel>
+                  <BadgeLabel tone="strong" dot>
+                    Access granted
+                  </BadgeLabel>
                 )}
               </Link>
             </li>

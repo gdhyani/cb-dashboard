@@ -24,12 +24,12 @@ export function OrgOverview({ orgId }: { orgId: string }) {
   const envs = projects.data?.flatMap((p) => p.environments.map((e) => ({ ...e, project: p }))) ?? [];
   return (
     <>
-      <PageHeader eyebrow="organization" title={org.data?.name ?? "…"} description={<HealthStatus />} />
+      <PageHeader breadcrumb="Organization" title={org.data?.name ?? "…"} description={<HealthStatus />} />
       <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
         <Stat label="projects" value={projects.data?.length ?? "—"} />
         <Stat label="environments" value={envs.length || "—"} />
         <Stat label="members" value={org.data?.memberCount ?? "—"} />
-        <Stat label="disabled" value={envs.filter((e) => e.killed).length} />
+        <Stat label="suspended" value={envs.filter((e) => e.killed).length} />
       </div>
       <Section title="Environments">
         <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
@@ -44,7 +44,7 @@ export function OrgOverview({ orgId }: { orgId: string }) {
                   <span className="font-mono">{e.name}</span>
                 </span>
                 <BadgeLabel tone={e.killed ? "warning" : e.hasAccess ? "strong" : "muted"}>
-                  {e.killed ? "disabled" : e.hasAccess ? "access" : "no access"}
+                  {e.killed ? "Suspended" : e.hasAccess ? "Access granted" : "No access"}
                 </BadgeLabel>
               </Link>
             </li>

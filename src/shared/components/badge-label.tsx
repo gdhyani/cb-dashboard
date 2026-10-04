@@ -1,23 +1,32 @@
 import { cn } from "@/shared/lib/utils";
 
-/** Monochrome label used for roles, variable types, states. "warning" is the only non-grey tone. */
+/** Soft pill for roles, types and states. Sentence case; "warning" is the only non-grey tone. */
 export function BadgeLabel({
   children,
   tone = "default",
+  dot = false,
 }: {
   children: string;
-  tone?: "default" | "strong" | "warning" | "muted";
+  tone?: "default" | "strong" | "warning" | "muted" | "success";
+  dot?: boolean;
 }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-wider",
-        tone === "default" && "border-border text-muted-foreground",
-        tone === "strong" && "border-foreground text-foreground",
-        tone === "warning" && "border-destructive/60 text-destructive",
-        tone === "muted" && "border-transparent text-subtle",
+        "inline-flex h-5 items-center gap-1.5 rounded-full px-2 text-xs font-medium whitespace-nowrap",
+        tone === "default" && "bg-white/[0.06] text-muted-foreground",
+        tone === "strong" && "bg-white/[0.12] text-foreground",
+        tone === "warning" && "bg-destructive/15 text-destructive",
+        tone === "success" && "bg-white/[0.12] text-foreground",
+        tone === "muted" && "text-subtle",
       )}
     >
+      {dot && (
+        <span
+          className={cn("size-1.5 rounded-full", tone === "warning" ? "bg-destructive" : "bg-current")}
+          aria-hidden="true"
+        />
+      )}
       {children}
     </span>
   );

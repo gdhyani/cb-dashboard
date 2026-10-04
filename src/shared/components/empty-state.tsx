@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { CopyCommand } from "./copy-command";
 
-/** FR-UI-005: empty states can show copyable CLI commands. */
+/** FR-UI-005: an empty screen is an invitation to act — headline, one line of direction, commands or an action. */
 export function EmptyState({
   title,
   description,
@@ -14,10 +14,10 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-start gap-4 rounded-lg border border-dashed border-border p-8">
-      <div className="flex flex-col gap-1">
-        <p className="font-medium">{title}</p>
-        {description && <div className="text-sm text-muted-foreground">{description}</div>}
+    <div className="flex flex-col items-start gap-5 rounded-lg border border-dashed border-border-strong px-8 py-10">
+      <div className="flex flex-col gap-1.5">
+        <p className="text-title font-semibold">{title}</p>
+        {description && <div className="max-w-md text-sm text-muted-foreground">{description}</div>}
       </div>
       {commands && commands.length > 0 && (
         <div className="flex w-full max-w-md flex-col gap-2">

@@ -21,10 +21,10 @@ import { useVariableMutations } from "../hooks/use-variables";
 import { type CreateVariableInput, GENERATED_FORMATS, type VariableType } from "../types";
 
 const TYPE_HELP: Record<VariableType, string> = {
-  plain: "Non-secret value, same for everyone (PORT, feature flags).",
-  generated: "Personal random value per developer (session secrets). Worthless anywhere else.",
-  brokered: "Fake per-device value routed through cb; the real credential stays on the server.",
-  visible: "Real value given to developers. Last resort — it ends up on laptops.",
+  plain: "A non-sensitive value shared by every member, such as a port or feature flag.",
+  generated: "A unique value generated for each member, such as a session secret. Valid only for that member.",
+  brokered: "Applications receive a device-bound placeholder. The real credential never leaves the server.",
+  visible: "The real value is delivered to members' machines. Use only when the service cannot be managed.",
 };
 
 /** J3: define a variable of any type. */
@@ -103,10 +103,10 @@ export function VariableFormDialog({ envId }: { envId: string }) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="plain">plain</SelectItem>
-                  <SelectItem value="brokered">brokered</SelectItem>
-                  <SelectItem value="generated">generated</SelectItem>
-                  <SelectItem value="visible">visible (real value)</SelectItem>
+                  <SelectItem value="plain">Plain value</SelectItem>
+                  <SelectItem value="brokered">Managed secret</SelectItem>
+                  <SelectItem value="generated">Per-user value</SelectItem>
+                  <SelectItem value="visible">Exposed secret</SelectItem>
                 </SelectContent>
               </Select>
             </FormField>

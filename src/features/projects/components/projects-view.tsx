@@ -10,7 +10,7 @@ export function ProjectsView({ orgId }: { orgId: string }) {
   return (
     <>
       <PageHeader
-        eyebrow="projects"
+        breadcrumb="Projects"
         title="Projects"
         description="Each project holds environments, their variables and the resources they reach."
         actions={org.isAdmin && <CreateProjectDialog orgId={orgId} />}

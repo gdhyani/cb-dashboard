@@ -12,15 +12,18 @@ import {
   DialogTrigger,
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
+import { FormField } from "./form-field";
 
 interface ConfirmDialogProps {
-  trigger: ReactNode;
+  /** Optional trigger; omit and control with `open`/`onOpenChange` when opened from a menu. */
+  trigger?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   title: string;
   description: ReactNode;
   confirmLabel: string;
   destructive?: boolean;
-  /** FR-UI-002: when set, the user must type a reason (kill switches). */
+  /** FR-UI-002: when set, the user must give a reason (environment suspension). */
   requireReason?: boolean;
   onConfirm: (reason: string) => Promise<unknown> | undefined;
 }
@@ -28,6 +31,8 @@ interface ConfirmDialogProps {
 /** FR-UI-002: every destructive action goes through this dialog. */
 export function ConfirmDialog({
   trigger,
+  open,
+  onOpenChange,
   title,
   description,
   confirmLabel,
@@ -35,35 +40,33 @@ export function ConfirmDialog({
   requireReason = false,
   onConfirm,
 }: ConfirmDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [innerOpen, setInnerOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  const isOpen = open ?? innerOpen;
+  const setOpen = (next: boolean) => {
+    (onOpenChange ?? setInnerOpen)(next);
+    if (!next) setReason("");
+  };
   const blocked = requireReason && reason.trim().length < 3;
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) setReason("");
-      }}
-    >
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={setOpen}>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         {requireReason && (
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="confirm-reason">Reason (required)</Label>
+          <FormField id="confirm-reason" label="Reason" hint="Shown to developers and recorded in the activity log.">
             <Input
               id="confirm-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g. suspected credential leak"
+              placeholder="Suspected credential leak"
               autoFocus
             />
-          </div>
+          </FormField>
         )}
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>
@@ -71,7 +74,8 @@ export function ConfirmDialog({
           </Button>
           <Button
             variant={destructive ? "destructive" : "default"}
-            disabled={blocked || busy}
+            disabled={blocked}
+            loading={busy}
             onClick={async () => {
               setBusy(true);
               try {

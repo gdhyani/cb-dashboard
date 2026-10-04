@@ -1,12 +1,13 @@
 "use client";
 
+import { Ban, Trash2 } from "lucide-react";
+
 import { CLI_COMMANDS } from "@/constants";
 import { BadgeLabel } from "@/shared/components/badge-label";
-import { ConfirmDialog } from "@/shared/components/confirm-dialog";
 import { EmptyState } from "@/shared/components/empty-state";
 import { QueryState } from "@/shared/components/query-state";
+import { RowActions } from "@/shared/components/row-actions";
 import { timeAgo } from "@/shared/lib/format-time";
-import { Button } from "@/shared/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { useMyDevices, useOrgDevices, useRevokeDevice } from "../hooks/use-devices";
 import type { Device } from "../types";
@@ -32,16 +33,22 @@ function DeviceRows({ devices, showOwner }: { devices: Device[]; showOwner: bool
             {showOwner && <TableCell className="text-muted-foreground">{d.user.name}</TableCell>}
             <TableCell className="font-mono text-xs text-subtle">{timeAgo(d.lastSeenAt)}</TableCell>
             <TableCell className="text-right">
-              <ConfirmDialog
-                trigger={
-                  <Button size="sm" variant="ghost">
-                    Revoke
-                  </Button>
-                }
-                title={`Revoke ${d.name}?`}
-                description="Its token stops working immediately and every open connection from this device is closed."
-                confirmLabel="Revoke device"
-                onConfirm={() => revoke.mutateAsync(d.id)}
+              <RowActions
+                label={`Actions for ${d.name}`}
+                actions={[
+                  {
+                    label: "Revoke device",
+                    icon: Ban,
+                    destructive: true,
+                    confirm: {
+                      title: `Revoke ${d.name}?`,
+                      description:
+                        "Its token stops working immediately and every open connection from this device is closed.",
+                      confirmLabel: "Revoke device",
+                      onConfirm: () => revoke.mutateAsync(d.id),
+                    },
+                  },
+                ]}
               />
             </TableCell>
           </TableRow>

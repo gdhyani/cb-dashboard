@@ -174,7 +174,7 @@ export function describe(e: AuditEvent): Described {
         icon: PowerOff,
         text: (
           <>
-            {who} disabled {env} — “{str(e.meta.reason)}”
+            {who} suspended {env}: “{str(e.meta.reason)}”
           </>
         ),
         alert: true,
@@ -184,7 +184,7 @@ export function describe(e: AuditEvent): Described {
         icon: Power,
         text: (
           <>
-            {who} re-enabled {env}
+            {who} resumed {env}
           </>
         ),
       };

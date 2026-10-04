@@ -8,17 +8,21 @@ import { QueryState } from "@/shared/components/query-state";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { usePreview } from "../hooks/use-variables";
 
-/** J3 "Preview as developer": exactly what a member's app would receive (no real secrets shown). */
+/** J3 "Access preview": exactly what a member's app would receive (no real secrets shown). */
 export function PreviewPanel({ envId, members }: { envId: string; members: Member[] }) {
   const [userId, setUserId] = useState<string>();
   const preview = usePreview(envId, userId);
   return (
     <div className="flex flex-col gap-4">
       <div className="max-w-xs">
-        <FormField id="preview-user" label="Preview as">
+        <FormField
+          id="preview-user"
+          label="Member"
+          hint="Shows exactly what this member's application receives. Secret values are never displayed."
+        >
           <Select value={userId} onValueChange={setUserId}>
             <SelectTrigger id="preview-user">
-              <SelectValue placeholder="Choose a member…" />
+              <SelectValue placeholder="Select a member" />
             </SelectTrigger>
             <SelectContent>
               {members.map((m) => (
@@ -36,12 +40,16 @@ export function PreviewPanel({ envId, members }: { envId: string; members: Membe
             <div className="flex flex-col gap-3">
               <p className="text-sm">
                 {preview.data.hasAccess ? (
-                  <BadgeLabel tone="strong">has access</BadgeLabel>
+                  <BadgeLabel tone="strong" dot>
+                    Access granted
+                  </BadgeLabel>
                 ) : (
                   <span className="flex items-center gap-2">
-                    <BadgeLabel tone="warning">no access</BadgeLabel>
+                    <BadgeLabel tone="warning" dot>
+                      No access
+                    </BadgeLabel>
                     <span className="text-muted-foreground">
-                      `cb run` would refuse to start for {preview.data.user.name}.
+                      Sessions will be refused for {preview.data.user.name}.
                     </span>
                   </span>
                 )}

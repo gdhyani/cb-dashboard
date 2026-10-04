@@ -12,11 +12,11 @@ export function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-4">
+    <section className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-medium tracking-tight">{title}</h2>
-          {description && <div className="text-sm text-muted-foreground">{description}</div>}
+          <h2 className="text-title font-semibold">{title}</h2>
+          {description && <div className="max-w-2xl text-sm text-muted-foreground">{description}</div>}
         </div>
         {actions}
       </div>

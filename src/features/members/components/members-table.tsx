@@ -1,11 +1,12 @@
 "use client";
 
+import { Trash2, UserMinus } from "lucide-react";
+
 import type { Role } from "@/features/auth/types";
 import { BadgeLabel } from "@/shared/components/badge-label";
-import { ConfirmDialog } from "@/shared/components/confirm-dialog";
 import { QueryState } from "@/shared/components/query-state";
+import { RowActions } from "@/shared/components/row-actions";
 import { timeAgo } from "@/shared/lib/format-time";
-import { Button } from "@/shared/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { useMemberMutations, useMembers } from "../hooks/use-members";
@@ -72,16 +73,22 @@ export function MembersTable({
               {canManage && (
                 <TableCell className="text-right">
                   {m.userId !== currentUserId && (isOwner || m.role !== "owner") && (
-                    <ConfirmDialog
-                      trigger={
-                        <Button size="sm" variant="ghost">
-                          Remove
-                        </Button>
-                      }
-                      title={`Remove ${m.name}?`}
-                      description="They lose access to every project in this organization and their live connections are closed."
-                      confirmLabel="Remove member"
-                      onConfirm={() => remove.mutateAsync(m.userId)}
+                    <RowActions
+                      label={`Actions for ${m.name}`}
+                      actions={[
+                        {
+                          label: "Remove member",
+                          icon: UserMinus,
+                          destructive: true,
+                          confirm: {
+                            title: `Remove ${m.name}?`,
+                            description:
+                              "They lose access to every project in this organization and their live connections are closed.",
+                            confirmLabel: "Remove member",
+                            onConfirm: () => remove.mutateAsync(m.userId),
+                          },
+                        },
+                      ]}
                     />
                   )}
                 </TableCell>

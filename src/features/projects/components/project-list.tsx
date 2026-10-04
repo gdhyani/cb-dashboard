@@ -37,7 +37,7 @@ export function ProjectList({ orgId, isAdmin }: { orgId: string; isAdmin: boolea
                 <div className="mt-auto flex flex-wrap gap-2">
                   {p.environments.map((e) => (
                     <BadgeLabel key={e.id} tone={e.killed ? "warning" : e.hasAccess ? "strong" : "muted"}>
-                      {`${e.name}${e.killed ? " · off" : e.hasAccess ? "" : " · no access"}`}
+                      {e.killed ? `${e.name} · suspended` : e.name}
                     </BadgeLabel>
                   ))}
                 </div>

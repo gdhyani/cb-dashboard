@@ -42,7 +42,7 @@ export function AccessMatrix({ projectId }: { projectId: string }) {
                     if (m.role !== "developer") {
                       return (
                         <TableCell key={e.id}>
-                          <BadgeLabel tone="muted">{`implicit (${m.role})`}</BadgeLabel>
+                          <BadgeLabel tone="muted">{`Inherited · ${m.role}`}</BadgeLabel>
                         </TableCell>
                       );
                     }
@@ -52,7 +52,7 @@ export function AccessMatrix({ projectId }: { projectId: string }) {
                         {g ? (
                           <div className="flex items-center gap-2">
                             <BadgeLabel tone="strong">
-                              {g.expiresAt ? `until ${timeUntil(g.expiresAt).replace("in ", "")}` : "access"}
+                              {g.expiresAt ? `Expires ${timeUntil(g.expiresAt)}` : "Granted"}
                             </BadgeLabel>
                             <ConfirmDialog
                               trigger={
@@ -61,17 +61,17 @@ export function AccessMatrix({ projectId }: { projectId: string }) {
                                 </Button>
                               }
                               title={`Revoke ${m.name}'s access to ${e.name}?`}
-                              description="Takes effect within seconds: open database and API connections are closed and `cb run` stops."
+                              description="Takes effect within seconds. Active database and API connections are terminated and new sessions are refused."
                               confirmLabel="Revoke access"
                               onConfirm={() => revoke.mutateAsync(g.id)}
                             />
                           </div>
                         ) : (
                           <GrantDialog
-                            title={`Give ${m.name} access to ${e.name}`}
+                            title={`Grant ${m.name} access to ${e.name}`}
                             trigger={
                               <Button size="xs" variant="outline">
-                                Grant
+                                Grant access
                               </Button>
                             }
                             onGrant={(expiresAt) => grant.mutateAsync({ envId: e.id, userId: m.userId, expiresAt })}

@@ -22,9 +22,13 @@ export function EnvironmentList({ project, isAdmin }: { project: Project; isAdmi
             >
               <span className="font-mono">{e.name}</span>
               <span className="flex items-center gap-2">
-                {e.killed && <BadgeLabel tone="warning">disabled</BadgeLabel>}
+                {e.killed && (
+                  <BadgeLabel tone="warning" dot>
+                    Suspended
+                  </BadgeLabel>
+                )}
                 <BadgeLabel tone={e.hasAccess ? "strong" : "muted"}>
-                  {e.hasAccess ? "you have access" : "no access"}
+                  {e.hasAccess ? "Access granted" : "No access"}
                 </BadgeLabel>
               </span>
             </Link>
@@ -47,7 +51,7 @@ export function EnvironmentList({ project, isAdmin }: { project: Project; isAdmi
             aria-label="New environment name"
           />
           <Button variant="outline" type="submit" disabled={!name.trim()}>
-            Add environment
+            Create environment
           </Button>
         </form>
       )}

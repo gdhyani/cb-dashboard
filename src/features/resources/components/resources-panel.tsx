@@ -1,10 +1,11 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { BadgeLabel } from "@/shared/components/badge-label";
-import { ConfirmDialog } from "@/shared/components/confirm-dialog";
 import { EmptyState } from "@/shared/components/empty-state";
 import { QueryState } from "@/shared/components/query-state";
+import { RowActions } from "@/shared/components/row-actions";
 import { SecretInput } from "@/shared/components/secret-input";
 import { timeAgo } from "@/shared/lib/format-time";
 import { Button } from "@/shared/ui/button";
@@ -86,16 +87,22 @@ export function ResourcesPanel({ envId, isAdmin }: { envId: string; isAdmin: boo
                     <div className="min-w-64 flex-1">
                       <RotateForm resource={r} envId={envId} />
                     </div>
-                    <ConfirmDialog
-                      trigger={
-                        <Button size="sm" variant="ghost">
-                          Delete
-                        </Button>
-                      }
-                      title={`Delete ${r.name}?`}
-                      description="Variables brokered through it are deleted too, and running apps lose this connection."
-                      confirmLabel="Delete resource"
-                      onConfirm={() => remove.mutateAsync(r.id)}
+                    <RowActions
+                      label={`Actions for ${r.name}`}
+                      actions={[
+                        {
+                          label: "Delete resource",
+                          icon: Trash2,
+                          destructive: true,
+                          confirm: {
+                            title: `Delete ${r.name}?`,
+                            description:
+                              "Variables brokered through it are deleted too, and running apps lose this connection.",
+                            confirmLabel: "Delete resource",
+                            onConfirm: () => remove.mutateAsync(r.id),
+                          },
+                        },
+                      ]}
                     />
                   </div>
                 )}

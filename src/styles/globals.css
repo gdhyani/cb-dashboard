@@ -3,18 +3,19 @@
 /* Monochrome tokens (shadcn names): black background, typographic hierarchy, no accent colour. */
 @theme {
   --color-background: #000000;
-  --color-foreground: #fafafa;
+  --color-foreground: #ededed;
   --color-card: #0a0a0a;
   --color-card-foreground: #fafafa;
   --color-popover: #0a0a0a;
   --color-popover-foreground: #fafafa;
   --color-muted: #171717;
   --color-muted-foreground: #a1a1a1;
-  --color-subtle: #5c5c5c;
-  --color-border: #262626;
-  --color-input: #262626;
-  --color-ring: #737373;
-  --color-primary: #fafafa;
+  --color-subtle: #6b6b6b;
+  --color-border: #242424;
+  --color-border-strong: #3a3a3a;
+  --color-input: #2a2a2a;
+  --color-ring: #8f8f8f;
+  --color-primary: #ededed;
   --color-primary-foreground: #000000;
   /* "accent"/"secondary" are grey hover surfaces, not colours. */
   --color-secondary: #171717;
@@ -25,6 +26,15 @@
   --color-destructive-foreground: #ffffff;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  /* Type scale: hierarchy by size and weight, not colour. */
+  --text-display: 2.5rem;
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.045em;
+  --text-title: 1.125rem;
+  --text-title--line-height: 1.4;
+  --text-title--letter-spacing: -0.015em;
+  --text-hint: 0.8125rem;
+  --text-hint--line-height: 1.45;
 }
 
 @layer base {
@@ -39,6 +49,19 @@
   }
   * {
     border-color: var(--color-border);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-foreground);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
   ::selection {
     background: var(--color-foreground);

@@ -6,7 +6,7 @@ export default async function DevicesPage({ params }: { params: Promise<{ orgId:
   return (
     <>
       <PageHeader
-        eyebrow="security"
+        breadcrumb="Security"
         title="Devices"
         description="Every CLI login across your members. Revoking a device closes its connections immediately."
       />

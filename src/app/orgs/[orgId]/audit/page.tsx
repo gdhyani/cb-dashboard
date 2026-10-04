@@ -6,9 +6,9 @@ export default async function AuditPage({ params }: { params: Promise<{ orgId: s
   return (
     <>
       <PageHeader
-        eyebrow="security"
-        title="Audit log"
-        description="Every login, grant, revocation, tunnel and gateway request."
+        breadcrumb="Security"
+        title="Activity"
+        description="Who did what, and when: access changes, config, logins and app usage."
       />
       <ActivityFeed orgId={orgId} />
     </>

@@ -35,3 +35,11 @@ export const GENERATED_FORMATS = [
   "alnum:48",
   "uuid",
 ] as const;
+
+/** Display names; the API keeps the short type ids. */
+export const VARIABLE_TYPE_LABEL: Record<VariableType, string> = {
+  plain: "Plain value",
+  brokered: "Managed secret",
+  generated: "Per-user value",
+  visible: "Exposed secret",
+};

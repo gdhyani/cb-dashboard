@@ -23,7 +23,7 @@ export function useAccessMutations(projectId: string) {
       mutationFn: ({ envId, userId, expiresAt }: { envId: string; userId: string; expiresAt?: string | null }) =>
         api.grantAccess(envId, { userId, expiresAt }),
       onSuccess: (g) => {
-        notifySuccess(g.expiresAt ? "Temporary access granted" : "Access granted");
+        notifySuccess(g.expiresAt ? "Time-limited access granted" : "Access granted");
         return refresh();
       },
       onError: (e) => notifyError(e),
@@ -31,7 +31,7 @@ export function useAccessMutations(projectId: string) {
     revoke: useMutation({
       mutationFn: (grantId: string) => api.revokeGrant(grantId),
       onSuccess: () => {
-        notifySuccess("Access revoked — live connections closed");
+        notifySuccess("Access revoked. Active connections were terminated.");
         return refresh();
       },
       onError: (e) => notifyError(e),

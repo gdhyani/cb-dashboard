@@ -16,7 +16,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 
 const DURATIONS = [
-  { value: "permanent", label: "Until revoked", hours: 0 },
+  { value: "permanent", label: "No expiry", hours: 0 },
   { value: "1h", label: "1 hour", hours: 1 },
   { value: "8h", label: "8 hours", hours: 8 },
   { value: "24h", label: "1 day", hours: 24 },
@@ -43,7 +43,7 @@ export function GrantDialog({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Temporary access ends automatically; live connections are closed when it expires.
+            Time-limited access ends automatically, and active connections are terminated when it expires.
           </DialogDescription>
         </DialogHeader>
         <FormField id="grant-duration" label="Duration">

@@ -13,7 +13,7 @@ export function MembersView({ orgId }: { orgId: string }) {
   return (
     <>
       <PageHeader
-        eyebrow="team"
+        breadcrumb="Team"
         title="Members"
         description="Owners and admins manage everything; developers use the environments they are granted."
       />

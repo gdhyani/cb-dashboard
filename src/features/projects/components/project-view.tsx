@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { AccessMatrix } from "@/features/access/components/access-matrix";
 import { useOrg } from "@/features/orgs/hooks/use-orgs";
+import { Breadcrumb } from "@/shared/components/breadcrumb";
 import { ConfirmDialog } from "@/shared/components/confirm-dialog";
 import { PageHeader } from "@/shared/components/page-header";
 import { QueryState } from "@/shared/components/query-state";
@@ -21,7 +22,12 @@ export function ProjectView({ orgId, projectId }: { orgId: string; projectId: st
       {project.data && (
         <>
           <PageHeader
-            eyebrow="project"
+            backHref={`/orgs/${orgId}/projects`}
+            breadcrumb={
+              <Breadcrumb
+                items={[{ label: "Projects", href: `/orgs/${orgId}/projects` }, { label: project.data.name }]}
+              />
+            }
             title={project.data.name}
             description={project.data.description || <span className="font-mono">{project.data.slug}</span>}
             actions={

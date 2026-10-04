@@ -7,12 +7,13 @@ import { ResourcesPanel } from "@/features/resources/components/resources-panel"
 import { PreviewPanel } from "@/features/variables/components/preview-panel";
 import { VariablesPanel } from "@/features/variables/components/variables-panel";
 import { BadgeLabel } from "@/shared/components/badge-label";
+import { Breadcrumb } from "@/shared/components/breadcrumb";
 import { CopyCommand } from "@/shared/components/copy-command";
 import { PageHeader } from "@/shared/components/page-header";
 import { QueryState } from "@/shared/components/query-state";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { useEnvironment } from "../hooks/use-environment";
-import { KillSwitch } from "./kill-switch";
+import { SuspensionControl } from "./suspension-control";
 
 export function EnvironmentView({ orgId, projectId, envId }: { orgId: string; projectId: string; envId: string }) {
   const org = useOrg(orgId);
@@ -24,22 +25,34 @@ export function EnvironmentView({ orgId, projectId, envId }: { orgId: string; pr
       {env.data && (
         <>
           <PageHeader
-            eyebrow={project.data ? `${project.data.name} · environment` : "environment"}
+            backHref={`/orgs/${orgId}/projects/${projectId}`}
+            breadcrumb={
+              <Breadcrumb
+                items={[
+                  { label: "Projects", href: `/orgs/${orgId}/projects` },
+                  { label: project.data?.name ?? "Project", href: `/orgs/${orgId}/projects/${projectId}` },
+                  { label: env.data.name },
+                ]}
+              />
+            }
             title={env.data.name}
             description={
               env.data.killed ? (
                 <span className="flex items-center gap-2">
-                  <BadgeLabel tone="warning">disabled</BadgeLabel> {env.data.killedReason}
+                  <BadgeLabel tone="warning" dot>
+                    Suspended
+                  </BadgeLabel>{" "}
+                  {env.data.killedReason}
                 </span>
               ) : (
-                "Variables your app reads, and the resources they route to."
+                "Configuration delivered to applications in this environment, and the services it connects to."
               )
             }
-            actions={org.isAdmin && <KillSwitch env={env.data} />}
+            actions={org.isAdmin && <SuspensionControl env={env.data} />}
           />
           {env.data.hasAccess && project.data && (
             <div className="flex max-w-xl flex-col gap-2">
-              <p className="font-mono text-xs uppercase tracking-[0.2em] text-subtle">use locally</p>
+              <p className="font-mono text-xs uppercase tracking-[0.2em] text-subtle">Local development</p>
               <CopyCommand command={`npx cb init --project ${project.data.slug} --env ${env.data.name}`} />
             </div>
           )}
@@ -47,7 +60,7 @@ export function EnvironmentView({ orgId, projectId, envId }: { orgId: string; pr
             <TabsList>
               <TabsTrigger value="variables">Variables</TabsTrigger>
               <TabsTrigger value="resources">Resources</TabsTrigger>
-              {org.isAdmin && <TabsTrigger value="preview">Preview as developer</TabsTrigger>}
+              {org.isAdmin && <TabsTrigger value="preview">Access preview</TabsTrigger>}
             </TabsList>
             <TabsContent value="variables" className="pt-4">
               <VariablesPanel envId={envId} isAdmin={org.isAdmin} />

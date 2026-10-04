@@ -1,15 +1,15 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Copy, Trash2 } from "lucide-react";
 import { BadgeLabel } from "@/shared/components/badge-label";
-import { ConfirmDialog } from "@/shared/components/confirm-dialog";
 import { EmptyState } from "@/shared/components/empty-state";
 import { QueryState } from "@/shared/components/query-state";
-import { Button } from "@/shared/ui/button";
+import { RowActions } from "@/shared/components/row-actions";
+import { useCopy } from "@/shared/hooks/use-copy";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { useVariableMutations, useVariables } from "../hooks/use-variables";
-import type { Variable } from "../types";
+import { VARIABLE_TYPE_LABEL, type Variable } from "../types";
 import { VariableFormDialog } from "./variable-form-dialog";
 
 function source(v: Variable) {
@@ -32,6 +32,7 @@ function source(v: Variable) {
 export function VariablesPanel({ envId, isAdmin }: { envId: string; isAdmin: boolean }) {
   const variables = useVariables(envId);
   const { remove } = useVariableMutations(envId);
+  const { copy } = useCopy("Key copied");
   return (
     <div className="flex flex-col gap-4">
       {isAdmin && (
@@ -61,7 +62,7 @@ export function VariablesPanel({ envId, isAdmin }: { envId: string; isAdmin: boo
                       <BadgeLabel
                         tone={v.type === "visible" ? "warning" : v.type === "brokered" ? "strong" : "default"}
                       >
-                        {v.type}
+                        {VARIABLE_TYPE_LABEL[v.type]}
                       </BadgeLabel>
                       {v.type === "visible" && (
                         <Tooltip>
@@ -76,16 +77,22 @@ export function VariablesPanel({ envId, isAdmin }: { envId: string; isAdmin: boo
                   <TableCell className="max-w-xs truncate">{source(v)}</TableCell>
                   {isAdmin && (
                     <TableCell className="text-right">
-                      <ConfirmDialog
-                        trigger={
-                          <Button size="sm" variant="ghost">
-                            Delete
-                          </Button>
-                        }
-                        title={`Delete ${v.key}?`}
-                        description="Running apps restart without it."
-                        confirmLabel="Delete"
-                        onConfirm={() => remove.mutateAsync(v.id)}
+                      <RowActions
+                        label={`Actions for ${v.key}`}
+                        actions={[
+                          { label: "Copy key", icon: Copy, onSelect: () => void copy(v.key) },
+                          {
+                            label: "Delete variable",
+                            icon: Trash2,
+                            destructive: true,
+                            confirm: {
+                              title: `Delete ${v.key}?`,
+                              description: "Running apps restart without it.",
+                              confirmLabel: "Delete variable",
+                              onConfirm: () => remove.mutateAsync(v.id),
+                            },
+                          },
+                        ]}
                       />
                     </TableCell>
                   )}

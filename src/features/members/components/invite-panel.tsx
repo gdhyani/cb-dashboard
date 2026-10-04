@@ -1,11 +1,13 @@
 "use client";
 
+import { Ban, Trash2 } from "lucide-react";
+
 import { useState } from "react";
 import type { Role } from "@/features/auth/types";
 import { BadgeLabel } from "@/shared/components/badge-label";
-import { ConfirmDialog } from "@/shared/components/confirm-dialog";
 import { CopyCommand } from "@/shared/components/copy-command";
 import { FormField } from "@/shared/components/form-field";
+import { RowActions } from "@/shared/components/row-actions";
 import { timeUntil } from "@/shared/lib/format-time";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -59,7 +61,7 @@ export function InvitePanel({ orgId, isOwner }: { orgId: string; isOwner: boolea
           </FormField>
         </div>
         <Button type="submit" disabled={createInvite.isPending}>
-          Create invite link
+          Generate invite link
         </Button>
       </form>
       {link && (
@@ -80,16 +82,21 @@ export function InvitePanel({ orgId, isOwner }: { orgId: string; isOwner: boolea
                 </span>
                 <span className="flex items-center gap-3 font-mono text-xs text-subtle">
                   expires {timeUntil(inv.expiresAt)}
-                  <ConfirmDialog
-                    trigger={
-                      <Button size="sm" variant="ghost">
-                        Revoke
-                      </Button>
-                    }
-                    title="Revoke invite?"
-                    description="The link stops working."
-                    confirmLabel="Revoke"
-                    onConfirm={() => revokeInvite.mutateAsync(inv.id)}
+                  <RowActions
+                    label={"Invite actions"}
+                    actions={[
+                      {
+                        label: "Revoke",
+                        icon: Ban,
+                        destructive: true,
+                        confirm: {
+                          title: "Revoke invite?",
+                          description: "The link stops working.",
+                          confirmLabel: "Revoke",
+                          onConfirm: () => revokeInvite.mutateAsync(inv.id),
+                        },
+                      },
+                    ]}
                   />
                 </span>
               </li>

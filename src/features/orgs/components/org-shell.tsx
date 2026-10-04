@@ -33,7 +33,7 @@ export function OrgShell({ orgId, children }: { orgId: string; children: ReactNo
     ...(org.isAdmin
       ? [
           { href: `${base}/devices`, label: "Devices" },
-          { href: `${base}/audit`, label: "Audit" },
+          { href: `${base}/audit`, label: "Activity" },
         ]
       : []),
     { href: `${base}/me`, label: "My access" },

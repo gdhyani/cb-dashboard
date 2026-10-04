@@ -18,7 +18,7 @@ export function useEnvironmentMutations(envId: string) {
     kill: useMutation({
       mutationFn: (reason: string) => api.updateEnvironment(envId, { killed: true, reason }),
       onSuccess: () => {
-        notifySuccess("Environment disabled — all connections were cut");
+        notifySuccess("Environment suspended. Active connections were terminated.");
         return refresh();
       },
       onError: (e) => notifyError(e),
@@ -26,7 +26,7 @@ export function useEnvironmentMutations(envId: string) {
     revive: useMutation({
       mutationFn: () => api.updateEnvironment(envId, { killed: false }),
       onSuccess: () => {
-        notifySuccess("Environment re-enabled");
+        notifySuccess("Environment resumed");
         return refresh();
       },
       onError: (e) => notifyError(e),
