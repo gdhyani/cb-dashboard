@@ -24,12 +24,7 @@ export function ProjectList({ orgId, isAdmin }: { orgId: string; isAdmin: boolea
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {projects.data?.map((p, i) => (
-            <motion.li
-              key={p.id}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.03 }}
-            >
+            <motion.li key={p.id} initial={{ y: 4 }} animate={{ y: 0 }} transition={{ delay: i * 0.03 }}>
               <Link
                 href={`/orgs/${orgId}/projects/${p.id}`}
                 className="flex h-full flex-col gap-4 rounded-lg border border-border p-5 transition-colors hover:border-ring"

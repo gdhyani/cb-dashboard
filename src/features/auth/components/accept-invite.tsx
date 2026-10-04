@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { BadgeLabel } from "@/shared/components/badge-label";
@@ -24,6 +25,11 @@ export function AcceptInvite({ token }: { token: string }) {
     defaultValues: { name: "", email: "", password: "" },
   });
   const errors = form.formState.errors;
+  const invitedEmail = preview.data?.email;
+  useEffect(() => {
+    // The form initialises before the preview arrives; fill the invited email once it does.
+    if (invitedEmail && !form.getValues("email")) form.setValue("email", invitedEmail);
+  }, [invitedEmail, form]);
   const goToOrg = (orgId: string) => router.replace(`/orgs/${orgId}`);
 
   return (

@@ -63,7 +63,8 @@ export function OrgShell({ orgId, children }: { orgId: string; children: ReactNo
           </DropdownMenu>
           <nav className="flex flex-col gap-0.5" aria-label="Organization">
             {nav.map((item) => {
-              const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+              // Segment-aware: "/me" must not match "/members".
+              const active = pathname === item.href || (!item.exact && pathname.startsWith(`${item.href}/`));
               return (
                 <Link
                   key={item.href}

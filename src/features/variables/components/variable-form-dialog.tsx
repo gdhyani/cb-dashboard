@@ -40,6 +40,15 @@ export function VariableFormDialog({ envId }: { envId: string }) {
   const { create } = useVariableMutations(envId);
   const resource = resources.data?.find((r) => r.id === resourceId);
 
+  const reset = () => {
+    setType("plain");
+    setKey("");
+    setValue("");
+    setFormat("hex:32");
+    setResourceId("");
+    setField("");
+  };
+
   const body = (): CreateVariableInput => {
     if (type === "plain" || type === "visible") return { type, key, value };
     if (type === "generated") return { type, key, format };
@@ -50,7 +59,13 @@ export function VariableFormDialog({ envId }: { envId: string }) {
     (type === "generated" || (type === "brokered" ? Boolean(resourceId && field) : type === "plain" || Boolean(value)));
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) reset();
+      }}
+    >
       <DialogTrigger asChild>
         <Button>Add variable</Button>
       </DialogTrigger>
@@ -66,8 +81,7 @@ export function VariableFormDialog({ envId }: { envId: string }) {
             create.mutate(body(), {
               onSuccess: () => {
                 setOpen(false);
-                setKey("");
-                setValue("");
+                reset();
               },
             });
           }}
@@ -143,6 +157,8 @@ export function VariableFormDialog({ envId }: { envId: string }) {
                 <Select
                   value={resourceId}
                   onValueChange={(v) => {
+                    // Radix Select can emit "" from its hidden native select when options change; ignore it.
+                    if (!v) return;
                     setResourceId(v);
                     setField(resources.data?.find((r) => r.id === v)?.brokeredFields[0] ?? "");
                   }}
@@ -160,7 +176,7 @@ export function VariableFormDialog({ envId }: { envId: string }) {
                 </Select>
               </FormField>
               <FormField id="var-field" label="Field">
-                <Select value={field} onValueChange={setField} disabled={!resource}>
+                <Select value={field} onValueChange={(v) => v && setField(v)} disabled={!resource}>
                   <SelectTrigger id="var-field">
                     <SelectValue placeholder="—" />
                   </SelectTrigger>

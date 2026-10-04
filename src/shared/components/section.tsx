@@ -16,7 +16,7 @@ export function Section({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-medium tracking-tight">{title}</h2>
-          {description && <p className="text-sm text-muted-foreground">{description}</p>}
+          {description && <div className="text-sm text-muted-foreground">{description}</div>}
         </div>
         {actions}
       </div>

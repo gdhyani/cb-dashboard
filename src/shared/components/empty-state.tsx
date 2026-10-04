@@ -17,7 +17,7 @@ export function EmptyState({
     <div className="flex flex-col items-start gap-4 rounded-lg border border-dashed border-border p-8">
       <div className="flex flex-col gap-1">
         <p className="font-medium">{title}</p>
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        {description && <div className="text-sm text-muted-foreground">{description}</div>}
       </div>
       {commands && commands.length > 0 && (
         <div className="flex w-full max-w-md flex-col gap-2">
