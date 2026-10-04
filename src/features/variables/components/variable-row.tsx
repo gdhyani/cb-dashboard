@@ -57,7 +57,12 @@ export function VariableRow({
           {value.text}
         </span>
       </div>
-      <span className="flex max-w-[40%] shrink-0 items-center gap-1.5 truncate text-xs text-subtle">
+      <span
+        className={`max-w-[40%] shrink-0 items-center gap-1.5 truncate text-xs text-subtle ${
+          // On phones the ↳ indent already links an extra key to its main key; keep its name visible.
+          parentKey ? "hidden sm:flex" : "flex"
+        }`}
+      >
         {variable.type === "visible" && (
           <Tooltip>
             <TooltipTrigger aria-label="Why this is flagged">
