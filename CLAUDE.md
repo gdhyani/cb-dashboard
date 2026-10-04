@@ -78,6 +78,27 @@ cb-dashboard/
 └─ package.json
 ```
 
+## Motion, loading and mobile (required on every page)
+
+- **Slide-up entrance everywhere:** lists, cards, rows and sections enter with the same subtle motion used on the
+  projects list (`y: 4 → 0`, small stagger, transform only so content is never invisible). Use one shared helper
+  in `src/shared/components/`, never ad-hoc animations.
+- **Skeleton loading everywhere:** every data view renders skeletons shaped like its content while loading
+  (via `QueryState` / shared skeleton components). No spinners-only pages, no blank screens.
+- **Mobile first:** every page must work at 375px wide — no text wrapping mid-word, tables collapse to stacked
+  rows or scroll horizontally, forms stack, actions stay reachable. Check phone width in the browser for every change.
+- **Destructive actions are never primary buttons on a page.** Delete project, suspend environment, remove member,
+  revoke device… live in a row's "…" menu or a Settings section/tab, always behind a confirmation.
+- Keep the design system simple; correctness and the npm package come first.
+
+## Browser testing (required)
+
+- Verify every page and flow in a real browser using browser automation:
+  navigate to `http://localhost:4201`, perform the user journey (sign up, invite, grant access, revoke…), read the
+  browser console and network requests for errors.
+- Unit tests cover logic; the browser pass covers the real journey. A feature is done only after both pass.
+- Requires cb-backend running on :4200 and the dashboard on :4201.
+
 ## Next.js 16 notes
 
 - Next 16 has breaking changes vs older versions (e.g. `middleware.ts` → `proxy.ts`). Check the bundled

@@ -33,6 +33,23 @@ describe("http instance", () => {
     expect(await apiGet<string>("/things", { correlationId: "flow-7" })).toBe("flow-7");
   });
 
+  it("sends the CSRF header on mutations only", async () => {
+    mock
+      .onPost("/x")
+      .reply((config) => [
+        200,
+        { success: true, data: config.headers?.["x-cb-csrf"] ?? null, meta: { correlationId: "c" } },
+      ]);
+    mock
+      .onGet("/x")
+      .reply((config) => [
+        200,
+        { success: true, data: config.headers?.["x-cb-csrf"] ?? null, meta: { correlationId: "c" } },
+      ]);
+    expect(await apiPost<string>("/x")).toBe("1");
+    expect(await apiGet<string | null>("/x")).toBeNull();
+  });
+
   it("unwraps the success envelope", async () => {
     mock.onPost("/projects").reply(201, { success: true, data: { id: "p1" }, meta: { correlationId: "c1" } });
     expect(await apiPost<{ id: string }>("/projects", { name: "x" })).toEqual({ id: "p1" });

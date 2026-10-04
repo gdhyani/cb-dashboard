@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type AxiosRequestConfig } from "axios";
-import { API_BASE_PATH, CORRELATION_HEADER } from "@/constants";
+import { API_BASE_PATH, CORRELATION_HEADER, CSRF_HEADER } from "@/constants";
 import { ApiError } from "./api-error";
 import { newCorrelationId } from "./correlation";
 import { type ApiPaginated, isApiErrorBody, isApiSuccess, type PaginatedResult } from "./envelope";
@@ -19,8 +19,12 @@ export const http = axios.create({
   headers: { Accept: "application/json" },
 });
 
+const SAFE_METHODS = new Set(["get", "head", "options"]);
+
 http.interceptors.request.use((config) => {
   config.headers.set(CORRELATION_HEADER, config.correlationId ?? newCorrelationId());
+  // Cookie-authenticated mutations must carry the CSRF header (backend M0-D4).
+  if (!SAFE_METHODS.has((config.method ?? "get").toLowerCase())) config.headers.set(CSRF_HEADER, "1");
   return config;
 });
 
@@ -89,6 +93,11 @@ export async function apiPost<T>(url: string, body?: unknown, config?: AxiosRequ
 
 export async function apiPatch<T>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T> {
   const res = await http.patch(url, body, config);
+  return unwrap<T>(res.data, res.status, correlationOf(res.config.headers));
+}
+
+export async function apiPut<T>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T> {
+  const res = await http.put(url, body, config);
   return unwrap<T>(res.data, res.status, correlationOf(res.config.headers));
 }
 

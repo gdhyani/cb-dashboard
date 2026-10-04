@@ -1,26 +1,40 @@
 @import "tailwindcss";
 
-/* Monochrome tokens: black background, typographic hierarchy, no accent colour. */
+/* Monochrome tokens (shadcn names): black background, typographic hierarchy, no accent colour. */
 @theme {
   --color-background: #000000;
-  --color-foreground: #fafafa;
-  --color-muted: #a1a1a1;
-  --color-subtle: #5c5c5c;
-  --color-border: #262626;
-  --color-surface: #0a0a0a;
-  --color-primary: #fafafa;
+  --color-foreground: #ededed;
+  --color-card: #0a0a0a;
+  --color-card-foreground: #fafafa;
+  --color-popover: #0a0a0a;
+  --color-popover-foreground: #fafafa;
+  --color-muted: #171717;
+  --color-muted-foreground: #a1a1a1;
+  --color-subtle: #6b6b6b;
+  --color-border: #242424;
+  --color-border-strong: #3a3a3a;
+  --color-input: #2a2a2a;
+  --color-ring: #8f8f8f;
+  --color-primary: #ededed;
   --color-primary-foreground: #000000;
-  /* shadcn token names, kept monochrome ("accent" is a grey hover surface, not a colour). */
+  /* "accent"/"secondary" are grey hover surfaces, not colours. */
   --color-secondary: #171717;
   --color-secondary-foreground: #fafafa;
   --color-accent: #171717;
   --color-accent-foreground: #fafafa;
-  --color-input: #262626;
-  --color-ring: #737373;
   --color-destructive: #e5484d;
   --color-destructive-foreground: #ffffff;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  /* Type scale: hierarchy by size and weight, not colour. */
+  --text-display: 2rem;
+  --text-display--line-height: 1.15;
+  --text-display--letter-spacing: -0.045em;
+  --text-title: 1.125rem;
+  --text-title--line-height: 1.4;
+  --text-title--letter-spacing: -0.015em;
+  --text-hint: 0.8125rem;
+  --text-hint--line-height: 1.45;
 }
 
 @layer base {
@@ -33,8 +47,134 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
+  * {
+    border-color: var(--color-border);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-foreground);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
   ::selection {
     background: var(--color-foreground);
     color: var(--color-background);
+  }
+}
+
+/* Motion: one subtle language everywhere (transform-led, never hides content for long). */
+@keyframes cb-enter {
+  from {
+    opacity: 0.4;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cb-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes cb-sheet-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes cb-sheet-out {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+/* Horizontal centering comes from Tailwind's separate `translate` property; animate only transform so they compose. */
+@keyframes cb-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@layer utilities {
+  .cb-enter {
+    animation: cb-enter 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .cb-overlay[data-state="open"] {
+    animation: cb-fade 160ms ease-out;
+  }
+  .cb-overlay[data-state="closed"] {
+    animation: cb-fade 140ms ease-in reverse;
+  }
+  .cb-sheet[data-state="open"] {
+    animation: cb-sheet-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .cb-sheet[data-state="closed"] {
+    animation: cb-sheet-out 160ms ease-in;
+  }
+  .cb-pop[data-state="open"] {
+    animation: cb-pop 160ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+}
+
+/* Display titles scale up from phones to desktop. */
+@media (min-width: 640px) {
+  :root {
+    --text-display: 2.5rem;
+  }
+}
+
+/*
+ * Subtle grid pattern: crisp 1px squares (SVG tile, anchored to the box edge) drawn behind content on a
+ * pseudo-element. The mask keeps it to the top of the box — behind titles and numbers, never behind charts.
+ * `cb-grid` for cards (fades from the top-left); `cb-grid-wide` for headers and lists (fades from the top).
+ */
+@layer utilities {
+  .cb-grid,
+  .cb-grid-wide {
+    position: relative;
+    isolation: isolate;
+  }
+  .cb-grid::before,
+  .cb-grid-wide::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' shape-rendering='crispEdges'%3E%3Cpath d='M0 .5H20M.5 0V20' fill='none' stroke='%23ffffff' stroke-opacity='0.12'/%3E%3C/svg%3E");
+    background-size: 20px 20px;
+    background-position: 0 0;
+  }
+  .cb-grid::before {
+    mask-image: linear-gradient(to bottom, #000 0%, rgb(0 0 0 / 0.7) 35%, transparent 62%);
+  }
+  .cb-grid-wide::before {
+    background-size: 24px 24px;
+    mask-image:
+      linear-gradient(to bottom, #000 0%, rgb(0 0 0 / 0.6) 60%, transparent 100%),
+      linear-gradient(to right, #000 0%, rgb(0 0 0 / 0.5) 70%, transparent 100%);
+    mask-composite: intersect;
   }
 }
