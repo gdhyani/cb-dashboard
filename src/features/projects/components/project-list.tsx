@@ -32,7 +32,7 @@ export function ProjectList({ orgId, isAdmin }: { orgId: string; isAdmin: boolea
             <StaggerItem key={p.id} index={i}>
               <Link
                 href={`/orgs/${orgId}/projects/${p.id}`}
-                className="flex h-full flex-col gap-4 rounded-lg border border-border p-4 transition-colors hover:border-ring sm:p-5"
+                className="cb-grid flex h-full flex-col gap-4 rounded-lg border border-border p-4 transition-colors hover:border-ring sm:p-5"
               >
                 <div className="flex flex-col gap-1">
                   <span className="text-lg font-medium tracking-tight">{p.name}</span>

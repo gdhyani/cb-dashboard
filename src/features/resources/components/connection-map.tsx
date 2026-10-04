@@ -27,7 +27,7 @@ function Link({ solid = false }: { solid?: boolean }) {
 export function ConnectionMap({ resources }: { resources: Resource[] }) {
   if (resources.length === 0) return null;
   return (
-    <figure className="flex flex-col gap-3 rounded-lg border border-border p-4">
+    <figure className="cb-grid-wide flex flex-col gap-3 rounded-lg border border-border p-4">
       <figcaption className="flex flex-wrap items-baseline justify-between gap-2">
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">Connection map</span>
         <span className="flex items-center gap-4 text-[11px] text-subtle">

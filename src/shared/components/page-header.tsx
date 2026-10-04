@@ -12,15 +12,24 @@ export function PageHeader({
   title,
   description,
   actions,
+  pattern = false,
 }: {
   breadcrumb?: ReactNode;
   backHref?: string;
   title: string;
   description?: ReactNode;
   actions?: ReactNode;
+  /** Draws the subtle grid behind the title block (project and environment pages). */
+  pattern?: boolean;
 }) {
   return (
-    <header className="flex flex-col gap-3 pb-2">
+    <header
+      className={
+        pattern
+          ? "cb-grid-wide -mx-4 -mt-8 flex flex-col gap-3 px-4 pt-8 pb-6 sm:-mx-6 sm:px-6 md:-mt-10 md:pt-10"
+          : "flex flex-col gap-3 pb-2"
+      }
+    >
       {(breadcrumb || backHref) && (
         <div className="flex min-w-0 items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-subtle">
           {backHref && (

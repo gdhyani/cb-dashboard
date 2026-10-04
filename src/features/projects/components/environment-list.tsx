@@ -14,7 +14,7 @@ export function EnvironmentList({ project, isAdmin }: { project: Project; isAdmi
   const { createEnvironment } = useProjectMutations(project.orgId);
   return (
     <div className="flex flex-col gap-3">
-      <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
+      <ul className="cb-grid-wide flex flex-col divide-y divide-border rounded-lg border border-border">
         {project.environments.map((e, i) => (
           <StaggerItem key={e.id} index={i}>
             <Link

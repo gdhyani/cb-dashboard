@@ -43,7 +43,7 @@ function StatTile({
   index: number;
 }) {
   return (
-    <StaggerBlock index={index} className="flex min-w-0 flex-col gap-3 rounded-lg border border-border p-4">
+    <StaggerBlock index={index} className="cb-grid flex min-w-0 flex-col gap-3 rounded-lg border border-border p-4">
       <span className="truncate font-mono text-[10px] uppercase tracking-[0.18em] text-subtle">{label}</span>
       <span className="text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">{value}</span>
       {trend ? (
@@ -83,7 +83,7 @@ export function OrgOverview({ orgId }: { orgId: string }) {
 
   return (
     <>
-      <PageHeader breadcrumb="Organization" title={org.data?.name ?? "…"} description={<HealthStatus />} />
+      <PageHeader pattern breadcrumb="Organization" title={org.data?.name ?? "…"} description={<HealthStatus />} />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {stats.isPending ? (
@@ -166,7 +166,7 @@ export function OrgOverview({ orgId }: { orgId: string }) {
 
       <Section title="Environments">
         <QueryState isPending={projects.isPending} error={projects.error} skeleton={<SkeletonRows rows={3} />}>
-          <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
+          <ul className="cb-grid-wide flex flex-col divide-y divide-border rounded-lg border border-border">
             {envs.map((e, i) => (
               <StaggerItem key={e.id} index={i}>
                 <Link

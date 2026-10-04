@@ -143,3 +143,37 @@
     --text-display: 2.5rem;
   }
 }
+
+/*
+ * Subtle grid pattern: crisp 1px squares (SVG tile, anchored to the box edge) drawn behind content on a
+ * pseudo-element. The mask keeps it to the top of the box — behind titles and numbers, never behind charts.
+ * `cb-grid` for cards (fades from the top-left); `cb-grid-wide` for headers and lists (fades from the top).
+ */
+@layer utilities {
+  .cb-grid,
+  .cb-grid-wide {
+    position: relative;
+    isolation: isolate;
+  }
+  .cb-grid::before,
+  .cb-grid-wide::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' shape-rendering='crispEdges'%3E%3Cpath d='M0 .5H20M.5 0V20' fill='none' stroke='%23ffffff' stroke-opacity='0.07'/%3E%3C/svg%3E");
+    background-size: 20px 20px;
+    background-position: 0 0;
+  }
+  .cb-grid::before {
+    mask-image: linear-gradient(to bottom, #000 0%, rgb(0 0 0 / 0.5) 30%, transparent 60%);
+  }
+  .cb-grid-wide::before {
+    background-size: 24px 24px;
+    mask-image:
+      linear-gradient(to bottom, #000 0%, transparent 90%), linear-gradient(to right, #000 0%, transparent 85%);
+    mask-composite: intersect;
+  }
+}
