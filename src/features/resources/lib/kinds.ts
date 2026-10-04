@@ -3,7 +3,7 @@ import type { ResourceKind } from "../types";
 export interface FieldSpec {
   name: string;
   label: string;
-  type: "text" | "select" | "list" | "secret" | "secret-multiline";
+  type: "text" | "select" | "list" | "multiline" | "secret" | "secret-multiline";
   placeholder?: string;
   hint?: string;
   optional?: boolean;
@@ -27,6 +27,16 @@ export interface KindSpec {
 const uri = (placeholder: string): FieldSpec[] => [
   { name: "connectionUri", label: "Real connection URI", type: "secret", placeholder },
 ];
+/** Public CA certificate for self-hosted or private-CA servers; trusted for this resource only. */
+const caField: FieldSpec = {
+  name: "caCert",
+  label: "CA certificate (optional)",
+  type: "multiline",
+  optional: true,
+  mono: true,
+  placeholder: "-----BEGIN CERTIFICATE-----\n…\n-----END CERTIFICATE-----",
+  hint: "Only for servers whose certificate isn't from a public CA (self-hosted, Aiven, DigitalOcean). Public, not a secret.",
+};
 const hostSummary = (c: Record<string, unknown>) =>
   [c.host, c.database].filter((v) => v !== undefined && v !== "").join(" · ");
 const upstreamField: FieldSpec = {
@@ -52,7 +62,7 @@ export const KINDS: Record<ResourceKind, KindSpec> = {
     label: "PostgreSQL",
     description: "Apps get a fake URL; the gateway signs in with SCRAM using the real user.",
     namePlaceholder: "orders-db",
-    settings: [],
+    settings: [caField],
     secrets: uri("postgresql://user:password@host:5432/db?sslmode=require"),
     summary: hostSummary,
   },
@@ -60,23 +70,23 @@ export const KINDS: Record<ResourceKind, KindSpec> = {
     label: "MySQL",
     description: "Fake URL for the app; the gateway authenticates upstream with the real user.",
     namePlaceholder: "legacy-db",
-    settings: [],
-    secrets: uri("mysql://user:password@host:3306/db"),
+    settings: [caField],
+    secrets: uri("mysql://user:password@host:3306/db?ssl=true"),
     summary: hostSummary,
   },
   mongodb: {
     label: "MongoDB",
     description: "Fake URL for the app; SCRAM-SHA-256 upstream with the real user.",
     namePlaceholder: "main-db",
-    settings: [],
-    secrets: uri("mongodb://user:password@host:27017/db?authSource=admin"),
+    settings: [caField],
+    secrets: uri("mongodb+srv://user:password@cluster0.example.mongodb.net/db"),
     summary: hostSummary,
   },
   redis: {
     label: "Redis",
     description: "Fake AUTH for the app; the real password or ACL user is used upstream.",
     namePlaceholder: "cache",
-    settings: [],
+    settings: [caField],
     secrets: uri("redis://user:password@host:6379/0"),
     summary: hostSummary,
   },
@@ -84,7 +94,7 @@ export const KINDS: Record<ResourceKind, KindSpec> = {
     label: "SMTP",
     description: "Fake SMTP login for the app; real AUTH over STARTTLS upstream.",
     namePlaceholder: "mailer",
-    settings: [],
+    settings: [caField],
     secrets: uri("smtp://user:password@smtp.provider.com:587"),
     summary: (c) => String(c.host ?? ""),
   },

@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyRound, PlugZap, Trash2 } from "lucide-react";
+import { FileBadge, KeyRound, PlugZap, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { EmptyState } from "@/shared/components/empty-state";
@@ -12,6 +12,7 @@ import { timeAgo } from "@/shared/lib/format-time";
 import { useProfileMutations, useResourceMutations, useResources, useTestResource } from "../hooks/use-resources";
 import { KINDS } from "../lib/kinds";
 import type { Resource } from "../types";
+import { CaCertDialog } from "./ca-cert-dialog";
 import { ConnectionMap } from "./connection-map";
 import { CredentialsDialog } from "./credentials-dialog";
 import { ResourceFormDialog } from "./resource-form-dialog";
@@ -28,12 +29,15 @@ function ResourceCard({
   isAdmin: boolean;
   index: number;
 }) {
-  const { remove } = useResourceMutations(envId);
+  const { remove, updateCa } = useResourceMutations(envId);
+  const [editingCa, setEditingCa] = useState(false);
   const profiles = useProfileMutations(r.id);
   const tester = useTestResource(r.id);
   const last = tester.data;
   const [adding, setAdding] = useState(false);
   const spec = KINDS[r.kind];
+  const takesCa = spec?.settings.some((f) => f.name === "caCert") ?? false;
+  const caCert = typeof r.config.caCert === "string" ? r.config.caCert : "";
   const redirects = Array.isArray(r.config.redirectHosts) ? (r.config.redirectHosts as string[]) : [];
   return (
     <StaggerItem index={index} className="flex min-w-0 flex-col gap-4 rounded-lg border border-border p-4">
@@ -45,6 +49,7 @@ function ResourceCard({
             {r.disabled && <BadgeLabel tone="muted">Disabled</BadgeLabel>}
           </span>
           <span className="truncate font-mono text-xs text-subtle">{spec?.summary(r.config) || "—"}</span>
+          {caCert && <span className="truncate font-mono text-xs text-subtle">private CA trusted</span>}
           {redirects.length > 0 && (
             <span className="truncate font-mono text-xs text-subtle">redirects {redirects.join(", ")}</span>
           )}
@@ -65,6 +70,7 @@ function ResourceCard({
             actions={[
               { label: "Test connection", icon: PlugZap, onSelect: () => tester.mutate(undefined) },
               { label: "Add credential profile", icon: KeyRound, onSelect: () => setAdding(true) },
+              ...(takesCa ? [{ label: "CA certificate", icon: FileBadge, onSelect: () => setEditingCa(true) }] : []),
               {
                 label: "Delete resource",
                 icon: Trash2,
@@ -84,6 +90,16 @@ function ResourceCard({
         <ResourceProfiles resource={r} envId={envId} onTest={(profile) => tester.mutate(profile)} />
       ) : (
         <span className="font-mono text-xs text-subtle">•••• set · rotated {timeAgo(r.rotatedAt)}</span>
+      )}
+      {editingCa && (
+        <CaCertDialog
+          open
+          onOpenChange={setEditingCa}
+          resourceName={r.name}
+          current={caCert}
+          pending={updateCa.isPending}
+          onSave={(next) => updateCa.mutateAsync({ id: r.id, caCert: next })}
+        />
       )}
       {adding && (
         <CredentialsDialog

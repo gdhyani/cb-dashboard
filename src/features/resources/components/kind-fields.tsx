@@ -5,6 +5,7 @@ import { SecretInput, SecretTextarea } from "@/shared/components/secret-input";
 import { cn } from "@/shared/lib/utils";
 import { Input } from "@/shared/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import { Textarea } from "@/shared/ui/textarea";
 import type { FieldSpec } from "../lib/kinds";
 
 /** Renders registry fields; secrets go through the write-only inputs only (FR-UI-001). */
@@ -26,7 +27,9 @@ export function KindFields({
     <div className="grid gap-4 sm:grid-cols-2">
       {fields.map((f) => {
         const id = `${idPrefix}-${f.name}`;
-        const wide = f.type !== "select" && (f.type.startsWith("secret") || f.type === "list" || !f.optional);
+        const wide =
+          f.type !== "select" &&
+          (f.type.startsWith("secret") || f.type === "list" || f.type === "multiline" || !f.optional);
         const value = values[f.name] ?? "";
         const hint = f.type.startsWith("secret") ? "Write-only. Stored encrypted; never shown again." : f.hint;
         return (
@@ -59,6 +62,15 @@ export function KindFields({
                   isSet={rotating}
                   value={value}
                   placeholder={f.placeholder}
+                  onChange={(e) => onChange(f.name, e.target.value)}
+                />
+              ) : f.type === "multiline" ? (
+                <Textarea
+                  id={id}
+                  value={value}
+                  rows={4}
+                  placeholder={f.placeholder}
+                  className={cn("text-xs", f.mono && "font-mono")}
                   onChange={(e) => onChange(f.name, e.target.value)}
                 />
               ) : (
