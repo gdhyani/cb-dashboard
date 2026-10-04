@@ -40,6 +40,40 @@
 @layer base {
   html {
     color-scheme: dark;
+    /* No layout jump when a page grows a scrollbar. */
+    scrollbar-gutter: stable;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    /* Anchor jumps and nested scroll areas glide too (Lenis drives the page itself). */
+    html,
+    :where([data-radix-scroll-area-viewport], .overflow-auto, .overflow-y-auto, .overflow-x-auto) {
+      scroll-behavior: smooth;
+    }
+  }
+  :where(.overflow-auto, .overflow-y-auto) {
+    overscroll-behavior: contain;
+  }
+  /* One fast motion language: every interactive element eases its state changes (Tailwind utilities override). */
+  :where(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [role="button"],
+    [role="tab"],
+    [role="menuitem"],
+    [role="option"],
+    [role="switch"],
+    [role="checkbox"]
+  ) {
+    transition-property: color, background-color, border-color, outline-color, opacity, box-shadow, transform;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  :where(button, [role="button"]):not(:disabled):active {
+    transform: scale(0.98);
   }
   body {
     background: var(--color-background);
@@ -135,7 +169,8 @@
 
 @layer utilities {
   .cb-enter {
-    animation: cb-enter 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    /* backwards: no transform lingers after the entry, so sticky/fixed descendants behave normally. */
+    animation: cb-enter 260ms cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
   }
   .cb-overlay[data-state="open"] {
     animation: cb-fade 160ms ease-out;
