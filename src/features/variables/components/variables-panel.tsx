@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
+import { Copy, FileUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { KeyAccessDialog } from "@/features/access";
 import { useResources } from "@/features/resources";
@@ -17,6 +17,7 @@ import type { Variable } from "../types";
 import { AddVariableDialog } from "./add-variable-dialog";
 import { ConnectionMap } from "./connection-map";
 import { EditVariableDialog } from "./edit-variable-dialog";
+import { ImportEnvDialog } from "./import-env-dialog";
 import { QuickAdd } from "./quick-add";
 import { ServiceRows, serviceIcon } from "./service-rows";
 import { VariableRow } from "./variable-row";
@@ -35,6 +36,7 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
   const { remove } = useVariableMutations(envId);
   const { copy } = useCopy("Key copied");
   const [adding, setAdding] = useState<{ type: TypeId; provider?: string } | null>(null);
+  const [importing, setImporting] = useState(false);
   const [editing, setEditing] = useState<{ variable?: Variable; group?: ServiceGroup; replace?: boolean } | null>(null);
   const onEdit = (variable: Variable, group?: ServiceGroup, replace?: boolean) =>
     setEditing({ variable, group, replace });
@@ -70,10 +72,16 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
       {isAdmin && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <QuickAdd onPick={(type, provider) => setAdding({ type, provider })} />
-          <Button className="shrink-0 self-start sm:self-auto" onClick={() => setAdding({ type: "plain" })}>
-            <Plus />
-            Add variable
-          </Button>
+          <div className="flex shrink-0 gap-2 self-start sm:self-auto">
+            <Button variant="ghost" onClick={() => setImporting(true)}>
+              <FileUp />
+              Import .env
+            </Button>
+            <Button onClick={() => setAdding({ type: "plain" })}>
+              <Plus />
+              Add variable
+            </Button>
+          </div>
         </div>
       )}
       <QueryState
@@ -164,6 +172,14 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
           group={editing.group}
           startReplacing={editing.replace}
           takenKeys={(variables.data ?? []).map((v) => v.key)}
+        />
+      )}
+      {isAdmin && importing && (
+        <ImportEnvDialog
+          envId={envId}
+          open
+          onOpenChange={(open) => !open && setImporting(false)}
+          existingKeys={(variables.data ?? []).map((v) => v.key)}
         />
       )}
       {isAdmin && adding && (
