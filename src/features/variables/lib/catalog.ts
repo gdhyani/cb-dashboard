@@ -138,6 +138,60 @@ const BASIC_USER: FieldDef = {
   showWhen: { field: "authScheme", equals: "basic-password" },
 };
 
+/** OQ9: headers the backend refuses (the key and transport headers are set by cb). */
+const RESERVED_HEADERS = new Set([
+  "authorization",
+  "proxy-authorization",
+  "x-api-key",
+  "cookie",
+  "host",
+  "content-length",
+  "transfer-encoding",
+  "connection",
+  "upgrade",
+  "te",
+  "keep-alive",
+]);
+
+/** "Name: value" per line → headers, or the first problem. */
+export function parseHeaderLines(raw: string): { headers?: Record<string, string>; error?: string } {
+  const headers: Record<string, string> = {};
+  for (const line of raw
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)) {
+    const i = line.indexOf(":");
+    const name = line.slice(0, i).trim();
+    if (i <= 0 || !/^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/.test(name)) return { error: "Use one Name: value per line." };
+    if (RESERVED_HEADERS.has(name.toLowerCase()))
+      return { error: `${name} is set by cb — put keys in the value above.` };
+    headers[name] = line.slice(i + 1).trim();
+  }
+  if (Object.keys(headers).length > 10) return { error: "At most 10 headers." };
+  return { headers };
+}
+
+export const formatHeaderLines = (h: unknown): string =>
+  h && typeof h === "object"
+    ? Object.entries(h as Record<string, string>)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join("\n")
+    : "";
+
+const EXTRA_HEADERS: FieldDef = {
+  name: "extraHeaders",
+  label: "Extra headers",
+  multiline: true,
+  optional: true,
+  placeholder: "OpenAI-Organization: org_123",
+  hint: "Sent on every call, one Name: value per line. Not for keys — the key goes in the value above.",
+  validate: (v) => parseHeaderLines(v).error,
+};
+const API_CA_CERT: FieldDef = {
+  ...CA_CERT,
+  hint: "Only for internal APIs that use a private certificate authority.",
+};
+
 const db = (id: TypeId, name: string, kind: ResourceKind, icon: IconId, placeholder: string): TypeDef => ({
   id,
   name,
@@ -414,6 +468,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
               placeholder: "https://my-proxy.example.com",
               hint: "Azure OpenAI, a company proxy, or a regional endpoint instead of the default.",
             },
+            EXTRA_HEADERS,
           ],
   },
   oauth: {
@@ -452,6 +507,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
         select: [
           { value: "json", label: "The whole JSON, in this variable" },
           { value: "privateKey", label: "Only the private key (PEM)" },
+          { value: "file", label: "A file path (GOOGLE_APPLICATION_CREDENTIALS)" },
         ],
       },
     ],
@@ -580,6 +636,8 @@ export const TYPES: Record<TypeId, TypeDef> = {
         placeholder: "uploads.example.com:443",
         hint: "Comma-separated host:port, if the SDK also calls other hosts.",
       },
+      EXTRA_HEADERS,
+      API_CA_CERT,
     ],
   },
 };
@@ -709,7 +767,15 @@ export function buildCreateRequest(d: DraftState): CreateRequest {
     resource.provider = d.provider ?? "stripe";
     if (fields.port) resource.port = Number(fields.port);
   }
-  if (d.type === "gcp") mainField = d.fields.readsAs === "privateKey" ? "privateKey" : "credentialsJson";
+  if (d.type === "gcp")
+    mainField =
+      d.fields.readsAs === "privateKey"
+        ? "privateKey"
+        : d.fields.readsAs === "file"
+          ? "credentialsFile"
+          : "credentialsJson";
+  if (typeof fields.extraHeaders === "string")
+    resource.extraHeaders = parseHeaderLines(fields.extraHeaders).headers ?? {};
   if (d.type === "aws" && !fields.endpoint && fields.region)
     resource.endpoint = `https://s3.${fields.region}.amazonaws.com`;
   if (d.type === "http" && typeof fields.upstreamUrl === "string" && fields.upstreamUrl.startsWith("https://")) {

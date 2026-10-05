@@ -10,7 +10,17 @@ import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { useVariableMutations } from "../hooks/use-variables";
-import { dialogTitle, type FieldDef, fieldError, KEY_PATTERN, normalizeKey, TYPES, type TypeId } from "../lib/catalog";
+import {
+  dialogTitle,
+  type FieldDef,
+  fieldError,
+  formatHeaderLines,
+  KEY_PATTERN,
+  normalizeKey,
+  parseHeaderLines,
+  TYPES,
+  type TypeId,
+} from "../lib/catalog";
 import type { ServiceGroup } from "../lib/group";
 import { GENERATED_FORMATS, type Variable } from "../types";
 import { FieldInput } from "./field-input";
@@ -38,7 +48,8 @@ const hostOf = (u: unknown) => {
     return "";
   }
 };
-const asText = (v: unknown) => (Array.isArray(v) ? v.join(", ") : v == null ? "" : String(v));
+const asText = (v: unknown) =>
+  Array.isArray(v) ? v.join(", ") : v && typeof v === "object" ? formatHeaderLines(v) : v == null ? "" : String(v);
 const basicType = (v: Variable): TypeId =>
   v.type === "generated" ? "gen" : v.type === "visible" ? "visible" : "plain";
 
@@ -144,11 +155,13 @@ export function EditVariableDialog({
                   .split(",")
                   .map((h) => h.trim())
                   .filter(Boolean)
-              : f.name === "port" && group.resource.kind === "webhook"
-                ? next.trim()
-                  ? Number(next)
-                  : null
-                : next;
+              : f.name === "extraHeaders"
+                ? (parseHeaderLines(next).headers ?? {})
+                : f.name === "port" && group.resource.kind === "webhook"
+                  ? next.trim()
+                    ? Number(next)
+                    : null
+                  : next;
         }
         if (Object.keys(body).length > 0)
           await services.update.mutateAsync({ id: group.resource.id, body: { ...body, test: true } });
