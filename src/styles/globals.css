@@ -334,3 +334,7 @@
 #nd-page .grid[class*="@container"]:has(> a.rounded-lg) > a.text-end {
   grid-column: 2;
 }
+/* Phone "On this page" drop-down: solid panel so the page doesn't show through under the links. */
+[class*="grid-area:toc-popover"] > div {
+  background-color: var(--color-fd-background);
+}

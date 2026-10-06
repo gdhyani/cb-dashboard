@@ -25,7 +25,7 @@ export default async function Page({ params }: Props) {
     <DocsPage
       toc={page.data.toc}
       tableOfContent={{ footer: <TocFooter /> }}
-      tableOfContentPopover={{ footer: <TocFooter /> }}
+      tableOfContentPopover={{ footer: <TocFooter inPopover /> }}
     >
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         <div className="flex flex-wrap items-center gap-3">
