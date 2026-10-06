@@ -77,6 +77,8 @@ Stripe does not allow "every event" for thin destinations, so cb subscribes thin
 `v1.charge.succeeded`, `v1.charge.refunded`, `v1.checkout.session.completed`, `v1.checkout.session.expired`,
 `v1.customer.subscription.created`, `v1.customer.subscription.updated`, `v1.customer.subscription.deleted`,
 `v1.invoice.paid` and `v1.invoice.payment_failed`. You can add or remove events in Stripe at any time.
+
+<Frame src="/docs/images/guides/stripe-connect.png" alt="Stripe webhook before connecting: Your app's webhook code uses, with Full events, Thin events and Both, then Connect Stripe and Set it up yourself" caption="Before connecting: pick what your webhook code uses, then click Connect Stripe" />
 </Step>
 <Step>
 ### Click Connect Stripe
@@ -104,7 +106,7 @@ Events sent from the Stripe Dashboard or with `stripe trigger` are not caused by
 </Step>
 </Steps>
 
-<Frame src="/docs/images/guides/webhooks-tab.png" alt="Webhooks tab before connecting: each webhook key with its app path and the webhook URL to paste, with Copy" caption="Webhooks tab before connecting: each webhook key with its app path and the webhook URL to paste" />
+<Frame src="/docs/images/guides/webhooks-tab.png" alt="Webhooks tab after connecting: Connected to Stripe, Full events with all events and an Open in Stripe link, the webhook URL with Copy, and Change what your app receives open with Full events, Thin events and Both" caption="Connected: what Stripe sends, the Open in Stripe link, and Change what your app receives" />
 
 ## Change what your app receives
 
