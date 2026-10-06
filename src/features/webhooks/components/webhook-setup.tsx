@@ -44,7 +44,7 @@ function RazorpaySetup({
       <WebhookEndpoint url={url} provider="razorpay" showSteps={!secret} />
       {secret ? (
         <GeneratedSecret secret={secret} />
-      ) : (
+      ) : resource.config.secretOrigin !== "generated" ? null : (
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-subtle">
           <span>The signing secret was shown once when this key was added.</span>
           <Button

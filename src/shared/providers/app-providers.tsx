@@ -26,6 +26,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <Toaster
         theme="dark"
         position="bottom-right"
+        closeButton
         toastOptions={{ style: { background: "#0a0a0a", border: "1px solid #262626", color: "#fafafa" } }}
       />
     </QueryClientProvider>
