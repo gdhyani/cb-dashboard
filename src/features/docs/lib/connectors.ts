@@ -23,7 +23,7 @@ export const CONNECTORS: Connector[] = [
   { slug: "mistral", name: "Mistral", group: "ai", beta: true, logo: "mistralai" },
   { slug: "openrouter", name: "OpenRouter", group: "ai", beta: false, logo: "openrouter" },
   { slug: "custom-ai", name: "Custom AI (self-hosted)", group: "ai", beta: true, logo: "letter:⌂" },
-  { slug: "aws", name: "AWS (S3, R2, SES, SQS)", group: "cloud", beta: false, logo: "aws" },
+  { slug: "aws", name: "AWS (S3, R2, SES)", group: "cloud", beta: false, logo: "aws" },
   { slug: "smtp", name: "SMTP email", group: "cloud", beta: true, logo: "mail" },
   { slug: "google", name: "Google sign-in", group: "sign-in", beta: true, logo: "google" },
   { slug: "github", name: "GitHub sign-in", group: "sign-in", beta: true, logo: "github" },

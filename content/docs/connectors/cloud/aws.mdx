@@ -1,6 +1,6 @@
 ---
 title: AWS / S3-compatible
-description: Use Amazon S3, SES, SQS, Cloudflare R2 or other S3-compatible storage with the AWS SDK, presigned URLs included, without the real access keys.
+description: Use Amazon S3, SES, Cloudflare R2 or other S3-compatible storage with the AWS SDK, presigned URLs included, without the real access keys.
 ---
 
 Store your real AWS access key pair in cb once. Every developer's app gets stand-in AWS keys and a local endpoint.
@@ -11,8 +11,8 @@ way when they are opened.
 ## Before you start
 
 - You are an owner or admin of the organization.
-- You have a real access key ID (`AKIA…`) and secret access key, and the region of the service (your bucket, SES or
-  SQS region).
+- You have a real access key ID (`AKIA…`) and secret access key, and the region of the service (your bucket or SES
+  region).
 - For Cloudflare R2, MinIO, Backblaze or other S3-compatible storage, you have the storage's S3 endpoint, for
   example `https://<account>.r2.cloudflarestorage.com`.
 - Developers who will run the app have [access](/docs/guides/dashboard/access) to the environment.
@@ -35,7 +35,7 @@ Open your project, pick the environment, and go to the [Variables tab](/docs/gui
 <Step>
 ### Pick the service
 
-Set **Service** to the AWS API your code calls: **Amazon S3**, **Amazon SES (email)**, **Amazon SQS (queues)** or
+Set **Service** to the AWS API your code calls: **Amazon S3**, **Amazon SES (email)** or
 **S3-compatible (R2, MinIO, Backblaze)**. cb fills in the service's endpoint from the region and suggests the
 endpoint variable that service's AWS SDK client reads. Each AWS variable serves one service; add another AWS
 variable for a second service (they can use the same keys).
@@ -57,7 +57,6 @@ Open **Suggested extra keys**. `AWS_ACCESS_KEY_ID` and the service's endpoint va
 |---|---|---|
 | Amazon S3 | `https://s3.<region>.amazonaws.com` | `AWS_ENDPOINT_URL_S3` |
 | Amazon SES (email) | `https://email.<region>.amazonaws.com` | `AWS_ENDPOINT_URL_SESV2` (and `AWS_ENDPOINT_URL_SES` for the classic `SESClient`, not ticked) |
-| Amazon SQS (queues) | `https://sqs.<region>.amazonaws.com` | `AWS_ENDPOINT_URL_SQS` |
 | S3-compatible | the **Endpoint** you enter | `AWS_ENDPOINT_URL` |
 
 Recent AWS SDKs read these variables on their own, so the client needs no `endpoint` option.
@@ -72,7 +71,7 @@ With **S3-compatible**, enter the storage's **Endpoint**, for example
 ### Save & test
 
 Click **Save & test**. cb signs one harmless call for the service with the real keys before saving: `ListBuckets`
-for S3, `GetAccount` for SES, `ListQueues` for SQS. If the key or secret is wrong, nothing is saved and the dialog
+for S3, `GetAccount` for SES. If the key or secret is wrong, nothing is saved and the dialog
 shows the error.
 </Step>
 </Steps>
@@ -87,7 +86,7 @@ shows the error.
     The variable type.
   </Field>
   <Field name="Service" type="select" required default="Amazon S3">
-    Amazon S3, Amazon SES (email), Amazon SQS (queues) or S3-compatible (R2, MinIO, Backblaze). Sets the endpoint and
+    Amazon S3, Amazon SES (email) or S3-compatible (R2, MinIO, Backblaze). Sets the endpoint and
     the suggested endpoint variable.
   </Field>
   <Field name="Secret access key" type="secret" required>
@@ -97,7 +96,7 @@ shows the error.
     The real access key ID, such as `AKIA…`. cb needs it to sign requests; developers get a stand-in ID instead.
   </Field>
   <Field name="Region" type="text" required default="us-east-1">
-    For example `eu-west-1`, or `auto` for Cloudflare R2. For S3, SES and SQS the endpoint follows the region; changing
+    For example `eu-west-1`, or `auto` for Cloudflare R2. For S3 and SES the endpoint follows the region; changing
     the region later asks for the keys again, because they will be sent to a new address.
   </Field>
   <Field name="Endpoint" type="text">
@@ -123,7 +122,7 @@ Create the client from the environment as you do in production. Recent AWS SDKs 
 (`AWS_ENDPOINT_URL_S3`, `AWS_ENDPOINT_URL_SESV2`, …) on their own; for S3, use path-style addressing, because the
 local endpoint is an IP address that can't carry a bucket name as a subdomain.
 
-<Tabs items={["S3", "Presigned URLs", "SES", "SQS"]}>
+<Tabs items={["S3", "Presigned URLs", "SES"]}>
 <Tab value="S3">
 ```ts title="lib/storage.ts"
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
@@ -173,17 +172,6 @@ await ses.send(
 );
 ```
 </Tab>
-<Tab value="SQS">
-```ts title="lib/queue.ts"
-import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
-
-// Service: Amazon SQS. Reads AWS_ENDPOINT_URL_SQS (cb's local endpoint) from the environment.
-const sqs = new SQSClient({ region: process.env.AWS_REGION });
-const queueUrl = `${process.env.AWS_ENDPOINT_URL_SQS}/123456789012/orders`;
-
-await sqs.send(new SendMessageCommand({ QueueUrl: queueUrl, MessageBody: "hi" }));
-```
-</Tab>
 </Tabs>
 
 <Callout type="note" title="One service per variable">
@@ -192,8 +180,7 @@ await sqs.send(new SendMessageCommand({ QueueUrl: queueUrl, MessageBody: "hi" })
 </Callout>
 
 <Callout type="note" title="Verified services">
-  S3 (including presigned URLs) and SES are verified end to end with real AWS. SQS goes through the same signing path
-  and is still in beta.
+  S3 (including presigned URLs) and SES are verified end to end with real AWS. Amazon SQS is not offered for now.
 </Callout>
 
 ## Run it
