@@ -51,9 +51,17 @@ export function typeOfResource(r: Resource): { type: TypeId; provider?: string }
     case "mysql":
     case "redis":
     case "smtp":
-    case "aws":
     case "apns":
       return { type: r.kind };
+    case "aws": {
+      const service = String(r.config.awsService ?? "");
+      if (service === "s3" || service === "ses" || service === "sqs") return { type: "aws", provider: service };
+      const host = hostOf(r.config.endpoint);
+      if (/^email(-fips)?\.[a-z0-9-]+\.amazonaws\.com$/.test(host)) return { type: "aws", provider: "ses" };
+      if (/^sqs(-fips)?\.[a-z0-9-]+\.amazonaws\.com$/.test(host)) return { type: "aws", provider: "sqs" };
+      if (!host || /^s3[.-]/.test(host)) return { type: "aws", provider: "s3" };
+      return { type: "aws", provider: "compatible" };
+    }
     case "google-sa":
       return { type: "gcp" };
     case "webhook":
@@ -79,6 +87,7 @@ export function chipLabel(type: TypeId, provider?: string): string {
   if (type === "gen") return "Random secret";
   if (type === "visible") return "Shown as-is";
   if (type === "http") return "API key";
+  if (type === "aws") return `AWS · ${{ ses: "SES", sqs: "SQS", compatible: "S3-compatible" }[provider ?? ""] ?? "S3"}`;
   if (type === "ai") {
     const p = AI_PROVIDERS.find((x) => x.id === provider);
     return `AI · ${!p || p.id === "custom" ? "Custom" : p.name}`;
