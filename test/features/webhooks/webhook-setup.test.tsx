@@ -153,6 +153,14 @@ describe("FR-WH-001 Razorpay: cb makes the secret; URL and secret are pasted onc
     expect(screen.getByText(/shown only now/i)).toBeInTheDocument();
   });
 
+  it("a secret the admin typed (their own, already in Razorpay) is never offered for replacement", async () => {
+    resources.listResources.mockResolvedValue([]);
+    renderSetup(<WebhookSetup envId="e1" resource={webhook({ provider: "razorpay", secretOrigin: "typed" })} />);
+    expect(await screen.findByText(URL_)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "New secret" })).toBeNull();
+    expect(screen.queryByText(/cb made/)).toBeNull();
+  });
+
   it("later, New secret makes a fresh one and shows it once", async () => {
     resources.listResources.mockResolvedValue([]);
     hooks.regenerateWebhookSecret.mockResolvedValue({
@@ -162,7 +170,11 @@ describe("FR-WH-001 Razorpay: cb makes the secret; URL and secret are pasted onc
     renderSetup(
       <WebhookSetup
         envId="e1"
-        resource={webhook({ provider: "razorpay", secretsSet: { snapshot: true, thin: false } })}
+        resource={webhook({
+          provider: "razorpay",
+          secretOrigin: "generated",
+          secretsSet: { snapshot: true, thin: false },
+        })}
       />,
     );
     fireEvent.click(await screen.findByRole("button", { name: "New secret" }));

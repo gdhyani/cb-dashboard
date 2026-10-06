@@ -3,7 +3,7 @@ export const WEBHOOK_SETUP: Record<string, string> = {
   stripe:
     "In the Stripe Dashboard, open Developers → Webhooks, add a destination with this URL, then paste its signing secret into this key (Replace value). A thin-events destination uses the same URL; its secret goes in Thin events signing secret.",
   razorpay:
-    "In the Razorpay Dashboard, open Account & Settings → Webhooks, add this URL with the signing secret cb made for this key.",
+    "In the Razorpay Dashboard, open Account & Settings → Webhooks, add this URL with this key's signing secret.",
 };
 
 export const providerName = (provider: string | undefined) =>
