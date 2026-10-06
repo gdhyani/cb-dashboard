@@ -162,6 +162,11 @@ If you ran `cb init`, your package scripts already run under cb. To see the stan
 ## Limits
 
 - The key must travel in the place set in **How the key is sent**. A key in the URL query string is not recognised.
+- If your app also sends the device's stand-in in other headers, cb replaces it with the real key in every header
+  that carries it, and changes nothing else.
+- A request without this device's stand-in in that place is refused with `401`. Only the
+  [Supabase](/docs/connectors/databases/supabase) preset lets requests with another key, such as a public key,
+  through unchanged.
 - Catching a host by name works in processes started by `cb run`. Other processes need the base URL key.
 - Plain `http://` works only for private and loopback addresses, and only while the cb server allows it; see
   [Backend setup](/docs/guides/self-host/backend).

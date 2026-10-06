@@ -62,14 +62,17 @@ export async function POST(req: Request) {
 
 ## Your app needs no port setting
 
-`cb run` finds the port your app listens on and delivers there. If the port changes, delivery follows it. When the
-app starts, the terminal shows where webhooks go:
+`cb run` finds the port your app listens on and delivers there: the newest process's first HTTP server on a port it
+chose. If several apps run under the same `cb run` (for example a front end and an API), the one listening on `PORT`
+wins. If the port changes, delivery follows it. There is no port setting in the dashboard. When the app starts, the
+terminal shows where webhooks go:
 
 ```bash
 cb: webhooks → 127.0.0.1:3000 (the port your app listens on)
 ```
 
-Events that arrive while the app is still starting wait and are sent as soon as the port is known. If no listening
+Events that arrive while the app is still starting wait; cb never tries them on a guessed port. They are sent as
+soon as the port is known, and a port change sends waiting events at once. If no listening
 port is seen within 10 seconds (for example, a process that is not Node.js), cb falls back to `PORT`, or to `3000`.
 
 To choose the port yourself, pass `--webhook-port` to [`cb run`](/docs/guides/develop/cb-run), or set
@@ -86,7 +89,8 @@ Some events are not caused by any app on your team: test events sent from the pr
 15 seconds (in case the event that links the object arrives later). After that, the event is:
 
 - delivered to devices that opted in with [`cb webhooks listen`](/docs/guides/webhooks/listen), and
-- kept in the [delivery log](/docs/guides/webhooks/delivery-log), where an admin can **Send to me**.
+- kept in the [delivery log](/docs/guides/webhooks/delivery-log), where an admin can **Send to me**: the event then
+  goes only to that admin's own signed-in machines.
 
 cb never sends such an event to the whole team.
 
