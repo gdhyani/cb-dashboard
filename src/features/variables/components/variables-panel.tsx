@@ -24,7 +24,7 @@ import { VariableRow } from "./variable-row";
 
 const BASIC_CHIP: Record<string, { icon: string; type: TypeId }> = {
   plain: { icon: "letter:Aa", type: "plain" },
-  generated: { icon: "letter:✱", type: "gen" },
+  generated: { icon: "secret", type: "gen" },
   visible: { icon: "letter:!", type: "visible" },
   brokered: { icon: "letter:●", type: "plain" },
 };
@@ -37,9 +37,16 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
   const { copy } = useCopy("Key copied");
   const [adding, setAdding] = useState<{ type: TypeId; provider?: string } | null>(null);
   const [importing, setImporting] = useState(false);
-  const [editing, setEditing] = useState<{ variable?: Variable; group?: ServiceGroup; replace?: boolean } | null>(null);
+  const [editing, setEditing] = useState<{
+    variable?: Variable;
+    group?: ServiceGroup;
+    replace?: boolean;
+    view?: boolean;
+  } | null>(null);
   const onEdit = (variable: Variable, group?: ServiceGroup, replace?: boolean) =>
     setEditing({ variable, group, replace });
+  /** D9: a click on a key opens it read-only; Edit in the dialog unlocks it. */
+  const onOpen = (variable: Variable, group?: ServiceGroup) => setEditing({ variable, group, view: true });
   const [sharing, setSharing] = useState<{ resourceId: string; keyName: string } | null>(null);
   const onAccess = (group: ServiceGroup, keyName: string) => setSharing({ resourceId: group.resource.id, keyName });
   const grouped = useMemo(
@@ -72,7 +79,7 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
       {isAdmin && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <QuickAdd onPick={(type, provider) => setAdding({ type, provider })} />
-          <div className="flex shrink-0 gap-2 self-start sm:self-auto">
+          <div className="flex shrink-0 gap-2 self-end sm:self-auto">
             <Button variant="ghost" onClick={() => setImporting(true)}>
               <FileUp />
               Import .env
@@ -106,6 +113,7 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
                     isAdmin={isAdmin}
                     onRemoveVariable={(id) => remove.mutateAsync(id)}
                     onEdit={onEdit}
+                    onOpen={onOpen}
                     onAccess={onAccess}
                     onEditService={(group) => setEditing({ group })}
                   />
@@ -124,7 +132,7 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
                     label: v.type === "brokered" ? "Protected" : chipLabel(chip?.type ?? "plain"),
                   }}
                   actions={isAdmin ? standaloneActions(v) : undefined}
-                  onOpen={isAdmin ? () => onEdit(v) : undefined}
+                  onOpen={isAdmin ? () => onOpen(v) : undefined}
                 />
               );
             })}
@@ -137,6 +145,7 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
                 isAdmin={isAdmin}
                 onRemoveVariable={(id) => remove.mutateAsync(id)}
                 onEdit={onEdit}
+                onOpen={onOpen}
                 onAccess={onAccess}
                 onEditService={(group) => setEditing({ group })}
               />
@@ -171,6 +180,7 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
           variable={editing.variable}
           group={editing.group}
           startReplacing={editing.replace}
+          initialMode={editing.view ? "view" : "edit"}
           takenKeys={(variables.data ?? []).map((v) => v.key)}
         />
       )}

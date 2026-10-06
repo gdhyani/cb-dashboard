@@ -113,7 +113,10 @@ describe("Edit variable dialog (D9, FR-UI-001)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(vars.updateVariable).toHaveBeenCalledWith("v-MONGODB_URI", { key: "MONGO_URL" }));
     expect(resources.updateResource).not.toHaveBeenCalled();
-    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+    // Saved: back to the read-only view in the same dialog, not closed.
+    expect(await screen.findByRole("button", { name: "Edit" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Key")).toHaveAttribute("readonly");
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
 
   it("rename conflict shows on the Key field and the dialog stays open", async () => {
@@ -253,6 +256,49 @@ describe("Edit variable dialog (D9, FR-UI-001)", () => {
   });
 });
 
+describe("D9 read-only view first, Edit unlocks the same form", () => {
+  it("opens read-only: the title has no verb, fields can't be typed in, only Close and Edit", () => {
+    const onOpenChange = vi.fn();
+    renderEdit({ initialMode: "view", onOpenChange });
+    expect(screen.getByRole("heading", { name: "MongoDB variable · MONGODB_URI" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Key")).toHaveAttribute("readonly");
+    expect(screen.getByLabelText(/CA certificate/)).toHaveAttribute("readonly");
+    expect(screen.queryByRole("button", { name: "Replace value" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
+    // The footer Close (the dialog's own X is also "Close") just closes.
+    const close = screen.getAllByRole("button", { name: "Close" }).find((b) => b.textContent === "Close");
+    fireEvent.click(close as HTMLElement);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("Edit unlocks the fields in the same dialog; Cancel drops the changes and goes back to read-only", () => {
+    const onOpenChange = vi.fn();
+    renderEdit({ initialMode: "view", onOpenChange });
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    expect(screen.getByRole("heading", { name: "Edit MongoDB variable · MONGODB_URI" })).toBeInTheDocument();
+    const key = screen.getByLabelText("Key");
+    expect(key).not.toHaveAttribute("readonly");
+    expect(screen.getByRole("button", { name: "Replace value" })).toBeInTheDocument();
+    fireEvent.change(key, { target: { value: "OTHER" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByLabelText("Key")).toHaveValue("MONGODB_URI");
+    expect(screen.getByLabelText("Key")).toHaveAttribute("readonly");
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(vars.updateVariable).not.toHaveBeenCalled();
+  });
+
+  it("FR-UI-001 a typed secret is gone once back in the read-only view", async () => {
+    renderEdit({ initialMode: "view" });
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Replace value" }));
+    fireEvent.change(screen.getByLabelText(/Connection URL/), { target: { value: "mongodb://u:p@h/db" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByDisplayValue("mongodb://u:p@h/db")).toBeNull();
+    expect(screen.queryByLabelText(/Connection URL/)).toBeNull();
+  });
+});
+
 describe("FR-WH-001 editing a webhook signing secret", () => {
   const WH_VAR = variable({ key: "STRIPE_WEBHOOK_SECRET", resourceId: "r9", field: "secret" });
   const WH: ServiceGroup = {
@@ -278,6 +324,18 @@ describe("FR-WH-001 editing a webhook signing secret", () => {
     await waitFor(() =>
       expect(resources.updateResource).toHaveBeenCalledWith("r9", expect.objectContaining({ port: 4000, test: true })),
     );
+  });
+
+  it("shows the URL to paste into Stripe again, with the setup steps", () => {
+    renderEdit({ variable: WH_VAR, group: WH });
+    expect(screen.getByText("https://cb.example/api/hooks/r9")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy webhook URL" })).toBeInTheDocument();
+    expect(screen.getByText(/Stripe Dashboard/)).toBeInTheDocument();
+  });
+
+  it("other services show no webhook URL", () => {
+    renderEdit();
+    expect(screen.queryByRole("button", { name: "Copy webhook URL" })).toBeNull();
   });
 
   it("an emptied port is cleared", async () => {

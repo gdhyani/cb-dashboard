@@ -46,7 +46,7 @@ export function AccessPreviewSheet({
                 <div className="flex flex-col gap-3">
                   <p className="text-sm">
                     {preview.data.hasAccess ? (
-                      <BadgeLabel tone="strong" dot>
+                      <BadgeLabel tone="success" dot>
                         Access granted
                       </BadgeLabel>
                     ) : (

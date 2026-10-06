@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useServiceMutations } from "@/features/resources";
+import { WebhookEndpoint } from "@/features/webhooks";
 import { ApiError } from "@/shared/api/api-error";
 import { FormError } from "@/shared/components/form-error";
 import { FormField } from "@/shared/components/form-field";
@@ -55,6 +56,7 @@ const basicType = (v: Variable): TypeId =>
 
 /**
  * D9: rename the key, replace the value (tested, never viewable), change connection settings, rename extra keys.
+ * Opened from a click on a key it starts read-only; Edit unlocks the same form, and Save or Cancel return to it.
  * The type never changes here — add a new variable and remove this one instead.
  * Mounted per opening (the panel renders it only while editing), so typed secrets never outlive it (FR-UI-001).
  */
@@ -66,6 +68,7 @@ export function EditVariableDialog({
   group,
   startReplacing = false,
   takenKeys = [],
+  initialMode = "edit",
 }: {
   envId: string;
   open: boolean;
@@ -76,6 +79,8 @@ export function EditVariableDialog({
   startReplacing?: boolean;
   /** Keys already used in the environment, so a clashing rename is refused before any write (review I2). */
   takenKeys?: string[];
+  /** "view": read-only with an Edit button (a click on a key); "edit": ready to change (menu actions). */
+  initialMode?: "view" | "edit";
 }) {
   const { update } = useVariableMutations(envId);
   const services = useServiceMutations(envId);
@@ -115,12 +120,15 @@ export function EditVariableDialog({
   const [error, setError] = useState<unknown>(null);
   const [keyError, setKeyError] = useState<string>();
   const [pending, setPending] = useState(false);
+  const [mode, setMode] = useState(initialMode);
+  const editButton = useRef<HTMLButtonElement>(null);
+  const editing = mode === "edit";
 
   // review I5: a new address for the service needs the key again (the backend refuses it otherwise).
   const moved = ["upstreamUrl", "endpoint", "tokenUrl"].some(
     (k) => k in initialSettings && hostOf(settings[k]) !== hostOf(initialSettings[k]),
   );
-  const replacingNow = replacing || (isMain && moved);
+  const replacingNow = editing && (replacing || (isMain && moved));
   const secretMissing = replacingNow && secretDefs.some((f) => !(secrets[f.name] ?? "").trim());
   const taken = new Set(takenKeys);
   const keyTaken = Boolean(variable && key !== variable.key && taken.has(key));
@@ -136,6 +144,22 @@ export function EditVariableDialog({
     !extraInvalid &&
     !settingsInvalid &&
     !pending;
+
+  /** Back to the read-only view; typed secrets are dropped (FR-UI-001), unsaved edits too when `discard`. */
+  function toView(discard: boolean) {
+    setSecrets({});
+    setReplacing(false);
+    setError(null);
+    setKeyError(undefined);
+    if (discard) {
+      setKey(variable?.key ?? "");
+      setValue(variable?.value ?? "");
+      setFormat(variable?.format ?? "");
+      setSettings(initialSettings);
+      setExtraKeys(Object.fromEntries(extras.map((x) => [x.id, x.key])));
+    }
+    setMode("view");
+  }
 
   async function save() {
     setError(null);
@@ -188,7 +212,7 @@ export function EditVariableDialog({
         const next = extraKeys[x.id];
         if (next && next !== x.key) await update.mutateAsync({ id: x.id, key: next });
       }
-      onOpenChange(false);
+      toView(false);
     } catch (err) {
       setError(err);
     } finally {
@@ -200,28 +224,40 @@ export function EditVariableDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto">
+      <DialogContent
+        className="max-h-[90dvh] max-w-lg overflow-y-auto"
+        onOpenAutoFocus={(e) => {
+          // Read-only: focus Edit, not a field that only looks typeable.
+          if (editing) return;
+          e.preventDefault();
+          editButton.current?.focus();
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {type !== "plain" && <ServiceLogo icon={def.icon} />}
             {variable
-              ? `${dialogTitle("Edit", type)} · ${variable.key}`
-              : `Edit ${def.title} service · ${group?.resource.name ?? ""}`}
+              ? `${dialogTitle(editing ? "Edit" : "View", type)} · ${variable.key}`
+              : `${editing ? "Edit " : ""}${def.title} service · ${group?.resource.name ?? ""}`}
           </DialogTitle>
-          <DialogDescription>Rename the key, replace the value or change settings at any time.</DialogDescription>
+          <DialogDescription>
+            {editing
+              ? "Rename the key, replace the value or change settings at any time."
+              : "Stored values can't be viewed. Choose Edit to rename the key, replace the value or change settings."}
+          </DialogDescription>
         </DialogHeader>
         <form
           className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();
-            if (canSave) void save();
+            if (editing && canSave) void save();
           }}
         >
           {variable && (
             <FormField
               id="edit-key"
               label="Key"
-              hint="Apps under cb run restart with the new name — make sure your code reads it."
+              hint={editing ? "Apps under cb run restart with the new name — make sure your code reads it." : undefined}
               error={
                 keyError ??
                 (keyTaken ? `${key} already exists in this environment.` : KEY_PATTERN.test(key) ? undefined : KEY_HINT)
@@ -230,6 +266,7 @@ export function EditVariableDialog({
               <Input
                 id="edit-key"
                 value={key}
+                readOnly={!editing}
                 autoComplete="off"
                 spellCheck={false}
                 className="font-mono"
@@ -249,11 +286,17 @@ export function EditVariableDialog({
 
           {variable?.type === "plain" && (
             <FormField id="edit-value" label="Value">
-              <Input id="edit-value" value={value} className="font-mono" onChange={(e) => setValue(e.target.value)} />
+              <Input
+                id="edit-value"
+                value={value}
+                readOnly={!editing}
+                className="font-mono"
+                onChange={(e) => setValue(e.target.value)}
+              />
             </FormField>
           )}
           {variable?.type === "generated" && (
-            <FieldInput idPrefix="edit" def={FORMAT} value={format} onChange={setFormat} />
+            <FieldInput idPrefix="edit" def={FORMAT} value={format} onChange={setFormat} readOnly={!editing} />
           )}
 
           {(isMain || variable?.type === "visible") && (
@@ -262,13 +305,13 @@ export function EditVariableDialog({
                 <span className="text-xs text-subtle">
                   ●●●●●●●● · set {timeAgo(group?.resource.rotatedAt ?? variable?.updatedAt)} · can't be viewed
                 </span>
-                {!replacingNow && (
+                {editing && !replacingNow && (
                   <Button type="button" size="sm" variant="outline" onClick={() => setReplacing(true)}>
                     Replace value
                   </Button>
                 )}
               </div>
-              {isMain && moved && !replacing && (
+              {editing && isMain && moved && !replacing && (
                 <p className="text-xs text-subtle">A new address needs the key again, so it isn't sent anywhere new.</p>
               )}
               {replacingNow &&
@@ -284,6 +327,10 @@ export function EditVariableDialog({
             </div>
           )}
 
+          {isMain && group?.resource.webhookUrl && (
+            <WebhookEndpoint url={group.resource.webhookUrl} provider={group.provider} />
+          )}
+
           {settingsDefs
             .filter((f) => !f.showWhen || (settings[f.showWhen.field] ?? "") === f.showWhen.equals)
             .map((f) => (
@@ -293,7 +340,8 @@ export function EditVariableDialog({
                 def={f}
                 value={settings[f.name] ?? ""}
                 onChange={(v) => setSettings((s) => ({ ...s, [f.name]: v }))}
-                error={settings[f.name]?.trim() ? f.validate?.(settings[f.name]?.trim() ?? "") : undefined}
+                readOnly={!editing}
+                error={editing && settings[f.name]?.trim() ? f.validate?.(settings[f.name]?.trim() ?? "") : undefined}
               />
             ))}
 
@@ -305,6 +353,7 @@ export function EditVariableDialog({
                   key={x.id}
                   aria-label={`Key name (was ${x.key})`}
                   value={extraKeys[x.id] ?? x.key}
+                  readOnly={!editing}
                   className="h-8 font-mono text-xs"
                   onChange={(e) => setExtraKeys((k) => ({ ...k, [x.id]: normalizeKey(e.target.value) }))}
                 />
@@ -312,19 +361,31 @@ export function EditVariableDialog({
             </section>
           )}
 
-          {isMain && group && READONLY_TYPES[type] && def.value && (
+          {editing && isMain && group && READONLY_TYPES[type] && def.value && (
             <ReadonlyLogin resourceId={group.resource.id} valueField={def.value} label={READONLY_TYPES[type] ?? ""} />
           )}
 
           <FormError error={error} />
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={!canSave} loading={pending}>
-              Save
-            </Button>
-          </DialogFooter>
+          {/* Separate keys: React must not turn the clicked Edit button into the submit button (it would save). */}
+          {editing ? (
+            <DialogFooter key="edit">
+              <Button type="button" variant="ghost" disabled={pending} onClick={() => toView(true)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!canSave} loading={pending}>
+                Save
+              </Button>
+            </DialogFooter>
+          ) : (
+            <DialogFooter key="view">
+              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+                Close
+              </Button>
+              <Button ref={editButton} type="button" onClick={() => setMode("edit")}>
+                Edit
+              </Button>
+            </DialogFooter>
+          )}
         </form>
       </DialogContent>
     </Dialog>

@@ -1,32 +1,24 @@
+import { BADGE_DOTS, BADGE_TONES, type BadgeTone } from "@/shared/lib/badge-tones";
 import { cn } from "@/shared/lib/utils";
 
-/** Soft pill for roles, types and states. Sentence case; "warning" is the only non-grey tone. */
+/** Soft boxy label for roles, types and states, coloured by the design system's badge tones. Sentence case. */
 export function BadgeLabel({
   children,
   tone = "default",
   dot = false,
 }: {
   children: string;
-  tone?: "default" | "strong" | "warning" | "muted" | "success";
+  tone?: BadgeTone;
   dot?: boolean;
 }) {
   return (
     <span
       className={cn(
-        "inline-flex h-5 items-center gap-1.5 rounded-full px-2 text-xs font-medium whitespace-nowrap",
-        tone === "default" && "bg-white/[0.06] text-muted-foreground",
-        tone === "strong" && "bg-white/[0.12] text-foreground",
-        tone === "warning" && "bg-destructive/15 text-destructive",
-        tone === "success" && "bg-white/[0.12] text-foreground",
-        tone === "muted" && "text-subtle",
+        "inline-flex h-5 items-center gap-1.5 rounded-md px-1.5 text-xs font-medium whitespace-nowrap",
+        BADGE_TONES[tone],
       )}
     >
-      {dot && (
-        <span
-          className={cn("size-1.5 rounded-full", tone === "warning" ? "bg-destructive" : "bg-current")}
-          aria-hidden="true"
-        />
-      )}
+      {dot && <span className={cn("size-1.5 rounded-full", BADGE_DOTS[tone])} aria-hidden="true" />}
       {children}
     </span>
   );

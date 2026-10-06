@@ -154,7 +154,7 @@ describe("Variables tab (D1, D4)", () => {
     await waitFor(() => expect(m.removeService).toHaveBeenCalledWith("o"));
   });
 
-  it("D9 Edit (menu) and a click on the key open the edit dialog for that key", async () => {
+  it("D9 Edit / Replace value in the menu open the dialog ready to edit", async () => {
     renderPanel();
     const menu = await openMenu("Actions for STRIPE_SECRET_KEY");
     fireEvent.click(within(menu).getByRole("menuitem", { name: /Replace value/ }));
@@ -165,8 +165,17 @@ describe("Variables tab (D1, D4)", () => {
     expect(within(dialog).getByLabelText(/Secret key \(new value\)/)).toBeInTheDocument();
     fireEvent.keyDown(dialog, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    fireEvent.click(screen.getByRole("button", { name: "Edit PORT" }));
-    expect(await screen.findByRole("heading", { name: "Edit variable · PORT" })).toBeInTheDocument();
+  });
+
+  it("D9 a click on a key opens it read-only; Edit unlocks the same dialog", async () => {
+    renderPanel();
+    fireEvent.click(await screen.findByRole("button", { name: "Open PORT" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("heading", { name: "Variable · PORT" })).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Key")).toHaveAttribute("readonly");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Edit" }));
+    expect(within(dialog).getByRole("heading", { name: "Edit variable · PORT" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Save" })).toBeInTheDocument();
   });
 
   it("D10 Who can use it opens the per-person login dialog for that service", async () => {

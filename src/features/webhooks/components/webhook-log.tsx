@@ -84,8 +84,8 @@ function EventRow({
   );
 }
 
-/** FR-WH-003: the last 24 h of provider webhooks and where each one went. */
-export function WebhookEvents({ envId }: { envId: string }) {
+/** FR-WH-003: the last 24 h of provider webhooks and where each one went. Mounted only while the log is open. */
+export function WebhookLog({ envId }: { envId: string }) {
   const [page, setPage] = useState(1);
   const events = useWebhookEvents(envId, page);
   const replay = useReplayWebhook(envId);
@@ -93,8 +93,8 @@ export function WebhookEvents({ envId }: { envId: string }) {
     <QueryState isPending={events.isPending} error={events.error} skeleton={<SkeletonRows rows={4} />}>
       {events.data && events.data.items.length === 0 ? (
         <EmptyState
-          title="No webhooks yet"
-          description="Add a Webhook signing secret in Variables and paste its URL into Stripe or Razorpay. Each event shows up here and goes only to the developer whose app caused it."
+          title="Nothing in the last 24 hours"
+          description="Each Stripe or Razorpay event shows up here and goes only to the developer whose app caused it."
         />
       ) : (
         events.data && (
