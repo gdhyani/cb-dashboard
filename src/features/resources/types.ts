@@ -20,6 +20,8 @@ export interface Resource {
   credentialsSet: boolean;
   rotatedAt: string | null;
   disabled: boolean;
+  /** B11: whether the provider still accepts the key (shown as a status dot; "rejected" = Expired). */
+  health?: { status: "ok" | "rejected" | "unknown"; reason: string | null; checkedAt: string | null };
   brokeredFields: string[];
   createdAt: string;
   /** Webhook services: the URL to paste into the provider's webhook settings. */

@@ -1,9 +1,11 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
+import { BadgeLabel } from "@/shared/components/badge-label";
 import { type RowAction, RowActions } from "@/shared/components/row-actions";
 import { ServiceLogo } from "@/shared/components/service-logo";
 import { StaggerItem } from "@/shared/components/stagger";
+import { StatusDot } from "@/shared/components/status-dot";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { describeValue } from "../lib/display";
 import type { Variable } from "../types";
@@ -17,6 +19,7 @@ export function VariableRow({
   chip,
   actions,
   onOpen,
+  health,
 }: {
   variable: Variable;
   index: number;
@@ -26,15 +29,29 @@ export function VariableRow({
   actions?: RowAction[];
   /** Admins: clicking the key opens Edit. */
   onOpen?: () => void;
+  /** B11: a service's main key shows whether the provider still accepts the key (never the key). */
+  health?: { status: "ok" | "rejected" | "unknown"; reason: string | null; checkedAt: string | null };
 }) {
   const value = describeValue(variable, isMain);
+  const status =
+    health && isMain && !parentKey
+      ? {
+          ok: { tone: "ok" as const, label: "Working — the provider accepts this key" },
+          rejected: {
+            tone: "rejected" as const,
+            label: `Expired — ${health.reason ?? "the provider refused this key"}`,
+          },
+          unknown: { tone: "unknown" as const, label: "Not checked yet — Test connection checks it" },
+        }[health.status]
+      : undefined;
   return (
     <StaggerItem
       index={index}
       className={`flex items-center gap-3 px-3 py-2.5 sm:px-4 ${parentKey ? "pl-7 sm:pl-9" : ""}`}
     >
       <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-4">
-        <span className="truncate font-mono text-sm sm:w-[38%] sm:shrink-0">
+        <span className="flex min-w-0 items-center gap-2 truncate font-mono text-sm sm:w-[38%] sm:shrink-0">
+          {status && <StatusDot tone={status.tone} label={status.label} />}
           {parentKey && (
             <span aria-hidden className="text-subtle">
               ↳{" "}
@@ -69,6 +86,16 @@ export function VariableRow({
               <AlertTriangle className="size-3.5 text-destructive" />
             </TooltipTrigger>
             <TooltipContent>Real value delivered to developers (FR-UI-003).</TooltipContent>
+          </Tooltip>
+        )}
+        {status?.tone === "rejected" && (
+          <Tooltip>
+            <TooltipTrigger aria-label={status.label}>
+              <BadgeLabel tone="danger" dot>
+                Expired
+              </BadgeLabel>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">{status.label}</TooltipContent>
           </Tooltip>
         )}
         {parentKey ? (
