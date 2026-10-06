@@ -1,14 +1,11 @@
 "use client";
 
-import { useResources } from "@/features/resources";
+import type { Resource } from "@/features/resources";
 import { StaggerItem } from "@/shared/components/stagger";
 import { WebhookEndpoint } from "./webhook-endpoint";
 
 /** FR-WH-001: every webhook service's URL on the Webhooks tab, so a deleted provider endpoint is easy to re-add. */
-export function WebhookEndpoints({ envId }: { envId: string }) {
-  const resources = useResources(envId);
-  const hooks = (resources.data ?? []).filter((r) => r.kind === "webhook" && r.webhookUrl);
-  if (hooks.length === 0) return null;
+export function WebhookEndpoints({ hooks }: { hooks: Resource[] }) {
   return (
     <ul className="flex flex-col divide-y divide-border rounded-lg border border-border px-4">
       {hooks.map((r, i) => {

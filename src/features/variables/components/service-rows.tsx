@@ -26,6 +26,7 @@ export function ServiceRows({
   isAdmin,
   onRemoveVariable,
   onEdit,
+  onOpen,
   onAccess,
   onEditService,
 }: {
@@ -35,6 +36,8 @@ export function ServiceRows({
   isAdmin: boolean;
   onRemoveVariable: (id: string) => Promise<unknown>;
   onEdit: (variable: Variable, group: ServiceGroup, replace?: boolean) => void;
+  /** D9: a click on a key opens it read-only. */
+  onOpen: (variable: Variable, group: ServiceGroup) => void;
   onAccess: (group: ServiceGroup, keyName: string) => void;
   /** Services no variable uses: settings and value only (review I4). */
   onEditService: (group: ServiceGroup) => void;
@@ -125,7 +128,7 @@ export function ServiceRows({
             parentKey={row.extra ? row.parentKey : undefined}
             chip={chip}
             actions={isAdmin ? actions : undefined}
-            onOpen={isAdmin ? () => onEdit(row.variable, group) : undefined}
+            onOpen={isAdmin ? () => onOpen(row.variable, group) : undefined}
           />
         );
       })}

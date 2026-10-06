@@ -40,8 +40,8 @@
 @layer base {
   html {
     color-scheme: dark;
-    /* No layout jump when a page grows a scrollbar. */
-    scrollbar-gutter: stable;
+    /* Thin, and only when the page really scrolls: no empty strip reserved on the right of short pages. */
+    scrollbar-width: thin;
   }
   @media (prefers-reduced-motion: no-preference) {
     /* Anchor jumps and nested scroll areas glide too (Lenis drives the page itself). */

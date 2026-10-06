@@ -177,7 +177,7 @@ export function OrgOverview({ orgId }: { orgId: string }) {
                     <span className="text-muted-foreground">{e.project.name} / </span>
                     <span className="font-mono">{e.name}</span>
                   </span>
-                  <BadgeLabel tone={e.killed ? "warning" : e.hasAccess ? "strong" : "muted"}>
+                  <BadgeLabel tone={e.killed ? "warning" : e.hasAccess ? "success" : "muted"}>
                     {e.killed ? "Suspended" : e.hasAccess ? "Access granted" : "No access"}
                   </BadgeLabel>
                 </Link>

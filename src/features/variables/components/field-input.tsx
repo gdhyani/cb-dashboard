@@ -15,6 +15,7 @@ export function FieldInput({
   onChange,
   isSet,
   error,
+  readOnly = false,
 }: {
   idPrefix: string;
   def: FieldDef;
@@ -23,6 +24,8 @@ export function FieldInput({
   /** Edit mode: a stored secret exists; the input stays empty and only replaces it. */
   isSet?: boolean;
   error?: string;
+  /** Read-only view of the Edit dialog: shown as stored, can't be typed in (secrets are never shown here). */
+  readOnly?: boolean;
 }) {
   const id = `${idPrefix}-${def.name}`;
   const label = def.optional ? `${def.label} (optional)` : def.label;
@@ -30,7 +33,7 @@ export function FieldInput({
   if (def.select) {
     const current = value || def.defaultValue || "";
     control = (
-      <Select value={current} onValueChange={(v) => v && onChange(v)}>
+      <Select value={current} disabled={readOnly} onValueChange={(v) => v && onChange(v)}>
         <SelectTrigger id={id}>
           <SelectValue>{def.select.find((o) => o.value === current)?.label}</SelectValue>
         </SelectTrigger>
@@ -69,6 +72,7 @@ export function FieldInput({
         id={id}
         value={value}
         rows={4}
+        readOnly={readOnly}
         placeholder={def.placeholder}
         className="font-mono text-xs"
         onChange={(e) => onChange(e.target.value)}
@@ -79,6 +83,7 @@ export function FieldInput({
       <Input
         id={id}
         value={value}
+        readOnly={readOnly}
         placeholder={def.placeholder}
         className="font-mono"
         autoComplete="off"

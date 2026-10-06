@@ -28,7 +28,7 @@ export function EnvironmentList({ project, isAdmin }: { project: Project; isAdmi
                     Suspended
                   </BadgeLabel>
                 )}
-                <BadgeLabel tone={e.hasAccess ? "strong" : "muted"}>
+                <BadgeLabel tone={e.hasAccess ? "success" : "muted"}>
                   {e.hasAccess ? "Access granted" : "No access"}
                 </BadgeLabel>
               </span>

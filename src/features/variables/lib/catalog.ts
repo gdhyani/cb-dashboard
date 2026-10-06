@@ -316,7 +316,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     title: "random secret",
     group: "Basic",
     desc: "different per developer",
-    icon: "letter:✱",
+    icon: "secret",
     required: none,
     extras: none,
     advanced: none,
@@ -543,7 +543,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     title: "AWS / S3-compatible",
     group: "Cloud & email",
     desc: "secret access key",
-    icon: "letter:S3",
+    icon: "aws",
     kind: "aws",
     presetId: "aws-s3",
     value: { name: "secretAccessKey", label: "Secret access key", secret: true },
@@ -583,7 +583,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     title: "SMTP",
     group: "Cloud & email",
     desc: "SendGrid, SES, Mailgun…",
-    icon: "letter:@",
+    icon: "mail",
     kind: "smtp",
     value: {
       name: "connectionUri",
@@ -606,7 +606,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     title: "API key",
     group: "Other",
     desc: "anything without a preset",
-    icon: "letter:{}",
+    icon: "api",
     kind: "http",
     value: { name: "apiKey", label: "API key", secret: true },
     required: () => [
@@ -655,17 +655,22 @@ export const QUICK_ADD: { id: string; label: string; type: TypeId; provider?: st
   { id: "anthropic", label: "Anthropic", type: "ai", provider: "anthropic", icon: "anthropic" },
   { id: "firebase", label: "Firebase", type: "gcp", icon: "firebase" },
   { id: "google", label: "Google sign-in", type: "oauth", provider: "google", icon: "google" },
-  { id: "aws", label: "AWS S3", type: "aws", icon: "letter:S3" },
-  { id: "smtp", label: "SMTP", type: "smtp", icon: "letter:@" },
-  { id: "gen", label: "Random secret", type: "gen", icon: "letter:✱" },
-  { id: "http", label: "Other API", type: "http", icon: "letter:{}" },
+  { id: "aws", label: "AWS S3", type: "aws", icon: "aws" },
+  { id: "smtp", label: "SMTP", type: "smtp", icon: "mail" },
+  { id: "gen", label: "Random secret", type: "gen", icon: "secret" },
+  { id: "http", label: "Other API", type: "http", icon: "api" },
 ];
 
 /** D5: "Add MongoDB variable", "Add AI variable", "Add random secret"; plain → "Add variable". */
-export function dialogTitle(verb: "Add" | "Edit", type: TypeId): string {
-  if (type === "plain") return `${verb} variable`;
-  if (type === "gen" || type === "visible") return `${verb} ${TYPES[type].title}`;
-  return `${verb} ${TYPES[type].title} variable`;
+/** "View" is the read-only Edit dialog: no verb, e.g. "MongoDB variable". */
+export function dialogTitle(verb: "Add" | "Edit" | "View", type: TypeId): string {
+  const title =
+    type === "plain"
+      ? "variable"
+      : type === "gen" || type === "visible"
+        ? TYPES[type].title
+        : `${TYPES[type].title} variable`;
+  return verb === "View" ? title.charAt(0).toUpperCase() + title.slice(1) : `${verb} ${title}`;
 }
 
 export interface DraftExtra {

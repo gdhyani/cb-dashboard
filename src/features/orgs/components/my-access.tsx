@@ -45,7 +45,7 @@ export function MyAccess({ orgId }: { orgId: string }) {
                     Suspended
                   </BadgeLabel>
                 ) : (
-                  <BadgeLabel tone="strong" dot>
+                  <BadgeLabel tone="success" dot>
                     Access granted
                   </BadgeLabel>
                 )}

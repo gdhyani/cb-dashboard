@@ -43,7 +43,7 @@ export function VariableRow({
           {onOpen ? (
             <button
               type="button"
-              aria-label={`Edit ${variable.key}`}
+              aria-label={`Open ${variable.key}`}
               onClick={onOpen}
               className="underline-offset-4 hover:underline"
             >

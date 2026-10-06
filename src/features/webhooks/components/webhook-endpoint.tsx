@@ -10,7 +10,7 @@ export function WebhookEndpoint({ url, provider }: { url: string; provider?: str
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <span className="text-[13px] font-medium">Webhook URL · paste into {name}</span>
-      <CopyCommand command={url} prompt={false} label="Copy webhook URL" toastLabel="Webhook URL copied" wrap />
+      <CopyCommand command={url} prompt={false} label="Copy webhook URL" toastLabel="Webhook URL copied" />
       {!providerCanReach(url) && (
         <p role="alert" className="text-xs text-destructive">
           {name === "the provider" ? "The provider" : name} can't reach this address. Set PUBLIC_URL on the backend to

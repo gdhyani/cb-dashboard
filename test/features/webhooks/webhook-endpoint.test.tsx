@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Resource } from "@/features/resources";
-import { WebhookEndpoint, WebhookEvents } from "@/features/webhooks";
+import { WebhookEndpoint, WebhooksTab } from "@/features/webhooks";
 import { providerCanReach } from "@/features/webhooks/lib/endpoint";
 
 const hooks = vi.hoisted(() => ({ listWebhookEvents: vi.fn(), replayWebhookEvent: vi.fn() }));
@@ -90,11 +90,50 @@ describe("FR-WH-001 the webhook URL can always be found again", () => {
       }),
       { ...webhook({ id: "r3", kind: "mongodb", name: "MONGODB_URI" }), webhookUrl: undefined },
     ]);
-    renderWithClient(<WebhookEvents envId="e1" />);
+    renderWithClient(<WebhooksTab envId="e1" />);
     expect(await screen.findByText("https://cb.example/api/hooks/r1")).toBeInTheDocument();
     expect(screen.getByText("https://cb.example/api/hooks/r2")).toBeInTheDocument();
     expect(screen.getByText("STRIPE_WEBHOOK_SECRET")).toBeInTheDocument();
     expect(screen.getByText(/\/hooks\/rzp/)).toBeInTheDocument();
     expect(screen.queryByText("MONGODB_URI")).toBeNull();
+  });
+});
+
+describe("FR-WH-003 the Webhooks tab shows setup; the delivery log is one click away", () => {
+  it("does not load or show deliveries until Delivery log is opened", async () => {
+    resources.listResources.mockResolvedValue([webhook({})]);
+    hooks.listWebhookEvents.mockResolvedValue({
+      ...empty,
+      items: [
+        {
+          id: "w1",
+          eventId: "evt_1",
+          type: "payment_intent.succeeded",
+          provider: "stripe",
+          serviceId: "r1",
+          serviceName: "STRIPE_WEBHOOK_SECRET",
+          routing: "matched",
+          receivedAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+          deliveries: [],
+        },
+      ],
+    });
+    renderWithClient(<WebhooksTab envId="e1" />);
+    expect(await screen.findByText("https://cb.example/api/hooks/r1")).toBeInTheDocument();
+    expect(screen.queryByText("payment_intent.succeeded")).toBeNull();
+    expect(hooks.listWebhookEvents).not.toHaveBeenCalled();
+    const toggle = screen.getByRole("button", { name: /Delivery log/ });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(await screen.findByText("payment_intent.succeeded")).toBeInTheDocument();
+  });
+
+  it("with no webhook services it explains how to add one, and has no log button", async () => {
+    resources.listResources.mockResolvedValue([]);
+    renderWithClient(<WebhooksTab envId="e1" />);
+    expect(await screen.findByText("No webhooks yet")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Delivery log/ })).toBeNull();
   });
 });

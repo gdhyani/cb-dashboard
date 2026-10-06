@@ -12,7 +12,7 @@ export function SkeletonRows({ rows = 3 }: { rows?: number }) {
             <Skeleton className="h-3.5 w-2/5" />
             <Skeleton className="h-3 w-1/4" />
           </div>
-          <Skeleton className="h-6 w-16 rounded-full" />
+          <Skeleton className="h-6 w-16 rounded-md" />
         </div>
       ))}
     </div>
@@ -30,8 +30,8 @@ export function SkeletonCards({ cards = 2, columns = 2 }: { cards?: number; colu
             <Skeleton className="h-3 w-1/2" />
           </div>
           <div className="flex gap-2">
-            <Skeleton className="h-5 w-20 rounded-full" />
-            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-5 w-20 rounded-md" />
+            <Skeleton className="h-5 w-16 rounded-md" />
           </div>
         </div>
       ))}

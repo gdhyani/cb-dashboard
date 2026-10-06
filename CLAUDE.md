@@ -136,7 +136,11 @@ type ApiErrorBody = { success: false; error: { code: string; message: string; st
 - Use the **`taste`** design skill for UI work when it is installed. Until then use
   `frontend-design:frontend-design` for layout/typography and `dataviz` for any chart.
 - Elegant and simple: **typographic hierarchy** carries the design (size, weight, spacing), not colour.
-- **Black background**, white/grey text, **no accent colour**. Only basic action colours on buttons
+- **Colour is for meaning only, never decoration.** Badges use the shared palette in
+  `src/shared/lib/badge-tones.ts` (default sky, strong violet, success green, warning amber, danger red, muted grey) —
+  never ad-hoc badge colours. Service logos use brand colours (switch: `BRAND_COLORS` in `service-logo.tsx`).
+  Badges and chips are boxy (`rounded-md`), not pills.
+- **Black background**, white/grey text, no accent colour on layout or text. Only basic action colours on buttons
   (primary = white on black / inverted, destructive = red). No gradients, no decorative colour.
 - Modern data visuals where they help: activity/audit timelines, **git-graph style** history views,
   sparklines — monochrome.

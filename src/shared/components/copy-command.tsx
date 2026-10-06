@@ -10,14 +10,11 @@ export function CopyCommand({
   label,
   prompt = true,
   toastLabel,
-  wrap = false,
 }: {
   command: string;
   label?: string;
   prompt?: boolean;
   toastLabel?: string;
-  /** Show the whole value on several lines instead of cutting it off (URLs people compare by eye). */
-  wrap?: boolean;
 }) {
   const { copied, copy } = useCopy(toastLabel);
   return (
@@ -27,7 +24,8 @@ export function CopyCommand({
       onClick={() => void copy(command)}
       className="group flex w-full items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2.5 text-left font-mono text-[13px] text-foreground transition-colors hover:border-border-strong"
     >
-      <span className={wrap ? "min-w-0 break-all" : "truncate"}>
+      {/* One line, never cut off with "…": on narrow screens the text scrolls sideways. */}
+      <span className="min-w-0 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {prompt && <span className="select-none text-subtle">$ </span>}
         {command}
       </span>

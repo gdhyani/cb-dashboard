@@ -18,10 +18,11 @@ const buttonVariants = cva(
         link: "h-auto px-0 text-foreground underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-9 px-4",
-        xs: "h-7 gap-1.5 rounded-md px-2.5 text-[13px]",
-        sm: "h-8 px-3 text-[13px]",
-        lg: "h-10 px-5",
+        // A little shorter on phones so more fits on screen; regular from sm up.
+        default: "h-8 px-3.5 sm:h-9 sm:px-4",
+        xs: "h-6.5 gap-1.5 rounded-md px-2.5 text-[13px] sm:h-7",
+        sm: "h-7 px-3 text-[13px] sm:h-8",
+        lg: "h-9 px-5 sm:h-10",
         icon: "size-9",
         "icon-sm": "size-8",
         "icon-xs": "size-7",

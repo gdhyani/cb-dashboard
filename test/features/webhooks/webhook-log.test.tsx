@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { WebhookEvents } from "@/features/webhooks";
+import { WebhookLog } from "@/features/webhooks/components/webhook-log";
 
 const api = vi.hoisted(() => ({ listWebhookEvents: vi.fn(), replayWebhookEvent: vi.fn() }));
 vi.mock("@/features/webhooks/api/webhooks.api", () => api);
@@ -15,7 +15,7 @@ function renderList() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <WebhookEvents envId="e1" />
+      <WebhookLog envId="e1" />
     </QueryClientProvider>,
   );
 }
@@ -105,10 +105,10 @@ describe("FR-WH-003 webhook deliveries in the dashboard", () => {
     await waitFor(() => expect(api.replayWebhookEvent).toHaveBeenCalledWith("w3"));
   });
 
-  it("an empty list explains how webhooks get here", async () => {
+  it("an empty log says nothing arrived in the last 24 hours", async () => {
     api.listWebhookEvents.mockResolvedValue(page([]));
     renderList();
-    expect(await screen.findByText("No webhooks yet")).toBeInTheDocument();
+    expect(await screen.findByText("Nothing in the last 24 hours")).toBeInTheDocument();
   });
 });
 
