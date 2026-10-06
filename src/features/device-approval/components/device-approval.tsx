@@ -31,6 +31,7 @@ export function DeviceApproval({ initialCode }: { initialCode: string }) {
       description={me.data ? `Signed in as ${me.data.user.email}. Only approve codes you just requested.` : undefined}
     >
       <form
+        method="post"
         className="flex flex-col gap-4"
         onSubmit={(e) => {
           e.preventDefault();

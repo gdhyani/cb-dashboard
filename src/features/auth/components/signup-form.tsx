@@ -43,6 +43,7 @@ export function SignupForm() {
       }
     >
       <form
+        method="post"
         className="flex flex-col gap-4"
         onSubmit={form.handleSubmit((values) => signup.mutate(values, { onSuccess: () => router.replace(next) }))}
       >

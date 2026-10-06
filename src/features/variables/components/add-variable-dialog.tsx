@@ -215,6 +215,7 @@ export function AddVariableDialog({
           </DialogDescription>
         </DialogHeader>
         <form
+          method="post"
           className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();

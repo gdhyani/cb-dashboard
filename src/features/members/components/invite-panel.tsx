@@ -22,6 +22,7 @@ export function InvitePanel({ orgId, isOwner }: { orgId: string; isOwner: boolea
   return (
     <div className="flex flex-col gap-6 rounded-lg border border-border p-4 sm:p-5">
       <form
+        method="post"
         className="grid gap-3 sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-end"
         onSubmit={(e) => {
           e.preventDefault();

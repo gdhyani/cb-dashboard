@@ -74,7 +74,7 @@ export function LoginForm() {
         </>
       }
     >
-      <form className="flex flex-col gap-4" noValidate onSubmit={submit}>
+      <form method="post" className="flex flex-col gap-4" noValidate onSubmit={submit}>
         <FormField id="email" label="Email" error={errors.email?.message}>
           <Input
             id="email"

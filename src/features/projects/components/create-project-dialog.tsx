@@ -52,6 +52,7 @@ export function CreateProjectDialog({
           <DialogDescription>Starts with development and staging environments.</DialogDescription>
         </DialogHeader>
         <form
+          method="post"
           className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();
