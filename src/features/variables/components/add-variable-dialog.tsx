@@ -29,7 +29,7 @@ import { AdvancedSection } from "./advanced-section";
 import { ExtrasSection } from "./extras-section";
 import { FieldInput } from "./field-input";
 import { ProviderSelect } from "./provider-select";
-import { ServiceLogo } from "./service-logo";
+import { ServiceLogo } from "@/shared/components/service-logo";
 import { TypeSelect } from "./type-select";
 
 const BASIC: TypeId[] = ["plain", "gen", "visible"];

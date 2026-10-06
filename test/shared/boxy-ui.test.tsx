@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { QuickAdd } from "@/features/variables/components/quick-add";
-import { logoColor } from "@/features/variables/components/service-logo";
+import { logoColor } from "@/shared/components/service-logo";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";

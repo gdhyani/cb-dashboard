@@ -2,7 +2,7 @@
 
 import { ScrollRow } from "@/shared/components/scroll-row";
 import { QUICK_ADD, type TypeId } from "../lib/catalog";
-import { logoColor, ServiceLogo } from "./service-logo";
+import { logoColor, ServiceLogo } from "@/shared/components/service-logo";
 
 /** D4: one row of shortcuts above the table; a badge only sets the type (and provider) of the Add dialog. */
 export function QuickAdd({ onPick }: { onPick: (type: TypeId, provider?: string) => void }) {

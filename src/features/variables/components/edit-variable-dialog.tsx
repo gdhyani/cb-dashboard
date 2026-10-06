@@ -26,7 +26,7 @@ import type { ServiceGroup } from "../lib/group";
 import { GENERATED_FORMATS, type Variable } from "../types";
 import { FieldInput } from "./field-input";
 import { ReadonlyLogin } from "./readonly-login";
-import { ServiceLogo } from "./service-logo";
+import { ServiceLogo } from "@/shared/components/service-logo";
 
 const READONLY_TYPES: Partial<Record<TypeId, string>> = {
   mongodb: "Read-only login",
