@@ -12,7 +12,7 @@ not, and to send it again.
 Only organization owners and admins see the **Webhooks** tab. Open your project, pick the environment, go to
 **Webhooks**, and click **Delivery log**. The log loads only when you open it.
 
-<Frame src="/docs/images/guides/delivery-log.png" alt="The Webhooks tab with the Delivery log open (empty until the first event arrives)" caption="The Webhooks tab with the Delivery log open (empty until the first event arrives)" />
+<Frame src="/docs/images/guides/delivery-log.png" alt="Delivery log open: product.created that no one on the team caused, with Send to me; payment_intent.succeeded, charge.succeeded and refund.processed delivered with status 200 to a developer's device, each with Replay" caption="An event nobody caused has Send to me; delivered events show the status, the developer and the device" />
 
 Each event shows its type (for example `payment_intent.succeeded`), the provider and when it arrived. Under it is
 one line per device it was routed to: a status, the developer's email and the device name. The log never shows the
