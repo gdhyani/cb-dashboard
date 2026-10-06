@@ -100,6 +100,20 @@ describe("Add variable dialog (D2, D5, FR-UI-001)", () => {
     expect(screen.queryByText(/invalid_grant/)).not.toBeInTheDocument();
   });
 
+  it("warns when a protected key is named so the framework ships it to the browser (NEXT_PUBLIC_, VITE_ …)", () => {
+    renderDialog({ initialType: "ai", initialProvider: "openai" });
+    fireEvent.change(screen.getByLabelText("Key"), { target: { value: "NEXT_PUBLIC_OPENAI_KEY" } });
+    expect(screen.getByText(/sent to the browser/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Key"), { target: { value: "OPENAI_API_KEY" } });
+    expect(screen.queryByText(/sent to the browser/i)).not.toBeInTheDocument();
+  });
+
+  it("no browser warning for a plain public value", () => {
+    renderDialog();
+    fireEvent.change(screen.getByLabelText("Key"), { target: { value: "NEXT_PUBLIC_SITE_URL" } });
+    expect(screen.queryByText(/sent to the browser/i)).not.toBeInTheDocument();
+  });
+
   it("file-based types say the file can be dropped", () => {
     renderDialog({ initialType: "gcp" });
     expect(screen.getByText(/Paste or drop the file/)).toBeInTheDocument();

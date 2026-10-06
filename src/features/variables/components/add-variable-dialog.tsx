@@ -332,6 +332,16 @@ export function AddVariableDialog({
                 : undefined
             }
           />
+          {protectedType && /^(NEXT_PUBLIC_|VITE_|PUBLIC_|EXPO_PUBLIC_|REACT_APP_)/.test(draft.key) && (
+            <p
+              role="note"
+              className="flex items-start gap-2 rounded-md border border-amber-400/40 p-3 text-xs text-amber-300"
+            >
+              <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0" />
+              Keys with this prefix are sent to the browser by your framework. Only a stand-in would ever reach it, so
+              nothing real leaks — but browser code can't use a protected key. Use a server-side name instead.
+            </p>
+          )}
           {protectedType && draft.type !== "visible" && (
             <p className="flex items-start gap-2 rounded-md border border-border p-3 text-xs text-subtle">
               <Lock aria-hidden className="mt-0.5 size-3.5 shrink-0" />

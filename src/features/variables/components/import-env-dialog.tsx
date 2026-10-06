@@ -16,6 +16,8 @@ import type { CreateVariableInput } from "../types";
 
 interface Row extends DotenvEntry {
   choice: string;
+  /** Looks like a secret: no default type, and a warning while it is unset or Plain. */
+  secretLooking?: boolean;
   exists: boolean;
   result?: { ok: boolean; message?: string };
 }
@@ -60,13 +62,19 @@ export function ImportEnvDialog({
         .filter((e) => KEY_PATTERN.test(e.key))
         .map((e) => ({
           ...e,
-          choice: choiceOf(guessType(e.key, e.value)),
+          // "unsure" = looks secret, no known shape: no default — Plain would show it to every developer.
+          choice: (() => {
+            const g = guessType(e.key, e.value);
+            return g.type === "unsure" ? "" : choiceOf({ type: g.type, provider: g.provider });
+          })(),
+          secretLooking: guessType(e.key, e.value).type === "unsure",
           exists: existingKeys.includes(e.key),
         })),
     );
   }
 
   const toImport = rows?.filter((r) => !r.exists) ?? [];
+  const unchosen = toImport.some((r) => !r.choice);
 
   async function importAll() {
     if (!rows) return;
@@ -77,6 +85,8 @@ export function ImportEnvDialog({
       const [type, provider] = r.choice.split(":");
       try {
         if (type === "plain") await api.createVariable(envId, { type: "plain", key: r.key, value: r.value });
+        else if (type === "visible")
+          await api.createVariable(envId, { type: "visible", key: r.key, value: r.value } as CreateVariableInput);
         else if (type === "gen")
           await api.createVariable(envId, {
             type: "generated",
@@ -165,12 +175,23 @@ export function ImportEnvDialog({
                       }
                       className="h-8 rounded-md border border-border bg-background px-2 text-sm"
                     >
+                      {!r.choice && (
+                        <option value="" disabled>
+                          Choose what it is…
+                        </option>
+                      )}
                       {IMPORTABLE.map((o) => (
                         <option key={choiceOf(o)} value={choiceOf(o)}>
                           {o.label}
                         </option>
                       ))}
                     </select>
+                  )}
+                  {r.secretLooking && !r.exists && !r.result && (!r.choice || r.choice === "plain") && (
+                    <p className="basis-full text-xs text-destructive">
+                      This looks like a secret. Plain shows it to every developer — choose a protected type, Random
+                      secret, or Secret shown as-is.
+                    </p>
                   )}
                 </li>
               ))}
@@ -192,7 +213,12 @@ export function ImportEnvDialog({
             </Button>
           ) : (
             !done && (
-              <Button type="button" disabled={toImport.length === 0} loading={running} onClick={() => void importAll()}>
+              <Button
+                type="button"
+                disabled={toImport.length === 0 || unchosen}
+                loading={running}
+                onClick={() => void importAll()}
+              >
                 Import {toImport.length} variable{toImport.length === 1 ? "" : "s"}
               </Button>
             )

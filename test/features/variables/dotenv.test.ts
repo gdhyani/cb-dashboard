@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { guessType, parseDotenv } from "@/features/variables/lib/dotenv";
+import { guessType, IMPORTABLE, parseDotenv } from "@/features/variables/lib/dotenv";
 
 describe("OQ10 pasting a .env file", () => {
   it("parses KEY=VALUE lines: export, quotes, comments, blanks, = inside values, and reports bad lines", () => {
@@ -38,5 +38,29 @@ describe("OQ10 pasting a .env file", () => {
     expect(guessType("AUTH_SECRET", "anything")).toEqual({ type: "gen" });
     expect(guessType("PORT", "3000")).toEqual({ type: "plain" });
     expect(guessType("NEXT_PUBLIC_STRIPE_KEY", "pk_test_1")).toEqual({ type: "plain" });
+  });
+});
+
+describe("Import .env never defaults a secret to Plain (security run 2026-10-07)", () => {
+  it("a random-looking value with no known shape gets no default: the admin must choose", () => {
+    expect(guessType("CB_TOKEN", "CANARY_8b584afc52a0cfdb33633e4d64901bef")).toEqual({ type: "unsure" });
+    expect(guessType("RESEND_API_KEY", "re_AbCdEf123456789xyz")).toEqual({ type: "unsure" });
+    expect(guessType("CLERK_SECRET_KEY", "sk_test_aGVsbG8gd29ybGQ")).toMatchObject({ type: "stripe" }); // Stripe-shaped: still a guess
+  });
+
+  it("key names that say secret / token / password / private / key are never guessed Plain", () => {
+    for (const k of ["MY_SECRET", "GITHUB_TOKEN", "DB_PASSWORD", "PRIVATE_KEY", "SENDGRID_API_KEY"])
+      expect(guessType(k, "short")).toEqual({ type: "unsure" });
+  });
+
+  it("ordinary public values stay Plain", () => {
+    expect(guessType("PORT", "3000")).toEqual({ type: "plain" });
+    expect(guessType("NEXT_PUBLIC_SITE_URL", "https://example.com")).toEqual({ type: "plain" });
+    expect(guessType("APP_NAME", "storefront")).toEqual({ type: "plain" });
+    expect(guessType("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", "pk_test_123")).toEqual({ type: "plain" }); // public prefix: browser anyway
+  });
+
+  it("'Secret shown as-is' can be chosen when importing", () => {
+    expect(IMPORTABLE.some((o) => o.type === "visible")).toBe(true);
   });
 });

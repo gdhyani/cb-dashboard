@@ -236,6 +236,10 @@ Paste the contents under **Your .env**, one `KEY=value` per line. Comments and `
 
 cb guesses a type for each key. Change any guess in its **What is …?** list. Keys that already exist are left as
 they are, and lines that aren't `KEY=value` are skipped.
+
+A line that looks like a secret but matches no known service (a name with `SECRET`, `TOKEN`, `PASSWORD`, `API_KEY`…,
+or a long random value) gets **no guess**: choose what it is before importing. **Plain** would show the value to
+every developer; pick a service type, **Random secret**, or **Secret shown as-is** instead.
 </Step>
 <Step>
 ### Import
