@@ -330,3 +330,7 @@
   grid-column: auto;
   min-width: 0;
 }
+/* Next always sits on the right, even when there is no Previous; Previous stays on the left. */
+#nd-page .grid[class*="@container"]:has(> a.rounded-lg) > a.text-end {
+  grid-column: 2;
+}
