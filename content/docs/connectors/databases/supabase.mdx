@@ -12,6 +12,9 @@ the way out. The public publishable key keeps working exactly as it does today.
 - You are an owner or admin of the organization.
 - You have the project's **secret key** (`sb_secret_…`, or the legacy `service_role` key) and its **Project URL**
   (`https://<project-ref>.supabase.co`). Both are under **Project Settings → API** in Supabase.
+- Supabase's **Connect → Server** tab lists the four values a server app uses: `SUPABASE_URL`,
+  `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` and `SUPABASE_JWKS_URL`. Only the secret key is protected by cb;
+  the other three are public and become plain variables.
 
 <Callout type="note">
   The **publishable** key (`sb_publishable_…`) is public by design and meant for browsers. cb does not store it as
@@ -122,7 +125,8 @@ If you ran `cb init`, your package scripts already run under cb. See [cb run](/d
   device's own stand-in wherever it appears and leaves every other value untouched.
 - A request that carries another key, such as the publishable key, or no key at all goes through unchanged and never
   gets the real secret added. A cb stand-in that belongs to another device is refused.
-- Verified end to end with real Supabase: `supabase-js` `auth.admin.listUsers` and `storage.listBuckets`.
+- Verified end to end with real Supabase: `supabase-js` `auth.admin.listUsers` and `storage.listBuckets` with the
+  secret key, and the publishable key passing through unchanged.
 - For direct Postgres connections to your Supabase database, add a separate [PostgreSQL](/docs/connectors/databases/postgres)
   variable with the database connection string.
 

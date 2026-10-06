@@ -134,7 +134,7 @@ export function EditVariableDialog({
   const editing = mode === "edit";
 
   // review I5: a new address for the service needs the key again (the backend refuses it otherwise).
-  // AWS S3/SES/SQS: the endpoint follows the region, so a new region is a new address too.
+  // AWS S3/SES (and older SQS variables): the endpoint follows the region, so a new region is a new address too.
   const awsService = group?.resource.kind === "aws" && group.provider !== "compatible" ? group.provider : undefined;
   const awsNewEndpoint =
     awsService && settings.region?.trim() && settings.region.trim() !== (initialSettings.region ?? "")

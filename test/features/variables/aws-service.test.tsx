@@ -23,8 +23,8 @@ const draft = (provider: string, fields: Record<string, string>) => {
 };
 
 describe("FR-GW-005 AWS type: a Service choice fills the endpoint and the SDK's variable names", () => {
-  it("offers S3, SES, SQS and S3-compatible storage", () => {
-    expect(AWS_SERVICES.map((s) => s.id)).toEqual(["s3", "ses", "sqs", "compatible"]);
+  it("offers S3, SES and S3-compatible storage (SQS hidden for now, PRD v1.46)", () => {
+    expect(AWS_SERVICES.map((s) => s.id)).toEqual(["s3", "ses", "compatible"]);
     expect(TYPES.aws.providers).toBe(AWS_SERVICES);
     expect(TYPES.aws.providerLabel).toBe("Service");
   });
@@ -54,12 +54,6 @@ describe("FR-GW-005 AWS type: a Service choice fills the endpoint and the SDK's 
     expect(r.body.extras).toContainEqual({ key: "AWS_ENDPOINT_URL_SESV2", field: "endpoint" });
     // The classic SESClient's name is offered too, not ticked.
     expect(initialExtras("aws", "ses").find((e) => e.suggestedKey === "AWS_ENDPOINT_URL_SES")?.on).toBe(false);
-  });
-
-  it("SQS: sqs.<region> endpoint and AWS_ENDPOINT_URL_SQS", () => {
-    const r = draft("sqs", { region: "eu-west-1" });
-    expect(r.body).toMatchObject({ resource: { endpoint: "https://sqs.eu-west-1.amazonaws.com", awsService: "sqs" } });
-    expect(r.body.extras).toContainEqual({ key: "AWS_ENDPOINT_URL_SQS", field: "endpoint" });
   });
 
   it("S3-compatible: the endpoint is asked for (required, https) and handed over as AWS_ENDPOINT_URL", () => {

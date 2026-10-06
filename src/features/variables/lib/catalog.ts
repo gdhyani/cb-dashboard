@@ -294,10 +294,10 @@ const providerOf = (list: ProviderDef[], id?: string) => list.find((p) => p.id =
  * AWS: which API the key is for. cb sends each AWS variable's requests to one endpoint, so the choice fills the endpoint
  * (from the region) and suggests the variable the AWS SDK reads for that service's endpoint.
  */
+// Amazon SQS is hidden for now (PRD v1.46); variables saved with it still show as "AWS · SQS" (group.ts).
 export const AWS_SERVICES: ProviderDef[] = [
   { id: "s3", name: "Amazon S3", icon: "aws", placeholder: "the secret access key", baseUrlKey: "" },
   { id: "ses", name: "Amazon SES (email)", icon: "aws", placeholder: "the secret access key", baseUrlKey: "" },
-  { id: "sqs", name: "Amazon SQS (queues)", icon: "aws", placeholder: "the secret access key", baseUrlKey: "" },
   {
     id: "compatible",
     name: "S3-compatible (R2, MinIO, Backblaze)",
@@ -661,7 +661,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     name: "AWS / S3-compatible",
     title: "AWS / S3-compatible",
     group: "Cloud & email",
-    desc: "S3, SES, SQS, R2…",
+    desc: "S3, SES, R2…",
     icon: "aws",
     kind: "aws",
     presetId: "aws-s3",
