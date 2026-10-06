@@ -57,5 +57,11 @@
   },
   "engines": {
     "node": ">=22"
-  }
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gdhyani/cb-dashboard.git"
+  },
+  "homepage": "https://github.com/gdhyani/cb-dashboard#readme"
 }
