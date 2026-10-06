@@ -97,8 +97,9 @@ export const createOrder = () => razorpay.orders.create({ amount: 500, currency:
 
 <Callout type="note" title="Webhooks">
   To receive Razorpay webhooks on each developer's machine, add a **Webhook signing secret** variable with the
-  Razorpay provider. cb sends each event to the developer whose app caused it. See
-  [Razorpay webhooks](/docs/guides/webhooks/razorpay).
+  Razorpay provider. With this key (and its Key ID) in the same environment, **Connect Razorpay** creates the
+  webhook in Razorpay for you; a normal merchant key is enough. cb sends each event to the developer whose app caused
+  it. See [Razorpay webhooks](/docs/guides/webhooks/razorpay).
 </Callout>
 
 ## Run it

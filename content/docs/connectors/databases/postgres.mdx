@@ -19,6 +19,11 @@ when the URL asks for it, and passes the traffic through. Your driver or ORM wor
   cb always verifies the server's certificate and host name, whatever `sslmode` says.
 </Callout>
 
+<Callout type="note" title="Verified with Neon">
+  Neon is verified end to end with its pooler URL (`sslmode=require&channel_binding=require`, PostgreSQL 17). Neon's
+  pooler reuses server sessions, so session state such as temporary tables can outlive your app's connection.
+</Callout>
+
 ## Add it in the dashboard
 
 <Steps>

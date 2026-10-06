@@ -208,9 +208,13 @@ Everything after `--` is the command to run. `cb run`:
 - Prints a banner when access is revoked and leaves your app running so it reports its own errors. It refuses
   to start while access is revoked.
 - Checks the background agent every 5 seconds and restarts it on the same ports if it has stopped.
+- Replaces a background agent started by an older cb build with its own (a newer build is never replaced by an
+  older one).
 
 The webhook port is chosen in this order: `--webhook-port`, `webhookPort` in `.cb/project.json`, then the port
-your app actually opens. If no listening port is seen within 10 seconds, webhooks go to `PORT` or `3000`.
+your app actually opens (the newest process's first HTTP server on a port it chose; if several apps run, the one on
+`PORT` wins). Webhooks wait while the app starts. If no listening port is seen within 10 seconds, webhooks go to `PORT`,
+then `3000`.
 
 ```json title="package.json"
 {

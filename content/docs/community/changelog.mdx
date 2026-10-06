@@ -18,12 +18,21 @@ on `main`.
 - **New secret** is offered only for Razorpay signing secrets that cb made, and toasts can now be closed.
 - The webhook URL is always visible, keys open in a read-only view, the Webhooks tab starts with setup, and
   badges use consistent colours.
+- **Supabase** is its own type under Databases, with a **Quick add** chip: secret key plus Project URL, with the
+  publishable key refused in the secret field.
+- The webhook **App port** field is gone: cb finds the port itself. Forms check webhook paths (a single leading `/`,
+  no spaces) and Stripe signing secrets (`whsec_…`) before saving, and removing a connected webhook key says what
+  happens at the provider.
 
 ### Backend
 
 - **Connect Stripe and Razorpay.** Webhook endpoints can be connected for you, with Stripe's full, thin or both
   formats; one URL serves both Stripe formats, and **Send to me** delivers a test event to your device.
 - The backend records where each webhook signing secret came from.
+- HTTP API keys: the device's stand-in is replaced with the real key in every header that carries it, so SDKs
+  that send the key twice (Supabase) work; the Supabase preset lets its public key through unchanged.
+- Verified with real providers: MongoDB Atlas (`mongodb+srv://` and replica-set URLs), Neon Postgres, Redis Cloud,
+  Supabase, OpenRouter (OpenAI and Anthropic SDKs), and AWS S3 and SES.
 
 ### CLI
 

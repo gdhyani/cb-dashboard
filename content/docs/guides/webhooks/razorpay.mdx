@@ -34,8 +34,8 @@ form:
     Choose **Razorpay**. The form then has no secret field: cb makes the signing secret.
   </Field>
   <Field name="Path in your app" type="text" required>
-    The route that handles webhooks in your app, for example `/api/webhooks/razorpay`. It must start with `/` and
-    contain no spaces.
+    The route that handles webhooks in your app, for example `/api/webhooks/razorpay`. It must start with a single `/`
+    (not `//`) and contain no spaces.
   </Field>
 </Fields>
 
@@ -44,12 +44,14 @@ Click **Save & test**. The dialog changes to **Connect Razorpay**.
 <Step>
 ### Click Connect Razorpay
 
-cb creates one webhook in your Razorpay account at the variable's cb URL, with the secret cb made, subscribed to
+cb creates one webhook in your Razorpay account at the variable's cb URL through Razorpay's webhooks API (a normal
+merchant key is enough), with the secret cb made and keeps, subscribed to
 these events: `payment.authorized`, `payment.captured`, `payment.failed`, `order.paid`, `refund.created`,
 `refund.processed` and `refund.failed`.
 
 The panel now reads "Connected to Razorpay — events go to cb, then only to the developer who caused them." and lists
-the events, with an **Open in Razorpay** link to add or remove events in the Razorpay Dashboard.
+the events, with an **Open in Razorpay** link (`https://dashboard.razorpay.com/app/webhooks`) to add or remove events
+in the Razorpay Dashboard.
 
 This setup is also in the variable's Edit dialog and on the **Webhooks** tab of the environment.
 </Step>
@@ -74,7 +76,8 @@ in Razorpay is created again.
 ## Remove the webhook
 
 Removing the webhook variable switches its webhook off in Razorpay (Razorpay has no way to delete it through its
-API). You can delete it in the Razorpay Dashboard if you like.
+API). The confirmation dialog says so before anything is removed. You can delete the webhook in the Razorpay
+Dashboard if you like.
 
 ## Set it up yourself
 
@@ -110,7 +113,8 @@ On the **Webhooks** tab, a webhook whose secret cb made shows **New secret** (un
 environment has a Razorpay key). It makes a new signing secret and shows
 it once. The old secret stops working at once, so paste the new one into Razorpay right away.
 
-**New secret** is not offered for a webhook that cb connected (use **Reconnect** instead), and the API refuses it
+**New secret** is offered only for a secret cb made. A secret someone entered by hand is never offered for
+replacement. It is also not offered for a webhook that cb connected (use **Reconnect** instead), and the API refuses it
 with "cb manages this secret with Razorpay. Use Reconnect instead of a new secret."
 
 ## Common errors

@@ -28,7 +28,7 @@ only, never a secret, so you commit it and everyone on the team runs against the
 | `projectId` | string | Yes | The project this folder runs against. |
 | `projectSlug` | string | No | The project's short name, shown in CLI output instead of the ID. |
 | `defaultEnvironment` | string | Yes | The [environment](/docs/overview/concepts#environment) used when you pass no `--env` and haven't set one with `cb env use`. |
-| `webhookPort` | integer, 1–65535 | No | Local port that [webhooks](/docs/guides/webhooks/how-it-works) are delivered to. Set it when your app's port can't be detected. `cb run --webhook-port` overrides it. |
+| `webhookPort` | integer, 1–65535 | No | Local port that [webhooks](/docs/guides/webhooks/how-it-works) are delivered to. Set it when your app's port can't be detected; setting it turns port detection off. `cb run --webhook-port` overrides it. |
 
 `cb init` writes every field except `webhookPort`, which you add by hand when you need it.
 

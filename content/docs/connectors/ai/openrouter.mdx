@@ -1,11 +1,12 @@
 ---
 title: OpenRouter
-description: Call OpenRouter through the OpenAI SDK while the real OpenRouter key stays on the cb server.
+description: Call OpenRouter through the OpenAI or Anthropic SDK while the real OpenRouter key stays on the cb server.
 ---
 
 Store your real OpenRouter key in cb once. Every developer's app gets a stand-in key that starts with `sk-or-cb-`,
 and the cb gateway swaps in the real key on the way to `openrouter.ai`. OpenRouter speaks the OpenAI API, so the
-official `openai` SDK works unchanged, including streaming.
+official `openai` SDK works unchanged, including streaming. The official Anthropic SDK works too, through
+OpenRouter's Anthropic-compatible API. Both are verified end to end with real OpenRouter.
 
 ## Before you start
 
@@ -78,7 +79,7 @@ If you ticked `OPENROUTER_BASE_URL`, it holds a local address such as `http://12
 
 ## Use it in code
 
-<Tabs items={["Chat", "Streaming"]}>
+<Tabs items={["Chat", "Streaming", "Anthropic SDK"]}>
 <Tab value="Chat">
 ```ts title="lib/ai.ts"
 import OpenAI from "openai";
@@ -112,6 +113,25 @@ const stream = await openrouter.chat.completions.create({
 for await (const chunk of stream) {
   process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
 }
+```
+</Tab>
+<Tab value="Anthropic SDK">
+```ts title="lib/ai-anthropic.ts"
+import Anthropic from "@anthropic-ai/sdk";
+
+// authToken sends the stand-in as Authorization: Bearer; apiKey: null stops the SDK reading ANTHROPIC_API_KEY.
+const openrouter = new Anthropic({
+  authToken: process.env.OPENROUTER_API_KEY,
+  apiKey: null,
+  baseURL: "https://openrouter.ai/api",
+});
+
+const message = await openrouter.messages.create({
+  model: "anthropic/your-model-id", // an Anthropic model id from OpenRouter's model list
+  max_tokens: 256,
+  messages: [{ role: "user", content: "Say hello" }],
+});
+console.log(message.content);
 ```
 </Tab>
 </Tabs>

@@ -35,22 +35,23 @@ form:
     Choose **Stripe**.
   </Field>
   <Field name="Path in your app" type="text" required>
-    The route that handles webhooks in your app, for example `/api/webhooks/stripe`. It must start with `/` and
-    contain no spaces. cb posts each webhook to this path on the developer's machine, on the port their app listens
+    The route that handles webhooks in your app, for example `/api/webhooks/stripe`. It must start with a single `/`
+    (not `//`) and contain no spaces. cb posts each webhook to this path on the developer's machine, on the port their app listens
     on.
   </Field>
 </Fields>
 
 <Fields title="Optional (Advanced)" collapsible>
   <Field name="Signing secret" type="secret">
-    Leave it empty. cb fills it when you connect Stripe. Paste a secret (`whsec_…`) here only if you set the
-    destination up in Stripe yourself.
+    Leave it empty. cb fills it when you connect Stripe, and never shows it. Paste a secret here only if you set
+    the destination up in Stripe yourself. The form refuses a value that does not start with `whsec_`.
   </Field>
   <Field name="Suggested extra keys → STRIPE_THIN_WEBHOOK_SECRET" type="checkbox">
     Only if your app verifies thin events with their own environment variable. It gets its own stand-in value.
   </Field>
   <Field name="Thin events signing secret" type="secret">
-    Under **Advanced**. Only for a thin-events destination you created in Stripe yourself, with the same URL.
+    Under **Advanced**. Only for a thin-events destination you created in Stripe yourself, with the same URL. It
+    also starts with `whsec_`.
   </Field>
   <Field name="Thin events path" type="text" default="the path above">
     Under **Advanced**. Only if your app takes thin events on a different route, for example
@@ -83,9 +84,8 @@ Stripe does not allow "every event" for thin destinations, so cb subscribes thin
 cb uses the environment's Stripe key to create the destination (or both) at the variable's cb URL, and stores the
 signing secret Stripe returns. The panel now reads "Connected to Stripe — events go to cb, then only to the developer
 who caused them." and lists what is subscribed, with an **Open in Stripe** link to the destination in the Stripe
-Dashboard.
-
-<Frame src="/docs/images/guides/connect-stripe.png" alt="Connect Stripe after saving: the webhook URL to paste into Stripe (with a Stripe key in the environment, cb offers to create the webhook for you)" caption="Connect Stripe after saving: the webhook URL to paste into Stripe (with a Stripe key in the environment, cb offers to create the webhook for you)" />
+Dashboard (`https://dashboard.stripe.com/test/workbench/webhooks/<id>` for a test-mode key, without `/test` in live
+mode). Full events use a Stripe webhook endpoint; thin events use a Stripe event destination.
 
 This setup is also in the variable's Edit dialog and on the **Webhooks** tab of the environment.
 </Step>
@@ -104,7 +104,7 @@ Events sent from the Stripe Dashboard or with `stripe trigger` are not caused by
 </Step>
 </Steps>
 
-<Frame src="/docs/images/guides/webhooks-tab.png" alt="Webhooks tab with a connected Stripe webhook: key name, app path, Full events row, Open in Stripe link, webhook URL with Copy" caption="Webhooks tab with a connected Stripe webhook: key name, app path, Full events row, Open in Stripe link, webhook URL with Copy" />
+<Frame src="/docs/images/guides/webhooks-tab.png" alt="Webhooks tab before connecting: each webhook key with its app path and the webhook URL to paste, with Copy" caption="Webhooks tab before connecting: each webhook key with its app path and the webhook URL to paste" />
 
 ## Change what your app receives
 
@@ -122,13 +122,17 @@ its signing secret. If someone deleted the destination in Stripe, Reconnect crea
 
 ## Remove the webhook
 
-Removing the webhook variable from the **Variables** tab also deletes the destinations cb created in Stripe. The
-confirmation dialog says so before anything is removed.
+Removing the webhook variable from the **Variables** tab also deletes the webhooks cb created in Stripe. The
+confirmation dialog says what will happen in Stripe before anything is removed.
 
 ## Set it up yourself
 
 If you prefer to create the destination in Stripe by hand, or the environment has no Stripe key, open **Set it up
-yourself**. It shows the **Webhook URL** with a copy button.
+yourself**. It shows the **Webhook URL** with a copy button. Without a Stripe key in the environment, the URL is
+shown directly. Once a signing secret has been pasted by hand, the panel stays in this mode and does not offer
+**Connect Stripe**.
+
+<Frame src="/docs/images/guides/connect-stripe.png" alt="Connect Stripe without a Stripe key in the environment: the webhook URL to paste into Stripe" caption="Connect Stripe without a Stripe key in the environment: the webhook URL to paste into Stripe" />
 
 <Steps>
 <Step>

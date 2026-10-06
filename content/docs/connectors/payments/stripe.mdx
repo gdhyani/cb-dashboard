@@ -94,8 +94,10 @@ export async function GET() {
 ```
 
 <Callout type="note" title="Webhooks">
-  To receive Stripe webhooks on each developer's machine, add a **Webhook signing secret** variable. cb sends each
-  event to the developer whose app caused it. See [Stripe webhooks](/docs/guides/webhooks/stripe).
+  To receive Stripe webhooks on each developer's machine, add a **Webhook signing secret** variable. With this key in
+  the same environment, **Connect Stripe** creates the webhook in Stripe for you (a restricted key needs
+  **Webhook Endpoints: Write**). cb sends each event to the developer whose app caused it. See
+  [Stripe webhooks](/docs/guides/webhooks/stripe).
 </Callout>
 
 ## Run it

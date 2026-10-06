@@ -48,6 +48,19 @@ To see this list for your environment without starting the app, run `cb env prin
 
 Put your command after `--` so its own flags aren't read by `cb`.
 
+## Webhooks
+
+`cb run` delivers [webhooks](/docs/guides/webhooks/how-it-works) to the port your app really listens on, so there is
+nothing to set. When delivery is ready, the terminal shows:
+
+```text
+cb: webhooks → 127.0.0.1:3000 (the port your app listens on)
+```
+
+While your app is starting, webhooks wait. If no listening port is seen within 10 seconds (for example, an app that
+is not Node.js), cb falls back to `PORT`, then `3000`. Pass `--webhook-port`, or set `webhookPort` in
+[`.cb/project.json`](/docs/reference/project-json), to choose the port yourself; either one turns detection off.
+
 ## Restarts on change
 
 When an admin adds, removes or renames a variable, the agent learns about it within seconds and `cb run` restarts
@@ -96,6 +109,10 @@ never restarts. Type `exit` to leave it.
 The agent is a small background process, one per user on your machine. `cb run` starts it when needed and checks it
 every few seconds; if it disappears, `cb run` starts it again on the same ports. It stops on its own after 8 hours
 with no apps and no open connections.
+
+After you upgrade `@cb/env`, the next `cb run` replaces an agent left running by an older cb automatically: the agent
+reports which build it runs, and a newer build takes over. An older build never replaces a newer one, so two projects
+with different cb versions don't keep restarting each other's agent.
 
 | Command | What it does |
 |---|---|

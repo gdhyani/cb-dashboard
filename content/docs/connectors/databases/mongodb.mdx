@@ -14,6 +14,11 @@ mongoose and the official `mongodb` driver work unchanged.
   cluster's connect dialog in MongoDB Atlas. Both `mongodb+srv://` and classic `mongodb://` URLs work, including multi-host replica-set lists.
 - The cb server can reach your cluster. On Atlas, add the cb server's outbound IP to the project's IP access list.
 
+<Callout type="note" title="Verified with MongoDB Atlas">
+  MongoDB Atlas is verified end to end with both a `mongodb+srv://` URL and the legacy `mongodb://` replica-set
+  form, with SCRAM-SHA-1 and SCRAM-SHA-256 users.
+</Callout>
+
 <Callout type="tip">
   Include the database name in the URL (`…mongodb.net/shop`). Without one, cb uses `test`.
 </Callout>
