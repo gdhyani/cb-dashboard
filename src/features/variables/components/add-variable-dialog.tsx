@@ -21,6 +21,7 @@ import {
   initialExtras,
   KEY_PATTERN,
   normalizeKey,
+  privateCaProvider,
   TYPES,
   type TypeId,
   WEBHOOK_PROVIDERS,
@@ -106,6 +107,11 @@ export function AddVariableDialog({
     return Boolean(ed && !ed.field && !e.value?.trim() && !(ed.defaultFrom && draft.fields[ed.defaultFrom]?.trim()));
   });
   const fieldsInvalid = Boolean(fieldError([...required, ...advanced], draft.fields));
+  // D3: a database on a private-CA provider needs that CA; open Advanced and say so until it is given.
+  const caProvider =
+    advanced.some((f) => f.name === "caCert") && !draft.fields.caCert?.trim()
+      ? privateCaProvider(draft.value)
+      : undefined;
   const valueError = valueMode !== "none" && draft.value.trim() ? def.value?.validate?.(draft.value.trim()) : undefined;
   const canSave =
     KEY_PATTERN.test(draft.key) &&
@@ -307,7 +313,18 @@ export function AddVariableDialog({
             />
           ))}
           <ExtrasSection defs={extraDefs} extras={draft.extras} onChange={(extras) => update({ extras })} />
-          <AdvancedSection idPrefix="add-adv" fields={advanced} values={draft.fields} onChange={setField} />
+          <AdvancedSection
+            idPrefix="add-adv"
+            fields={advanced}
+            values={draft.fields}
+            onChange={setField}
+            forceOpen={Boolean(caProvider)}
+            hint={
+              caProvider
+                ? `${caProvider} signs its servers with its own CA. Add ca.pem from the service's Overview page (Download CA certificate).`
+                : undefined
+            }
+          />
           {protectedType && draft.type !== "visible" && (
             <p className="flex items-start gap-2 rounded-md border border-border p-3 text-xs text-subtle">
               <Lock aria-hidden className="mt-0.5 size-3.5 shrink-0" />

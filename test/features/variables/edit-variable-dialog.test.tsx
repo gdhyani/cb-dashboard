@@ -194,15 +194,37 @@ describe("Edit variable dialog (D9, FR-UI-001)", () => {
     await waitFor(() => expect(vars.updateVariable).toHaveBeenCalledWith("v-MODEL_SERVER_URL", { key: "LLM_URL" }));
   });
 
-  it('CA certificate: replaced or removed ("") from the edit dialog, tested first', async () => {
-    const PEM = "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----";
-    const withCa: ServiceGroup = { ...MONGO, resource: resource({ config: { host: "h", caCert: PEM } }) };
+  it('CA certificate: the stored one shows its subject and expiry only; Remove sends "" (tested first)', async () => {
+    const withCa: ServiceGroup = {
+      ...MONGO,
+      resource: resource({
+        config: {
+          host: "h",
+          caCertFile: { subject: "CN=Aiven Project CA", notAfter: "2035-01-01T00:00:00.000Z", size: 1500 },
+        },
+      }),
+    };
     renderEdit({ group: withCa });
-    const ca = screen.getByLabelText(/CA certificate/);
-    expect(ca).toHaveValue(PEM);
-    fireEvent.change(ca, { target: { value: "" } });
+    expect(screen.getByText(/CN=Aiven Project CA/)).toBeInTheDocument();
+    expect(screen.getByText(/2035/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Remove CA certificate/ }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(resources.updateResource).toHaveBeenCalledWith("r1", { caCert: "", test: true }));
+  });
+
+  it("CA certificate: a new file replaces the stored one", async () => {
+    const PEM = "-----BEGIN CERTIFICATE-----\nMIIBNEW\n-----END CERTIFICATE-----\n";
+    const withCa: ServiceGroup = {
+      ...MONGO,
+      resource: resource({
+        config: { host: "h", caCertFile: { subject: "CN=Old", notAfter: "2030-01-01T00:00:00.000Z", size: 900 } },
+      }),
+    };
+    renderEdit({ group: withCa });
+    fireEvent.change(screen.getByLabelText(/choose a file/i), { target: { files: [new File([PEM], "new-ca.pem")] } });
+    await screen.findByText(/new-ca\.pem/);
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(resources.updateResource).toHaveBeenCalledWith("r1", { caCert: PEM, test: true }));
   });
 
   it("plain values are editable in place", async () => {

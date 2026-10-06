@@ -52,6 +52,54 @@ export interface FieldDef {
   validate?: (value: string) => string | undefined;
   /** Only shown when another field has this value (e.g. authHeader when authScheme is "header"). */
   showWhen?: { field: string; equals: string };
+  /** The value can also be chosen or dropped as a file (key files, CA certificates). */
+  file?: { accept: string; maxBytes: number };
+}
+
+// Checks for uploaded key / certificate files. They name the problem, never the content (B4).
+const PEM_CERT = /-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/;
+const PEM_PRIVATE = /-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----/;
+const looksJson = (v: string) => v.trimStart().startsWith("{");
+
+export function checkServiceAccount(value: string): string | undefined {
+  if (PEM_CERT.test(value)) return "This is a certificate, not a service-account key file.";
+  let sa: Record<string, unknown>;
+  try {
+    sa = JSON.parse(value) as Record<string, unknown>;
+  } catch {
+    return "This isn't a JSON key file. Download it from Firebase → Project settings → Service accounts → Generate new private key.";
+  }
+  if (sa.type !== undefined && sa.type !== "service_account")
+    return "This JSON is not a service-account key (its type is not service_account).";
+  for (const field of ["project_id", "client_email", "private_key"])
+    if (typeof sa[field] !== "string" || !sa[field]) return `The key file has no ${field}.`;
+  return undefined;
+}
+
+export function checkCertificate(value: string): string | undefined {
+  if (looksJson(value)) return "This is a JSON file, not a certificate.";
+  if (PEM_PRIVATE.test(value))
+    return "This file holds a private key. Use the provider's CA certificate (ca.pem) — never a private key.";
+  if (!PEM_CERT.test(value)) return "This isn't a PEM certificate (-----BEGIN CERTIFICATE-----).";
+  return undefined;
+}
+
+export function checkP8(value: string): string | undefined {
+  if (PEM_CERT.test(value)) return "This is a certificate, not an Apple .p8 key.";
+  if (!PEM_PRIVATE.test(value)) return "This isn't an Apple .p8 key (-----BEGIN PRIVATE KEY-----).";
+  return undefined;
+}
+
+/** D3: database hosts whose certificates are signed by the provider's own CA (Aiven, DigitalOcean …). */
+const PRIVATE_CA_HOSTS = /\.(aivencloud\.com|ondigitalocean\.com|db\.ondigitalocean\.com)$/i;
+export function privateCaProvider(url: string): string | undefined {
+  try {
+    const host = new URL(url.trim()).hostname;
+    if (!PRIVATE_CA_HOSTS.test(host)) return undefined;
+    return /aivencloud/i.test(host) ? "Aiven" : "DigitalOcean";
+  } catch {
+    return undefined;
+  }
 }
 
 export interface ExtraDef {
@@ -117,6 +165,8 @@ const CA_CERT: FieldDef = {
   multiline: true,
   optional: true,
   hint: "Only for self-hosted servers or providers that give you a CA file (Aiven, DigitalOcean).",
+  validate: checkCertificate,
+  file: { accept: ".pem,.crt,.cer", maxBytes: 32_000 },
 };
 const AUTH_SCHEME: FieldDef = {
   name: "authScheme",
@@ -610,7 +660,14 @@ export const TYPES: Record<TypeId, TypeDef> = {
     desc: "Firebase, FCM, GCP",
     icon: "googlecloud",
     kind: "google-sa",
-    value: { name: "serviceAccountJson", label: "Service account JSON", secret: true, multiline: true },
+    value: {
+      name: "serviceAccountJson",
+      label: "Service account JSON",
+      secret: true,
+      multiline: true,
+      validate: checkServiceAccount,
+      file: { accept: ".json,application/json", maxBytes: 16_000 },
+    },
     required: () => [
       {
         name: "readsAs",
@@ -645,7 +702,14 @@ export const TYPES: Record<TypeId, TypeDef> = {
     desc: "APNs .p8",
     icon: "apple",
     kind: "apns",
-    value: { name: "privateKey", label: ".p8 key", secret: true, multiline: true },
+    value: {
+      name: "privateKey",
+      label: ".p8 key",
+      secret: true,
+      multiline: true,
+      validate: checkP8,
+      file: { accept: ".p8,.pem", maxBytes: 8_000 },
+    },
     required: () => [
       { name: "keyId", label: "Key ID", placeholder: "ABC123DEFG" },
       { name: "teamId", label: "Team ID", placeholder: "DEF123GHIJ" },

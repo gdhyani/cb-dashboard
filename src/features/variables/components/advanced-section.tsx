@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FieldDef } from "../lib/catalog";
 import { FieldInput } from "./field-input";
 
@@ -11,13 +11,22 @@ export function AdvancedSection({
   fields,
   values,
   onChange,
+  forceOpen = false,
+  hint,
 }: {
   idPrefix: string;
   fields: FieldDef[];
   values: Record<string, string>;
   onChange: (name: string, value: string) => void;
+  /** D3: opened on its own when a detail here is needed (e.g. an Aiven URL needs its CA certificate). */
+  forceOpen?: boolean;
+  hint?: string;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(forceOpen);
+  // Once opened for a reason it stays open (filling the CA in must not fold the section away).
+  useEffect(() => {
+    if (forceOpen) setOpen(true);
+  }, [forceOpen]);
   if (fields.length === 0) return null;
   return (
     <section className="flex flex-col gap-3 border-t border-border pt-3">
@@ -33,6 +42,11 @@ export function AdvancedSection({
       </button>
       {open && (
         <div className="flex flex-col gap-3 pl-5">
+          {hint && (
+            <p role="note" className="rounded-md border border-border p-2 text-xs text-foreground">
+              {hint}
+            </p>
+          )}
           {fields.map((f) => (
             <FieldInput
               key={f.name}
