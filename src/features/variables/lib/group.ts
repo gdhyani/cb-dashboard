@@ -68,7 +68,7 @@ export function typeOfResource(r: Resource): { type: TypeId; provider?: string }
       const hint = String(r.config.provider ?? "");
       if (hint === "ai-custom") return { type: "ai", provider: "custom" };
       if (AI_PROVIDERS.some((p) => p.presetId === hint)) return { type: "ai", provider: hint };
-      if (hint === "stripe" || hint === "razorpay") return { type: hint };
+      if (hint === "stripe" || hint === "razorpay" || hint === "supabase") return { type: hint };
       return HOST_TYPES[hostOf(r.config.upstreamUrl)] ?? { type: "http" };
     }
   }
