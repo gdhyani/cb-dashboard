@@ -20,7 +20,8 @@ on `main`.
   the key (deleted, rotated or expired), grey **Not checked yet**. The key stays hidden in every state.
 - Secret fields never offer to save in the browser's password manager, and no form can put a value in a URL.
 - **Import .env** never guesses Plain for a line that looks like a secret, and can import it as **Secret shown
-  as-is**. A protected key named `NEXT_PUBLIC_…` (or `VITE_…`) gets a warning.
+  as-is**. That includes secrets behind a browser prefix (`NEXT_PUBLIC_…SECRET…`), password, auth, signing and DSN
+  names, and URLs that carry a password or a token. A protected key named `NEXT_PUBLIC_…` (or `VITE_…`) gets a warning.
 
 ### Backend
 
@@ -36,7 +37,8 @@ on `main`.
 
 - `cb env print` lists the path of stand-in key files and honours `CB_SERVER_URL` like every other command.
 - The agent's log and lock files are readable only by you; `Basic …` credentials are removed from its log.
-- The agent ignores `SIGUSR1`, so no other process on your machine can attach a debugger to it.
+- The agent ignores `SIGUSR1` and never inherits `NODE_OPTIONS`, so no other process on your machine can attach a
+  debugger to it or load code into it.
 
 ## 6 October 2026
 
