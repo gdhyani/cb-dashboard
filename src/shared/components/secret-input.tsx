@@ -16,11 +16,12 @@ export const SecretInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTML
       <PasswordInput
         ref={ref}
         noun="value"
-        autoComplete="off"
         spellCheck={false}
         placeholder={isSet ? "•••••••• set — enter a new value to rotate" : placeholder}
         className="font-mono"
         {...props}
+        // D4: last, so no caller can turn the browser's password manager back on for a secret.
+        autoComplete="new-password"
       />
     );
   },
@@ -36,13 +37,13 @@ export const SecretTextarea = forwardRef<
     <div className="relative">
       <textarea
         ref={ref}
-        autoComplete="off"
         spellCheck={false}
         rows={5}
         placeholder={isSet ? "•••••••• set — paste a new value to rotate" : placeholder}
         style={visible ? undefined : ({ WebkitTextSecurity: "disc" } as React.CSSProperties)}
         className={`${fieldClasses} min-h-28 resize-y py-2 pr-10 font-mono text-xs leading-relaxed ${className ?? ""}`}
         {...props}
+        autoComplete="off"
       />
       <button
         type="button"
