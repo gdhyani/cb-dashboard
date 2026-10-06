@@ -1,7 +1,6 @@
 ---
 title: MySQL
 description: Connect your app to MySQL with mysql2, Prisma, Drizzle or Knex, without the real database password.
-status: beta
 ---
 
 Store your real MySQL connection URL in cb once, and every developer's app gets a stand-in `DATABASE_URL` that
@@ -60,8 +59,9 @@ app@% (MySQL 8.4.0)". If the test fails, nothing is saved and the dialog shows t
 
 <Fields title="Optional (Advanced)" collapsible>
   <Field name="CA certificate (PEM)" type="multiline">
-    Only for self-hosted servers or providers that give you a CA file (Aiven, DigitalOcean). cb trusts it for this
-    database only, on top of the public certificate authorities.
+    Only for self-hosted servers or providers that give you a CA file (Aiven, DigitalOcean). Drop the `.pem` file,
+    choose it or paste it. cb trusts it for this database only, on top of the public certificate authorities. A URL
+    on an Aiven or DigitalOcean host opens **Advanced** for you and asks for it.
   </Field>
 </Fields>
 
@@ -181,7 +181,8 @@ See [cb run](/docs/guides/develop/cb-run) and [Custom scripts](/docs/guides/deve
 |---|---|
 | **Save & test** says "the server requires TLS: add ?ssl=true to the connection URI" | The server refuses plain connections. Add `?ssl=true` to the URL and save again. |
 | "cb: the database does not offer TLS" | The stored URL asks for TLS but the server doesn't support it. Fix the server, or remove the TLS option for a server on a private network. |
-| "cb: the gateway could not verify the database's TLS certificate" | The server uses a private certificate authority. Paste its CA into **CA certificate (PEM)** under Advanced. |
+| "cb: the gateway could not verify the database's TLS certificate" | The server uses a private certificate authority. Drop its CA file into **CA certificate (PEM)** under Advanced. |
+| **Save & test** says "The server's certificate is signed by a private CA…" | Same cause, caught before saving: add the provider's CA certificate under Advanced (Aiven: service **Overview → CA certificate**). |
 | `Access denied for user 'cbu_…'` | The stand-in belongs to another device or is stale. Run the app under `cb run` on this machine and don't copy the URL between machines. |
 | "cb: the gateway could not authenticate to the database" | The stored credentials stopped working. Replace the value with a working URL; see [Rotate a secret](/docs/guides/admin/rotate-secret). |
 | `cb: … no access` in the `cb run` output | You don't have access to this service. Ask an admin; see [Access](/docs/guides/admin/access). |

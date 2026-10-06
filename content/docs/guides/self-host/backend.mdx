@@ -119,7 +119,17 @@ COOKIE_SECURE=false
     Test only: an extra CA certificate file trusted for upstream connections, used by cb's own test suite with mock
     services. Never set it outside tests.
   </Field>
+  <Field name="FILE_STORE" type="mongo | supabase" default="mongo">
+    Where uploaded files (service-account JSON, `.p8` keys, CA certificates) are kept. cb encrypts each file with
+    `MASTER_KEY` first, so the store only holds ciphertext. With `supabase`, also set `SUPABASE_URL` and
+    `SUPABASE_SECRET_KEY` (and optionally `SUPABASE_STORAGE_BUCKET`, default `cb-files`, created private).
+  </Field>
 </Fields>
+
+<Callout type="note" title="Moving existing files to the store">
+  Services saved before the file store keep their files inline. Run `npm run migrate:file-store` to see what would
+  move, then `npm run migrate:file-store -- --apply`. Running it again moves nothing.
+</Callout>
 
 <Callout type="danger" title="UPSTREAM_EXTRA_CA_FILE is for tests only">
   This setting makes the gateway trust an extra certificate authority for every upstream connection. Never set it on

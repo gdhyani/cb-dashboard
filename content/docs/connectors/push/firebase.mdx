@@ -1,7 +1,6 @@
 ---
 title: Firebase (Google service account)
 description: Send FCM push messages with firebase-admin using a stand-in service-account key instead of the real one.
-status: beta
 ---
 
 Store your Firebase service-account JSON in cb once. Every developer's app gets a stand-in private key made for
@@ -27,10 +26,11 @@ Open your project, pick the environment, and go to the [Variables tab](/docs/gui
 account**. The dialog is titled **Add Google service account variable**.
 </Step>
 <Step>
-### Paste the JSON and choose how your app reads it
+### Drop the key file and choose how your app reads it
 
-Paste the whole key file into **Service account JSON**. Then set **Your app reads it as** to match your code, and
-type the **Key** your code reads:
+Drop the key file you downloaded from Firebase onto **Service account JSON**, or click **choose a file** (pasting its
+contents works too). The file is read in your browser and sent only to cb's server; the dashboard shows just its
+name. Then set **Your app reads it as** to match your code, and type the **Key** your code reads:
 
 | Your app reads it as | Typical key | The app gets |
 |---|---|---|
@@ -62,8 +62,9 @@ saving. If Google refuses, nothing is saved and the dialog shows the error.
     The variable type.
   </Field>
   <Field name="Service account JSON" type="secret, multiline" required>
-    The whole key file. It must contain `project_id`, `client_email` and `private_key`. Write-only: nobody can view
-    it after saving, but you can replace it.
+    The whole key file — drop it, choose it or paste it. It must contain `project_id`, `client_email` and
+    `private_key`; a certificate or another kind of JSON is refused with the reason. A file saved on Windows works
+    as is. Write-only: nobody can view it after saving, but you can replace it. cb stores it encrypted.
   </Field>
   <Field name="Your app reads it as" type="select" required default="The whole JSON, in this variable">
     **The whole JSON, in this variable**, **Only the private key (PEM)** or **A file path

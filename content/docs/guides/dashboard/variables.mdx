@@ -162,6 +162,18 @@ values cb generates, and **generated for each developer** for a random secret. P
 Extra keys are grouped under their main key, indented with **↳** and labelled **with `MAIN_KEY`**, so you can see
 which keys belong to one service.
 
+### Key status
+
+Each service's main key has a status dot. The value stays hidden in every state.
+
+| Dot | Means | What to do |
+|---|---|---|
+| Green — **Working** | The last Save & test, Test connection or app request through cb was accepted by the provider. | Nothing. |
+| Red — **Expired** badge | The provider refused the stored key: it was deleted, rotated or expired at the provider. Hover the badge for the reason. Apps keep getting the provider's own error. | **Replace value** with a working key. |
+| Grey — **Not checked yet** | Saved without a test, or saved before key status existed. | **Test connection** from the row's "…" menu. |
+
+The table refreshes the status every 30 seconds.
+
 ## Edit a variable
 
 Select a key to open it read-only. Choose **Edit** to change it. You can:

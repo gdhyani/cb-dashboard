@@ -26,6 +26,10 @@ missing or invalid. For local development, copy `.env.example` to `.env`. See
 | `COOKIE_SECURE` | No | `false` | `true` marks the dashboard session cookie `Secure`. Set it to `true` when the dashboard is served over HTTPS. |
 | `ALLOW_PRIVATE_HTTP_UPSTREAMS` | No | `true` | Allows plain `http://` service URLs on private and loopback addresses (`localhost`, `10.x`, `192.168.x`…). Set `false` on shared, hosted servers. `https://` is always allowed. |
 | `UPSTREAM_EXTRA_CA_FILE` | No | — | Test only: an extra CA file trusted for upstream services. The backend refuses to start with it when `NODE_ENV=production`. |
+| `FILE_STORE` | No | `mongo` | Where uploaded files (service-account JSON, `.p8` keys, CA certificates) are kept: `mongo` (the backend's database) or `supabase` (a private Supabase Storage bucket). Either way cb encrypts them first; the store only ever holds ciphertext. |
+| `SUPABASE_URL` | With `FILE_STORE=supabase` | — | Your Supabase project URL, for example `https://<project>.supabase.co`. |
+| `SUPABASE_SECRET_KEY` | With `FILE_STORE=supabase` | — | The project's secret key (server-side only). |
+| `SUPABASE_STORAGE_BUCKET` | No | `cb-files` | Bucket name. cb creates it as a private bucket on first start. |
 
 ```bash title=".env"
 NODE_ENV=development

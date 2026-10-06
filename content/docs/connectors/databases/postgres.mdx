@@ -64,8 +64,9 @@ app_user (PostgreSQL 16.4)". If the test fails, nothing is saved and the dialog 
 
 <Fields title="Optional (Advanced)" collapsible>
   <Field name="CA certificate (PEM)" type="multiline">
-    Only for self-hosted servers or providers that give you a CA file (Aiven, DigitalOcean). cb trusts it for this
-    database only, on top of the public certificate authorities.
+    Only for self-hosted servers or providers that give you a CA file (Aiven, DigitalOcean). Drop the `.pem` file,
+    choose it or paste it. cb trusts it for this database only, on top of the public certificate authorities. A URL
+    on an Aiven or DigitalOcean host opens **Advanced** for you and asks for it.
   </Field>
 </Fields>
 
