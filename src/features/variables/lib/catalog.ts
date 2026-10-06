@@ -78,6 +78,8 @@ export interface TypeDef {
   presetId?: string;
   providers?: ProviderDef[];
   value?: FieldDef;
+  /** Whether the real value must be typed: optional (Stripe webhook: Connect fills it) or none (cb makes it). */
+  valueMode?: (provider?: string) => "required" | "optional" | "none";
   required: (provider?: string) => FieldDef[];
   extras: (provider?: string) => ExtraDef[];
   advanced: (provider?: string) => FieldDef[];
@@ -395,27 +397,55 @@ export const TYPES: Record<TypeId, TypeDef> = {
     icon: "letter:WH",
     kind: "webhook",
     providers: WEBHOOK_PROVIDERS,
-    value: { name: "signingSecret", label: "Signing secret", secret: true },
+    value: {
+      name: "signingSecret",
+      label: "Signing secret",
+      secret: true,
+      optional: true,
+      hint: "Leave empty and cb creates the webhook in Stripe for you after saving (Connect Stripe).",
+    },
+    // Stripe: Connect fills it; Razorpay: cb makes the secret and shows it once after saving.
+    valueMode: (p) => (p === "razorpay" ? "none" : "optional"),
     required: () => [
       {
         name: "path",
         label: "Path in your app",
         placeholder: "/api/webhooks/stripe",
-        hint: "cb posts each webhook here on the developer's machine, signed so your usual verify code accepts it.",
+        hint: "cb posts each webhook here on the developer's machine, on the port their app listens on.",
       },
     ],
-    extras: none,
-    advanced: () => [
-      {
-        name: "port",
-        label: "App port",
-        optional: true,
-        validate: (v) =>
-          /^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 65_535 ? undefined : "Use a port from 1 to 65535.",
-        placeholder: "3000",
-        hint: "Only if your app doesn't read PORT. Developers can also run cb run --webhook-port <port>.",
-      },
-    ],
+    extras: (p) =>
+      p === "razorpay"
+        ? []
+        : [
+            {
+              suggestedKey: "STRIPE_THIN_WEBHOOK_SECRET",
+              what: "Only if your app verifies thin events with their own env var",
+              field: "thinSecret",
+            },
+          ],
+    advanced: (p) =>
+      p === "razorpay"
+        ? []
+        : [
+            {
+              name: "thinSigningSecret",
+              label: "Thin events signing secret",
+              secret: true,
+              optional: true,
+              placeholder: "whsec_…",
+              validate: (v) => (v.startsWith("whsec_") ? undefined : "A Stripe signing secret starts with whsec_."),
+              hint: "From a thin-events destination in Stripe that uses this same URL.",
+            },
+            {
+              name: "thinPath",
+              label: "Thin events path",
+              optional: true,
+              placeholder: "/api/webhooks/stripe-thin",
+              validate: (v) => (v.startsWith("/") ? undefined : "Start with /, e.g. /api/webhooks/stripe-thin."),
+              hint: "Only if your app takes thin events on a different route. Default: the path above.",
+            },
+          ],
   },
   ai: {
     id: "ai",
@@ -730,6 +760,11 @@ export function fieldError(defs: FieldDef[], values: Record<string, string>): st
   return undefined;
 }
 
+function valueSent(d: DraftState): boolean {
+  const mode = TYPES[d.type].valueMode?.(d.provider) ?? "required";
+  return mode === "required" || (mode === "optional" && Boolean(d.value));
+}
+
 /** Maps a finished draft to the API call: /variables for basic types, /services for anything with a service. */
 export function buildCreateRequest(d: DraftState): CreateRequest {
   if (d.type === "plain") return { endpoint: "variables", body: { type: "plain", key: d.key, value: d.value } };
@@ -747,7 +782,8 @@ export function buildCreateRequest(d: DraftState): CreateRequest {
     ...fields,
     ...(basePath ? { basePath } : {}),
     ...(fields.redirectHosts ? { redirectHosts: hostList(fields.redirectHosts) } : {}),
-    [valueField]: d.value,
+    // Optional values are sent only when typed; "none" (cb makes it) never, even if typed before a provider switch.
+    ...(valueSent(d) ? { [valueField]: d.value } : {}),
   };
   let preset = def.presetId;
   let mainField: string | undefined;
@@ -761,10 +797,7 @@ export function buildCreateRequest(d: DraftState): CreateRequest {
     }
   }
   if (d.type === "oauth") preset = providerOf(OAUTH_PROVIDERS, d.provider)?.presetId;
-  if (d.type === "webhook") {
-    resource.provider = d.provider ?? "stripe";
-    if (fields.port) resource.port = Number(fields.port);
-  }
+  if (d.type === "webhook") resource.provider = d.provider ?? "stripe";
   if (d.type === "gcp")
     mainField =
       d.fields.readsAs === "privateKey"

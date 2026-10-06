@@ -28,7 +28,7 @@ export function WebhooksTab({ envId }: { envId: string }) {
         />
       ) : (
         <div className="flex flex-col gap-4">
-          <WebhookEndpoints hooks={hooks} />
+          <WebhookEndpoints envId={envId} hooks={hooks} />
           <Button
             variant="outline"
             size="sm"

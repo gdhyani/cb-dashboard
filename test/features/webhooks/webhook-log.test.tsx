@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WebhookLog } from "@/features/webhooks/components/webhook-log";
 
-const api = vi.hoisted(() => ({ listWebhookEvents: vi.fn(), replayWebhookEvent: vi.fn() }));
+const api = vi.hoisted(() => ({ listWebhookEvents: vi.fn(), replayWebhookEvent: vi.fn(), sendWebhookToMe: vi.fn() }));
 vi.mock("@/features/webhooks/api/webhooks.api", () => api);
 
 const page = (items: unknown[]) => ({
@@ -133,5 +133,30 @@ describe("review M7: just-arrived events are not called unclaimed yet", () => {
     renderList();
     expect(await screen.findByText(/Finding the developer who caused it/)).toBeInTheDocument();
     expect(screen.queryByText(/No one on the team caused this/)).toBeNull();
+  });
+
+  it("FR-WH-003 an event nobody caused (a dashboard test, stripe trigger) can be sent to my own machine", async () => {
+    api.listWebhookEvents.mockResolvedValue(
+      page([
+        {
+          id: "w9",
+          eventId: "evt_9",
+          type: "charge.succeeded",
+          provider: "stripe",
+          serviceId: "r1",
+          serviceName: "STRIPE_WEBHOOK_SECRET",
+          routing: "unmatched",
+          receivedAt: new Date(Date.now() - 60_000).toISOString(),
+          expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+          deliveries: [],
+        },
+      ]),
+    );
+    api.sendWebhookToMe.mockResolvedValue({ queued: 1 });
+    renderList();
+    expect(await screen.findByText(/No one on the team caused this/)).toBeInTheDocument();
+    expect(screen.queryByText(/cb webhooks listen/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Send charge.succeeded to me" }));
+    await waitFor(() => expect(api.sendWebhookToMe).toHaveBeenCalledWith("w9"));
   });
 });
