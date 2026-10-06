@@ -19,5 +19,6 @@ export const GITHUB_URLS = {
   backend: "https://github.com/gdhyani/cb-backend",
   dashboard: "https://github.com/gdhyani/cb-dashboard",
 } as const;
-/** "Edit this page" base: the docs content lives in the dashboard repo. */
-export const DOCS_CONTENT_EDIT_URL = `${GITHUB_URLS.dashboard}/blob/main/content/docs`;
+/** Plain Markdown of a docs page ("Copy page", "View as Markdown"); outside the /api rewrite. */
+export const DOCS_MARKDOWN_PATH = "/docs-md";
+export const GITHUB_REPO = { owner: "gdhyani", repo: "cb-env" } as const;

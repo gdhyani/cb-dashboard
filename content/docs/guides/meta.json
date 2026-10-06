@@ -1,19 +1,11 @@
 {
   "title": "Guides",
-  "root": true,
-  "icon": "Compass",
   "pages": [
-    "---Dashboard---",
-    "...dashboard",
-    "---Develop---",
-    "...develop",
-    "---Admin---",
-    "...admin",
-    "---Webhooks---",
-    "...webhooks",
-    "---Run cb yourself---",
-    "...self-host",
-    "---Help---",
+    "dashboard",
+    "develop",
+    "admin",
+    "webhooks",
+    "self-host",
     "troubleshooting"
   ]
 }

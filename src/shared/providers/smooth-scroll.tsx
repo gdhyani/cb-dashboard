@@ -29,7 +29,9 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     return () => query.removeEventListener("change", update);
   }, []);
 
-  if (!enabled) return children;
+  // The docs scroll natively: code blocks and tables scroll sideways only, and the page keeps the vertical wheel.
+  const pathname = usePathname();
+  if (!enabled || pathname?.startsWith("/docs")) return children;
   return (
     <ReactLenis root options={{ lerp: 0.14, anchors: true, allowNestedScroll: true }}>
       <LenisSync />

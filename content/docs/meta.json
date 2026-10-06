@@ -1,1 +1,22 @@
-{ "pages": ["index", "overview", "quick-start", "platforms", "guides", "connectors", "reference", "community"] }
+{
+  "pages": [
+    "---Introduction---",
+    "index",
+    "...overview",
+    "...quick-start",
+    "---Build---",
+    "platforms",
+    "guides/dashboard",
+    "guides/develop",
+    "guides/admin",
+    "guides/webhooks",
+    "---Connectors---",
+    "...connectors",
+    "---Operate---",
+    "guides/self-host",
+    "guides/troubleshooting",
+    "reference",
+    "---Community---",
+    "...community"
+  ]
+}

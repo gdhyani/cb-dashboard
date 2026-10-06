@@ -1,10 +1,20 @@
-import { DocsBody, DocsDescription, DocsPage, DocsTitle, EditOnGitHub } from "fumadocs-ui/layouts/docs/page";
+import {
+  DocsBody,
+  DocsDescription,
+  DocsPage,
+  DocsTitle,
+  MarkdownCopyButton,
+  ViewOptionsPopover,
+} from "fumadocs-ui/layouts/notebook/page";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { DOCS_CONTENT_EDIT_URL, PRODUCT_NAME } from "@/constants";
+import { DOCS_MARKDOWN_PATH, PRODUCT_NAME } from "@/constants";
 import { getMDXComponents, StatusBadge, source } from "@/features/docs";
+import { TocFooter } from "@/features/docs/components/toc-footer";
 
 type Props = { params: Promise<{ slug?: string[] }> };
+
+const markdownUrl = (slug?: string[]) => `${DOCS_MARKDOWN_PATH}/${slug?.length ? slug.join("/") : "index"}`;
 
 export default async function Page({ params }: Props) {
   const { slug } = await params;
@@ -12,16 +22,26 @@ export default async function Page({ params }: Props) {
   if (!page) notFound();
   const MDX = page.data.body;
   return (
-    <DocsPage toc={page.data.toc}>
-      <div className="flex flex-wrap items-center gap-3">
-        <DocsTitle>{page.data.title}</DocsTitle>
-        {page.data.status && <StatusBadge status={page.data.status} />}
+    <DocsPage
+      toc={page.data.toc}
+      tableOfContent={{ footer: <TocFooter /> }}
+      tableOfContentPopover={{ footer: <TocFooter /> }}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <DocsTitle>{page.data.title}</DocsTitle>
+          {page.data.status && <StatusBadge status={page.data.status} />}
+        </div>
+        {/* "Copy page" for pasting into an AI assistant, plus view/open options (eve.dev style). */}
+        <div className="flex items-center gap-2">
+          <MarkdownCopyButton markdownUrl={markdownUrl(slug)} />
+          <ViewOptionsPopover markdownUrl={markdownUrl(slug)} />
+        </div>
       </div>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
         <MDX components={getMDXComponents()} />
       </DocsBody>
-      <EditOnGitHub href={`${DOCS_CONTENT_EDIT_URL}/${page.path}`} />
     </DocsPage>
   );
 }

@@ -246,15 +246,87 @@
   --docs-frame-gradient: linear-gradient(135deg, #6d28d9 0%, #a21caf 55%, #db2777 100%);
 }
 
-/* Docs top tabs (Fumadocs tabMode="top") share the page's grid cell; keep them a sticky strip above the page. */
-@media (min-width: 768px) {
-  #nd-docs-layout > div.border-b[class*="grid-area:main"] {
-    align-self: start;
-    position: sticky;
-    top: 0;
-    height: auto;
-  }
-  #nd-docs-layout:has(> div.border-b[class*="grid-area:main"]) #nd-page {
-    padding-top: 3.25rem;
-  }
+/* ── Docs (Fumadocs) — eve.dev-like reading layout. Scoped to Fumadocs' own variables and the docs page. ── */
+:root {
+  --color-fd-background: #000000;
+  --color-fd-foreground: #ededed;
+  --color-fd-muted-foreground: #9a9a9a;
+  --color-fd-card: #0a0a0a;
+  --color-fd-border: #232323;
+  --color-fd-primary: #c4b5fd;
+  --color-fd-accent: #161616;
+  --color-fd-accent-foreground: #fafafa;
+}
+/* Nested code blocks and tables scroll sideways only; the vertical wheel always reaches the page. */
+#nd-page :where(.overflow-auto, .overflow-x-auto, .overflow-y-auto, pre, figure) {
+  overscroll-behavior: auto;
+}
+#nd-page {
+  padding-top: 2.5rem;
+}
+#nd-page .prose {
+  color: #c8c8c8;
+  font-size: 0.975rem;
+  line-height: 1.8;
+}
+#nd-page .prose :where(h2) {
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  color: #f5f5f5;
+  letter-spacing: -0.015em;
+}
+#nd-page .prose :where(h3) {
+  margin-top: 2rem;
+  color: #f0f0f0;
+}
+#nd-page .prose :where(p, ul, ol) {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+#nd-page .prose :where(li) {
+  margin-top: 0.4rem;
+}
+#nd-page .prose :where(strong) {
+  color: #f0f0f0;
+}
+#nd-page .prose :where(a:not(.not-prose a)) {
+  color: #93c5fd;
+  text-decoration-color: rgb(147 197 253 / 0.35);
+  text-underline-offset: 3px;
+}
+#nd-page .prose :where(h1, h2, h3, h4) a {
+  color: inherit;
+  text-decoration: none;
+}
+/* Inline code: a bordered chip, like eve.dev. */
+#nd-page .prose :where(:not(pre) > code) {
+  border: 1px solid #2a2a2a;
+  background: #141414;
+  border-radius: 6px;
+  padding: 0.1rem 0.35rem;
+  color: #e5e5e5;
+  font-size: 0.85em;
+}
+/* Code blocks: quiet border, a tinted title bar for the file name. */
+#nd-page figure[data-rehype-pretty-code-figure],
+#nd-page .prose :where(figure.shiki, pre) {
+  border-color: #262626;
+}
+#nd-page :where(figure.shiki) > div:first-child:has(> figcaption),
+#nd-page :where(figure.shiki figcaption) {
+  background: #121212;
+  color: #c4b5fd;
+}
+/* Numbered steps: violet counters. */
+#nd-page .fd-step::before {
+  background: rgb(167 139 250 / 0.15);
+  color: #c4b5fd;
+}
+/* Previous / Next: always two half-width cards on one line (Fumadocs stacks them below its lg container size). */
+#nd-page .grid[class*="@container"]:has(> a.rounded-lg) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+#nd-page .grid[class*="@container"]:has(> a.rounded-lg) > a {
+  grid-column: auto;
+  min-width: 0;
 }

@@ -1,18 +1,14 @@
 {
   "title": "Community",
-  "root": true,
-  "icon": "Users",
   "pages": [
     "index",
     "local-development",
     "code-standards",
     "adding-a-connector",
     "updating-docs",
-    "---Policies---",
     "security",
     "code-of-conduct",
     "license",
-    "---Project---",
     "changelog"
   ]
 }

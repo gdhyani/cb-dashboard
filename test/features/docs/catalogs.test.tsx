@@ -44,11 +44,11 @@ describe("FR-DOC-009 platform catalog", () => {
     expect(by("coming-soon")).toEqual(["bun", "deno", "docker", "python"]);
     expect(new Set(PLATFORMS.map((p) => p.slug)).size).toBe(PLATFORMS.length);
   });
-  it("the matrix shows every platform with its badge, grouped", () => {
+  it("the matrix shows every platform as one grid of blocks with its badge", () => {
     render(<PlatformCards />);
     expect(screen.getByRole("link", { name: /Python.*Coming soon/ })).toHaveAttribute("href", "/docs/platforms/python");
     expect(screen.getByRole("link", { name: /Next\.js.*Supported/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /^Vite\s*Beta$/ })).toBeInTheDocument();
-    expect(screen.getByText("Coming soon", { selector: "h3" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading")).toBeNull();
   });
 });

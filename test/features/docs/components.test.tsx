@@ -56,7 +56,7 @@ describe("FR-DOC-007 Fields", () => {
     expect(screen.getByText("Upstream port.")).not.toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: /Optional \(Advanced\)/ }));
     expect(screen.getByText("Upstream port.")).toBeVisible();
-    expect(screen.getByText("5432")).toBeInTheDocument();
+    expect(screen.getByText("Default: 5432")).toBeInTheDocument();
   });
 });
 
@@ -96,5 +96,22 @@ describe("FR-DOC-007 diagrams", () => {
     expect(svg.getAttribute("aria-label")).toBeTruthy();
     expect(svg.closest("[data-docs-frame]")).not.toBeNull();
     for (const l of labels) expect(screen.getAllByText(l).length).toBeGreaterThan(0);
+  });
+});
+
+describe("BackToTop", () => {
+  it("appears after scrolling and scrolls smoothly to the top", async () => {
+    const { BackToTop } = await import("@/features/docs/components/back-to-top");
+    window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo;
+    render(<BackToTop />);
+    const btn = screen.getByRole("button", { name: "Back to top" });
+    expect(btn.className).toContain("opacity-0");
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 900 });
+    fireEvent.scroll(window);
+    expect(btn.className).toContain("opacity-100");
+    fireEvent.click(btn);
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "smooth" });
   });
 });

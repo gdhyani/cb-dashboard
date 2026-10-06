@@ -1,6 +1,12 @@
 {
   "title": "Reference",
-  "root": true,
-  "icon": "BookMarked",
-  "pages": ["cli", "api", "project-json", "environment-variables", "rest-api", "paths", "glossary"]
+  "pages": [
+    "cli",
+    "api",
+    "project-json",
+    "environment-variables",
+    "rest-api",
+    "paths",
+    "glossary"
+  ]
 }

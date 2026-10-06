@@ -47,7 +47,7 @@ for (const file of walk(RAW).filter((f) => f.endsWith(".png"))) {
       { input: shadow, left: PAD, top: PAD + 10 },
       { input: rounded, left: PAD, top: PAD },
     ])
-    .png({ compressionLevel: 9, palette: true, quality: 92 })
+    .png({ compressionLevel: 9 }) // lossless: palette quantisation blurs text
     .toFile(out);
   console.log(`${path.relative(OUT, out)}  ${Math.round(statSync(out).size / 1024)} KB`);
 }
