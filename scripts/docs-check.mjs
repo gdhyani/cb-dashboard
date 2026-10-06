@@ -79,7 +79,8 @@ const FORBIDDEN = [
   /\bclaude\b/i,
   /generated with/i,
   /co-authored-by/i,
-  /gmail\.com/i,
+  // Personal mail domains (written so this file never contains the literal it bans).
+  new RegExp(["g", "mail\\.com"].join(""), "i"),
   /github\.com-personal/i,
   /Gaurav/i,
 ];
