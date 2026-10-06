@@ -210,7 +210,9 @@ export function AddVariableDialog({
             {valueMode === "none"
               ? "cb makes the signing secret and shows it once after saving, with the URL to paste into the provider."
               : protectedType
-                ? "Paste the real value once. cb keeps it on the server and tests it before saving."
+                ? def.value?.file
+                  ? "Paste or drop the file once. cb keeps it on the server and tests it before saving."
+                  : "Paste the real value once. cb keeps it on the server and tests it before saving."
                 : "Every key your app reads from process.env lives here."}
           </DialogDescription>
         </DialogHeader>
@@ -246,7 +248,11 @@ export function AddVariableDialog({
             <TypeSelect
               id="add-type"
               value={draft.type}
-              onChange={(t) => setDraft((d) => freshDraft(t, undefined, d.key))}
+              onChange={(t) => {
+                // A refusal belongs to the type it was for; a new type starts clean.
+                setError(null);
+                setDraft((d) => freshDraft(t, undefined, d.key));
+              }}
             />
           </FormField>
           {def.providers && (

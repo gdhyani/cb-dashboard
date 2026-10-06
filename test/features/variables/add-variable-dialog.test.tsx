@@ -77,6 +77,34 @@ describe("Add variable dialog (D2, D5, FR-UI-001)", () => {
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
 
+  it("an error from Save & test goes away when the type changes", async () => {
+    api.createService.mockRejectedValue(
+      new ApiError({
+        code: "SERVICE_TEST_FAILED",
+        message: "Token exchange failed (HTTP 400 invalid_grant)",
+        statusCode: 422,
+        correlationId: "c1",
+      }),
+    );
+    Element.prototype.scrollIntoView ??= () => {}; // jsdom has none; the type list scrolls its item into view
+    renderDialog({ initialType: "mongodb" });
+    fireEvent.change(screen.getByLabelText("Key"), { target: { value: "MONGODB_URI" } });
+    fireEvent.change(screen.getByLabelText(/Connection URL/), { target: { value: "mongodb://u:p@127.0.0.1:1/x" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save & test" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("invalid_grant");
+    fireEvent.click(screen.getByRole("combobox", { name: "What is this?" }));
+    const mysql = (await screen.findAllByRole("option")).find((o) => /^MySQL/.test(o.textContent ?? ""));
+    if (!mysql) throw new Error("no MySQL option");
+    fireEvent.click(mysql);
+    expect(await screen.findByRole("heading", { name: "Add MySQL variable" })).toBeInTheDocument();
+    expect(screen.queryByText(/invalid_grant/)).not.toBeInTheDocument();
+  });
+
+  it("file-based types say the file can be dropped", () => {
+    renderDialog({ initialType: "gcp" });
+    expect(screen.getByText(/Paste or drop the file/)).toBeInTheDocument();
+  });
+
   it("a taken key is shown on the Key field", async () => {
     api.createService.mockRejectedValue(
       new ApiError({
