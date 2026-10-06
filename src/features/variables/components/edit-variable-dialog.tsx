@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useServiceMutations } from "@/features/resources";
-import { WebhookEndpoint } from "@/features/webhooks";
+import { WebhookSetup } from "@/features/webhooks";
 import { ApiError } from "@/shared/api/api-error";
 import { FormError } from "@/shared/components/form-error";
 import { FormField } from "@/shared/components/form-field";
@@ -99,7 +99,15 @@ export function EditVariableDialog({
     [isMain, def, group?.provider],
   );
   const secretDefs = useMemo(
-    () => (isMain && def.value ? [def.value, ...def.required(group?.provider).filter((f) => f.secret)] : []),
+    () =>
+      isMain && def.value
+        ? [
+            def.value,
+            ...def.required(group?.provider).filter((f) => f.secret),
+            // Optional secrets (Stripe's thin-events secret) can be set without retyping the main one.
+            ...def.advanced(group?.provider).filter((f) => f.secret),
+          ]
+        : [],
     [isMain, def, group?.provider],
   );
   const initialSettings = useMemo(
@@ -129,7 +137,9 @@ export function EditVariableDialog({
     (k) => k in initialSettings && hostOf(settings[k]) !== hostOf(initialSettings[k]),
   );
   const replacingNow = editing && (replacing || (isMain && moved));
-  const secretMissing = replacingNow && secretDefs.some((f) => !(secrets[f.name] ?? "").trim());
+  const mainOptional = def.valueMode?.(group?.provider) === "optional" && !(isMain && moved);
+  const secretRequired = (f: FieldDef) => !(f.optional && (f.name !== def.value?.name || mainOptional));
+  const secretMissing = replacingNow && secretDefs.some((f) => secretRequired(f) && !(secrets[f.name] ?? "").trim());
   const taken = new Set(takenKeys);
   const keyTaken = Boolean(variable && key !== variable.key && taken.has(key));
   const extraInvalid = extras.some((x) => {
@@ -169,7 +179,9 @@ export function EditVariableDialog({
       // 1. The service first: it is tested, so it is the step most likely to be refused.
       if (isMain && group) {
         const body: Record<string, unknown> = {};
-        if (replacingNow) for (const f of secretDefs) body[f.name] = secrets[f.name];
+        if (replacingNow)
+          for (const f of secretDefs)
+            if ((secrets[f.name] ?? "").trim() || secretRequired(f)) body[f.name] = secrets[f.name];
         for (const f of settingsDefs) {
           const next = settings[f.name] ?? "";
           if (next === (initialSettings[f.name] ?? "")) continue;
@@ -181,10 +193,8 @@ export function EditVariableDialog({
                   .filter(Boolean)
               : f.name === "extraHeaders"
                 ? (parseHeaderLines(next).headers ?? {})
-                : f.name === "port" && group.resource.kind === "webhook"
-                  ? next.trim()
-                    ? Number(next)
-                    : null
+                : f.name === "thinPath" && !next.trim()
+                  ? null
                   : next;
         }
         if (Object.keys(body).length > 0)
@@ -327,9 +337,7 @@ export function EditVariableDialog({
             </div>
           )}
 
-          {isMain && group?.resource.webhookUrl && (
-            <WebhookEndpoint url={group.resource.webhookUrl} provider={group.provider} />
-          )}
+          {isMain && group?.resource.webhookUrl && <WebhookSetup envId={envId} resource={group.resource} />}
 
           {settingsDefs
             .filter((f) => !f.showWhen || (settings[f.showWhen.field] ?? "") === f.showWhen.equals)

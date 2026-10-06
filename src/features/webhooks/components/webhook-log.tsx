@@ -1,6 +1,6 @@
 "use client";
 
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Send } from "lucide-react";
 import { useState } from "react";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { EmptyState } from "@/shared/components/empty-state";
@@ -11,6 +11,7 @@ import { StaggerItem } from "@/shared/components/stagger";
 import { timeAgo } from "@/shared/lib/format-time";
 import { Button } from "@/shared/ui/button";
 import { useReplayWebhook, useWebhookEvents } from "../hooks/use-webhook-events";
+import { useSendWebhookToMe } from "../hooks/use-webhook-setup";
 import type { WebhookDelivery, WebhookEvent } from "../types";
 
 /** The backend keeps re-routing an unclaimed event for 15 s (an owner record or linking event may still arrive). */
@@ -31,12 +32,19 @@ function EventRow({
   index,
   onReplay,
   replaying,
+  onSendToMe,
+  sending,
 }: {
   event: WebhookEvent;
   index: number;
   onReplay: () => void;
   replaying: boolean;
+  onSendToMe: () => void;
+  sending: boolean;
 }) {
+  const routing = Date.now() - new Date(event.receivedAt).getTime() < ROUTING_WINDOW_MS;
+  const nobody = event.deliveries.length === 0 && !routing;
+  const label = event.type || event.eventId;
   return (
     <StaggerItem index={index} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex min-w-0 flex-col gap-1">
@@ -48,9 +56,9 @@ function EventRow({
         </p>
         {event.deliveries.length === 0 ? (
           <p className="text-xs text-subtle">
-            {Date.now() - new Date(event.receivedAt).getTime() < ROUTING_WINDOW_MS
+            {routing
               ? "Finding the developer who caused it…"
-              : "No one on the team caused this, so it was kept here. Developers can receive these with cb webhooks listen."}
+              : "No one on the team caused this (a test event from the dashboard, or stripe trigger), so it was kept here."}
           </p>
         ) : (
           <ul className="flex flex-col gap-1">
@@ -69,17 +77,31 @@ function EventRow({
           </ul>
         )}
       </div>
-      <Button
-        size="sm"
-        variant="ghost"
-        aria-label={`Replay ${event.type || event.eventId}`}
-        loading={replaying}
-        onClick={onReplay}
-        className="self-start"
-      >
-        <RotateCcw className="size-3.5" />
-        Replay
-      </Button>
+      {nobody ? (
+        <Button
+          size="sm"
+          variant="outline"
+          aria-label={`Send ${label} to me`}
+          loading={sending}
+          onClick={onSendToMe}
+          className="self-start"
+        >
+          <Send className="size-3.5" />
+          Send to me
+        </Button>
+      ) : (
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-label={`Replay ${label}`}
+          loading={replaying}
+          onClick={onReplay}
+          className="self-start"
+        >
+          <RotateCcw className="size-3.5" />
+          Replay
+        </Button>
+      )}
     </StaggerItem>
   );
 }
@@ -89,6 +111,7 @@ export function WebhookLog({ envId }: { envId: string }) {
   const [page, setPage] = useState(1);
   const events = useWebhookEvents(envId, page);
   const replay = useReplayWebhook(envId);
+  const sendToMe = useSendWebhookToMe(envId);
   return (
     <QueryState isPending={events.isPending} error={events.error} skeleton={<SkeletonRows rows={4} />}>
       {events.data && events.data.items.length === 0 ? (
@@ -107,6 +130,8 @@ export function WebhookLog({ envId }: { envId: string }) {
                   index={i}
                   replaying={replay.isPending && replay.variables === e.id}
                   onReplay={() => replay.mutate(e.id)}
+                  sending={sendToMe.isPending && sendToMe.variables === e.id}
+                  onSendToMe={() => sendToMe.mutate(e.id)}
                 />
               ))}
             </ul>

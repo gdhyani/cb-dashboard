@@ -96,6 +96,7 @@ function renderEdit(props: Partial<ComponentProps<typeof EditVariableDialog>> = 
 beforeEach(() => {
   vi.clearAllMocks();
   resources.listProfiles.mockResolvedValue([{ name: "default", rotatedAt: null, isDefault: true }]);
+  resources.listResources.mockResolvedValue([]);
   vars.updateVariable.mockResolvedValue({});
   resources.updateResource.mockResolvedValue({});
 });
@@ -315,14 +316,19 @@ describe("FR-WH-001 editing a webhook signing secret", () => {
     rows: [{ variable: WH_VAR, extra: false }],
   };
 
-  it("sends a new port as a number and an emptied port as null (back to PORT / 3000)", async () => {
-    renderEdit({ variable: WH_VAR, group: WH });
-    const port = await screen.findByLabelText(/App port/);
-    expect(port).toHaveValue("3060");
-    fireEvent.change(port, { target: { value: "4000" } });
+  it("has no App port field: cb detects the port the app listens on", async () => {
+    renderEdit({ variable: WH_VAR, group: WH, initialMode: "edit" });
+    await screen.findByText("https://cb.example/api/hooks/r9");
+    expect(screen.queryByLabelText(/App port/)).toBeNull();
+  });
+
+  it("adds the thin destination's secret without retyping the main one", async () => {
+    renderEdit({ variable: WH_VAR, group: WH, initialMode: "edit" });
+    fireEvent.click(await screen.findByRole("button", { name: "Replace value" }));
+    fireEvent.change(screen.getByLabelText(/Thin events signing secret/), { target: { value: "whsec_thin_new" } });
     fireEvent.click(screen.getByRole("button", { name: /Save/ }));
     await waitFor(() =>
-      expect(resources.updateResource).toHaveBeenCalledWith("r9", expect.objectContaining({ port: 4000, test: true })),
+      expect(resources.updateResource).toHaveBeenCalledWith("r9", { thinSigningSecret: "whsec_thin_new", test: true }),
     );
   });
 
@@ -336,14 +342,5 @@ describe("FR-WH-001 editing a webhook signing secret", () => {
   it("other services show no webhook URL", () => {
     renderEdit();
     expect(screen.queryByRole("button", { name: "Copy webhook URL" })).toBeNull();
-  });
-
-  it("an emptied port is cleared", async () => {
-    renderEdit({ variable: WH_VAR, group: WH });
-    fireEvent.change(await screen.findByLabelText(/App port/), { target: { value: "" } });
-    fireEvent.click(screen.getByRole("button", { name: /Save/ }));
-    await waitFor(() =>
-      expect(resources.updateResource).toHaveBeenCalledWith("r9", expect.objectContaining({ port: null })),
-    );
   });
 });

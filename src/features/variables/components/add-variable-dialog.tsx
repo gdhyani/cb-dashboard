@@ -2,7 +2,8 @@
 
 import { AlertTriangle, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
-import { WebhookEndpoint } from "@/features/webhooks";
+import type { Resource } from "@/features/resources";
+import { WebhookSetup } from "@/features/webhooks";
 import { ApiError } from "@/shared/api/api-error";
 import { FormError } from "@/shared/components/form-error";
 import { FormField } from "@/shared/components/form-field";
@@ -67,8 +68,13 @@ export function AddVariableDialog({
   const [draft, setDraft] = useState<DraftState>(() => freshDraft(initialType, initialProvider));
   const [error, setError] = useState<unknown>(null);
   const [keyError, setKeyError] = useState<string>();
-  /** Webhook services: shown after saving — the URL the admin pastes into the provider. */
-  const [created, setCreated] = useState<{ key: string; url: string; provider: string } | null>(null);
+  /** Webhook services: after saving, how to set up the provider side (Connect, or URL + cb-made secret). */
+  const [created, setCreated] = useState<{
+    key: string;
+    service: Resource;
+    provider: string;
+    generatedSecret?: string;
+  } | null>(null);
 
   // Each opening starts clean (secrets never outlive the dialog — FR-UI-001).
   useEffect(() => {
@@ -87,7 +93,9 @@ export function AddVariableDialog({
   const pending = create.isPending || createService.isPending;
 
   const keyInvalid = draft.key !== "" && !KEY_PATTERN.test(draft.key);
-  const valueMissing = draft.type !== "plain" && draft.type !== "gen" && !draft.value.trim();
+  const valueMode = def.valueMode?.(draft.provider) ?? "required";
+  const valueMissing =
+    draft.type !== "plain" && draft.type !== "gen" && valueMode === "required" && !draft.value.trim();
   const requiredMissing = required.some((f) => !f.optional && !f.select && !(draft.fields[f.name] ?? "").trim());
   const extraDefs = def.extras(draft.provider);
   const extrasInvalid = draft.extras.some((e) => {
@@ -129,11 +137,14 @@ export function AddVariableDialog({
       // FR-UI-001: drop the request body (it holds the real value) from the mutation cache.
       createService.reset();
       create.reset();
-      const url =
-        req.endpoint === "services" ? (result as { service?: { webhookUrl?: string } }).service?.webhookUrl : undefined;
-      if (url) {
-        setDraft((d) => ({ ...d, value: "" }));
-        setCreated({ key: draft.key, url, provider: draft.provider ?? "stripe" });
+      const service =
+        req.endpoint === "services"
+          ? (result as { service?: Resource & { generatedSecret?: string } }).service
+          : undefined;
+      if (service?.webhookUrl) {
+        const { generatedSecret, ...rest } = service;
+        setDraft((d) => ({ ...d, value: "", fields: {} }));
+        setCreated({ key: draft.key, service: rest, provider: draft.provider ?? "stripe", generatedSecret });
         return;
       }
       onOpenChange(false);
@@ -155,17 +166,15 @@ export function AddVariableDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ServiceLogo icon={def.icon} />
-              Add this URL in {providerName}
+              {created.provider === "razorpay" ? "Add this webhook in Razorpay" : `Connect ${providerName}`}
             </DialogTitle>
             <DialogDescription>
               {created.key} is saved. {providerName} sends webhooks to cb; cb checks them with the real secret and
-              delivers each one only to the developer whose app caused it.
+              delivers each one only to the developer whose app caused it, on the port their app listens on.
             </DialogDescription>
           </DialogHeader>
-          <WebhookEndpoint url={created.url} provider={created.provider} />
-          <p className="text-xs text-subtle">
-            You can find this URL again in the key's Edit dialog and on the Webhooks tab.
-          </p>
+          <WebhookSetup envId={envId} resource={created.service} generatedSecret={created.generatedSecret} />
+          <p className="text-xs text-subtle">This setup is also in the key's Edit dialog and on the Webhooks tab.</p>
           <DialogFooter>
             <Button type="button" onClick={() => onOpenChange(false)}>
               Done
@@ -185,9 +194,11 @@ export function AddVariableDialog({
             {dialogTitle("Add", draft.type)}
           </DialogTitle>
           <DialogDescription>
-            {protectedType
-              ? "Paste the real value once. cb keeps it on the server and tests it before saving."
-              : "Every key your app reads from process.env lives here."}
+            {valueMode === "none"
+              ? "cb makes the signing secret and shows it once after saving, with the URL to paste into the provider."
+              : protectedType
+                ? "Paste the real value once. cb keeps it on the server and tests it before saving."
+                : "Every key your app reads from process.env lives here."}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -230,7 +241,12 @@ export function AddVariableDialog({
                 id="add-provider"
                 providers={def.providers}
                 value={draft.provider ?? ""}
-                onChange={(p) => setDraft((d) => ({ ...freshDraft(d.type, p, d.key), value: d.value }))}
+                onChange={(p) =>
+                  setDraft((d) => ({
+                    ...freshDraft(d.type, p, d.key),
+                    value: (TYPES[d.type].valueMode?.(p) ?? "required") === "none" ? "" : d.value,
+                  }))
+                }
               />
             </FormField>
           )}
@@ -258,7 +274,8 @@ export function AddVariableDialog({
               </p>
             </>
           ) : (
-            def.value && (
+            def.value &&
+            valueMode !== "none" && (
               <FieldInput
                 idPrefix="add"
                 def={{
