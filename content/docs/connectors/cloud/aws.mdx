@@ -1,7 +1,6 @@
 ---
 title: AWS / S3-compatible
 description: Use S3, Cloudflare R2 or other S3-compatible storage with the AWS SDK, presigned URLs included, without the real access keys.
-status: beta
 ---
 
 Store your real AWS access key pair in cb once. Every developer's app gets stand-in AWS keys and a local endpoint.
@@ -182,6 +181,17 @@ await sqs.send(new SendMessageCommand({ QueueUrl: `${endpoint}/123456789012/orde
   as in the `SES_…` example above.
 </Callout>
 
+<Callout type="warning" title="SESv2 reads a different variable">
+  AWS SDK v3's `SESv2Client` looks for `AWS_ENDPOINT_URL_SESV2`, not `AWS_ENDPOINT_URL_SES`. If you rely on the
+  SDK's environment variables instead of passing `endpoint` in code, name the extra key `AWS_ENDPOINT_URL_SESV2` so
+  requests go through cb.
+</Callout>
+
+<Callout type="note" title="Beta: SES and SQS">
+  S3 is verified end to end with real AWS, including presigned URLs. SES and SQS go through the same signing path
+  and are still in beta.
+</Callout>
+
 ## Run it
 
 ```bash
@@ -196,8 +206,9 @@ If you ran `cb init`, your package scripts already run under cb. To see the stan
 - Your app must send requests to the local endpoint; requests straight to `amazonaws.com` are not caught.
 - Presigned URLs work only on the developer's machine while `cb run` is running. Don't hand them to other people or
   devices.
-- **Save & test** checks keys with an S3 `ListBuckets` request. For an endpoint that isn't S3-compatible (SES, SQS),
-  the test can fail even with valid keys. For email, [SMTP](/docs/connectors/cloud/smtp) works with SES SMTP
+- **Save & test** checks keys with an S3 `ListBuckets` request. A key scoped to one bucket still passes ("key
+  accepted; can't list buckets"), because AWS checked the signature before refusing the list; an unknown key ID or a
+  wrong secret fails. For an endpoint that isn't S3-compatible (SES, SQS), the test can fail even with valid keys. For email, [SMTP](/docs/connectors/cloud/smtp) works with SES SMTP
   credentials.
 - Plain `http://` endpoints are accepted only for private addresses, and only while the cb server allows them.
 - Revoking a developer's access stops their requests.

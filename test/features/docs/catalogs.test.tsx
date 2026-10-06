@@ -5,17 +5,13 @@ import { CONNECTORS } from "@/features/docs/lib/connectors";
 import { PLATFORMS } from "@/features/docs/lib/platforms";
 
 const BETA = [
-  "postgres",
   "mysql",
-  "redis",
   "openai",
   "anthropic",
   "gemini",
   "groq",
   "mistral",
-  "openrouter",
   "custom-ai",
-  "aws",
   "smtp",
   "google",
   "github",

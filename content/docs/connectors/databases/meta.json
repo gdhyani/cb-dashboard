@@ -1,1 +1,1 @@
-{ "title": "Databases", "pages": ["mongodb", "postgres", "mysql", "redis"] }
+{ "title": "Databases", "pages": ["mongodb", "postgres", "mysql", "redis", "supabase"] }

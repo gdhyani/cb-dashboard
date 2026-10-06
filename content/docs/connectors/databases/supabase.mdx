@@ -1,0 +1,134 @@
+---
+title: Supabase
+description: Use the Supabase client with a stand-in secret key; the real secret key never leaves cb.
+---
+
+Store your Supabase **secret key** and **Project URL** in cb once. Every developer's app gets a stand-in
+`SUPABASE_SECRET_KEY`, and calls to your project's host go through cb, which swaps the stand-in for the real key on
+the way out. The public publishable key keeps working exactly as it does today.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have the project's **secret key** (`sb_secret_…`, or the legacy `service_role` key) and its **Project URL**
+  (`https://<project-ref>.supabase.co`). Both are under **Project Settings → API** in Supabase.
+
+<Callout type="note">
+  The **publishable** key (`sb_publishable_…`) is public by design and meant for browsers. cb does not store it as
+  a secret; the dashboard refuses it in the secret field and offers it as a plain extra key instead.
+</Callout>
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**Supabase** in the **Quick add** row, or click **Add variable** and set **What is this?** to **Supabase**.
+</Step>
+<Step>
+### Name the key and paste the secret
+
+Type the **Key** your code reads, usually `SUPABASE_SECRET_KEY`, paste the secret key into **Secret key**, and enter
+the **Project URL**.
+
+<Frame src="/docs/images/connectors/add-supabase.png" alt="Add Supabase variable dialog with the secret key masked, the Project URL and the suggested extra keys" caption="Add Supabase variable, with the suggested extra keys open" />
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `SUPABASE_SECRET_KEY`.
+  </Field>
+  <Field name="Secret key" type="secret" required>
+    `sb_secret_…` or the `service_role` key. Stored encrypted on the cb server and never shown again.
+  </Field>
+  <Field name="Project URL" type="url" required>
+    `https://<project-ref>.supabase.co`. cb sends your app's calls for this host through the gateway.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="SUPABASE_URL" type="plain" default="ticked">
+    Suggested extra key holding the Project URL. Rename it to match your code.
+  </Field>
+  <Field name="NEXT_PUBLIC_SUPABASE_URL" type="plain">
+    The Project URL again, for browser code.
+  </Field>
+  <Field name="NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" type="plain">
+    Paste your publishable key here if your browser code reads it. It is public and passes through unchanged.
+  </Field>
+</Fields>
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb calls your project's REST endpoint with the real key and only stores the secret if the
+call succeeds.
+</Step>
+</Steps>
+
+## What your app sees
+
+<EnvTable
+  rows={[
+    { name: "SUPABASE_SECRET_KEY", example: "sb_secret_cb_…", kind: "stand-in" },
+    { name: "SUPABASE_URL", example: "https://abcd.supabase.co", kind: "plain" },
+    { name: "NEXT_PUBLIC_SUPABASE_URL", example: "https://abcd.supabase.co", kind: "plain" },
+    { name: "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", example: "sb_publishable_…", kind: "plain" },
+  ]}
+/>
+
+The Project URL stays the real one: your code keeps calling `https://<project-ref>.supabase.co`, and the cb preload
+routes those connections through the local agent.
+
+## Use it in code
+
+The official client works unchanged. Use the secret key only in server code.
+
+```ts title="lib/supabase-admin.ts"
+import { createClient } from "@supabase/supabase-js";
+
+export const supabaseAdmin = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!, {
+  auth: { persistSession: false },
+});
+
+const { data, error } = await supabaseAdmin.from("orders").select("*").limit(10);
+```
+
+Browser code keeps using the publishable key:
+
+```ts title="lib/supabase-browser.ts"
+import { createClient } from "@supabase/supabase-js";
+
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+);
+```
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+If you ran `cb init`, your package scripts already run under cb. See [cb run](/docs/guides/develop/cb-run).
+
+## Limits
+
+- Only server code under `cb run` gets the brokered secret key. Browser code uses the publishable key, as Supabase
+  intends.
+- The Supabase client sends the key in two headers (`apikey` and `Authorization: Bearer`); cb replaces the
+  device's own stand-in wherever it appears and leaves every other value untouched.
+- A request that carries another key, such as the publishable key, or no key at all goes through unchanged and never
+  gets the real secret added. A cb stand-in that belongs to another device is refused.
+- For direct Postgres connections to your Supabase database, add a separate [PostgreSQL](/docs/connectors/databases/postgres)
+  variable with the database connection string.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| The dashboard says "That is the publishable key…" | You pasted `sb_publishable_…` into **Secret key**. | Paste the secret key, and add the publishable key as the optional extra. |
+| "Use your project URL, e.g. https://abcd.supabase.co" | The Project URL has a path or isn't HTTPS. | Use only `https://<project-ref>.supabase.co`. |
+| Calls fail with an invalid key error | The app isn't running under `cb run`, so the stand-in reached Supabase. | Start the app with `npx cb run -- …` or the scripts `cb init` wrapped. |
