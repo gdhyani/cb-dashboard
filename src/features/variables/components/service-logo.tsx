@@ -15,6 +15,7 @@ import {
   siRazorpay,
   siRedis,
   siStripe,
+  siSupabase,
 } from "simple-icons";
 
 const ICONS: Record<string, { path: string; hex: string }> = {
@@ -34,6 +35,7 @@ const ICONS: Record<string, { path: string; hex: string }> = {
   razorpay: { ...siRazorpay, hex: "3395FF" },
   redis: siRedis,
   stripe: siStripe,
+  supabase: siSupabase,
 };
 
 /** Types with no brand mark (simple-icons has no AWS logo): a coloured glyph instead of a letter badge. */

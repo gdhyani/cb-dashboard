@@ -13,6 +13,7 @@ export type TypeId =
   | "postgres"
   | "mysql"
   | "redis"
+  | "supabase"
   | "stripe"
   | "razorpay"
   | "webhook"
@@ -339,6 +340,50 @@ export const TYPES: Record<TypeId, TypeDef> = {
   postgres: db("postgres", "Postgres", "postgres", "postgresql", "postgresql://user:password@host:5432/db"),
   mysql: db("mysql", "MySQL", "mysql", "mysql", "mysql://user:password@host:3306/db"),
   redis: db("redis", "Redis", "redis", "redis", "rediss://default:password@host:6379"),
+  supabase: {
+    id: "supabase",
+    name: "Supabase",
+    title: "Supabase",
+    group: "Databases",
+    desc: "secret key + project URL",
+    icon: "supabase",
+    kind: "http",
+    presetId: "supabase",
+    value: {
+      name: "apiKey",
+      label: "Secret key",
+      secret: true,
+      placeholder: "sb_secret_…",
+      validate: (v) =>
+        v.startsWith("sb_publishable_")
+          ? "That is the publishable key; paste the secret key (sb_secret_… or the service_role key)."
+          : undefined,
+    },
+    required: () => [
+      {
+        name: "upstreamUrl",
+        label: "Project URL",
+        placeholder: "https://<project-ref>.supabase.co",
+        validate: (v) =>
+          /^https:\/\/[^\s/]+\/?$/.test(v) ? undefined : "Use your project URL, e.g. https://abcd.supabase.co",
+        hint: "Supabase → Project Settings → API. The publishable key keeps working as it is.",
+      },
+    ],
+    extras: () => [
+      { suggestedKey: "SUPABASE_URL", what: "Project URL (public)", preticked: true, defaultFrom: "upstreamUrl" },
+      {
+        suggestedKey: "NEXT_PUBLIC_SUPABASE_URL",
+        what: "Project URL for the browser (public)",
+        defaultFrom: "upstreamUrl",
+      },
+      {
+        suggestedKey: "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        what: "Publishable key (public)",
+        placeholder: "sb_publishable_…",
+      },
+    ],
+    advanced: none,
+  },
   stripe: {
     id: "stripe",
     name: "Stripe",
@@ -672,7 +717,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
 
 export const TYPE_GROUPS: { group: TypeGroup; ids: TypeId[] }[] = [
   { group: "Basic", ids: ["plain", "gen", "visible"] },
-  { group: "Databases", ids: ["mongodb", "postgres", "mysql", "redis"] },
+  { group: "Databases", ids: ["mongodb", "postgres", "mysql", "redis", "supabase"] },
   { group: "Payments", ids: ["stripe", "razorpay", "webhook"] },
   { group: "AI", ids: ["ai"] },
   { group: "Sign-in & push", ids: ["oauth", "gcp", "apns"] },
@@ -685,6 +730,7 @@ export const QUICK_ADD: { id: string; label: string; type: TypeId; provider?: st
   { id: "mongodb", label: "MongoDB", type: "mongodb", icon: "mongodb" },
   { id: "postgres", label: "Postgres", type: "postgres", icon: "postgresql" },
   { id: "redis", label: "Redis", type: "redis", icon: "redis" },
+  { id: "supabase", label: "Supabase", type: "supabase", icon: "supabase" },
   { id: "stripe", label: "Stripe", type: "stripe", icon: "stripe" },
   { id: "openai", label: "OpenAI", type: "ai", provider: "openai", icon: "letter:AI" },
   { id: "anthropic", label: "Anthropic", type: "ai", provider: "anthropic", icon: "anthropic" },
@@ -814,7 +860,11 @@ export function buildCreateRequest(d: DraftState): CreateRequest {
     resource.extraHeaders = parseHeaderLines(fields.extraHeaders).headers ?? {};
   if (d.type === "aws" && !fields.endpoint && fields.region)
     resource.endpoint = `https://s3.${fields.region}.amazonaws.com`;
-  if (d.type === "http" && typeof fields.upstreamUrl === "string" && fields.upstreamUrl.startsWith("https://")) {
+  if (
+    (d.type === "http" || d.type === "supabase") &&
+    typeof fields.upstreamUrl === "string" &&
+    fields.upstreamUrl.startsWith("https://")
+  ) {
     // SDKs with a fixed host are caught by host (Layer 2); the base-URL extra covers the rest.
     const host = `${new URL(fields.upstreamUrl).hostname}:443`;
     const extra = Array.isArray(resource.redirectHosts) ? (resource.redirectHosts as string[]) : [];
