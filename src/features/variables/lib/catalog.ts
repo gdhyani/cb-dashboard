@@ -403,6 +403,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
       secret: true,
       optional: true,
       hint: "Leave empty and cb creates the webhook in Stripe for you after saving (Connect Stripe).",
+      validate: (v) => (v.startsWith("whsec_") ? undefined : "A Stripe signing secret starts with whsec_."),
     },
     // Stripe: Connect fills it; Razorpay: cb makes the secret and shows it once after saving.
     valueMode: (p) => (p === "razorpay" ? "none" : "optional"),
@@ -411,6 +412,10 @@ export const TYPES: Record<TypeId, TypeDef> = {
         name: "path",
         label: "Path in your app",
         placeholder: "/api/webhooks/stripe",
+        validate: (v) =>
+          /^\/(?!\/)[^\s?#\\]*(\?[^\s#]*)?$/.test(v)
+            ? undefined
+            : "Start with /, e.g. /api/webhooks/stripe (no spaces).",
         hint: "cb posts each webhook here on the developer's machine, on the port their app listens on.",
       },
     ],

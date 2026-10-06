@@ -186,3 +186,35 @@ describe("FR-WH-001 webhook signing secret type (D2, D5, §6a)", () => {
     expect(screen.getByLabelText(/Thin events signing secret/)).toBeInTheDocument();
   });
 });
+
+describe("FR-WH-001 wrong input in the webhook form", () => {
+  it("a path without a leading / (or with spaces) is shown as an error and blocks Save", () => {
+    renderDialog("webhook", vi.fn());
+    fireEvent.change(screen.getByLabelText("Key"), { target: { value: "STRIPE_WEBHOOK_SECRET" } });
+    const path = screen.getByLabelText(/Path in your app/);
+    for (const bad of ["webhooks/stripe", "//evil.example/x", "/has space"]) {
+      fireEvent.change(path, { target: { value: bad } });
+      expect(screen.getByText(/Start with \/, e.g. \/api\/webhooks\/stripe/)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Save & test" })).toBeDisabled();
+    }
+    fireEvent.change(path, { target: { value: "/webhooks/stripe?var=X" } });
+    expect(screen.queryByText(/Start with \/, e.g. \/api\/webhooks\/stripe/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Save & test" })).toBeEnabled();
+  });
+
+  it("a thin secret that is not a Stripe signing secret is refused in the form", () => {
+    renderDialog("webhook", vi.fn());
+    fireEvent.click(screen.getByRole("button", { name: /Advanced/ }));
+    fireEvent.change(screen.getByLabelText(/Thin events signing secret/), { target: { value: "sk_test_oops" } });
+    expect(screen.getByText(/starts with whsec_/)).toBeInTheDocument();
+  });
+
+  it("a Stripe signing secret that is not whsec_… is refused in the form", () => {
+    renderDialog("webhook", vi.fn());
+    fireEvent.change(screen.getByLabelText("Key"), { target: { value: "STRIPE_WEBHOOK_SECRET" } });
+    fireEvent.change(screen.getByLabelText(/Path in your app/), { target: { value: "/hooks" } });
+    fireEvent.change(screen.getByLabelText(/Signing secret/), { target: { value: "sk_test_wrong_field" } });
+    expect(screen.getByText(/A Stripe signing secret starts with whsec_/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save & test" })).toBeDisabled();
+  });
+});

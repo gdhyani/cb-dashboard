@@ -48,6 +48,14 @@ export function ServiceRows({
   const label = chipLabel(group.type, group.provider);
   const chip = { icon: serviceIcon(group), label };
   const keys = group.rows.map((r) => r.variable.key);
+  const cfg = group.resource.config;
+  // A connected webhook's provider side goes with it (Stripe: deleted; Razorpay: switched off, it has no delete).
+  const providerSide =
+    cfg.stripeEndpointId || cfg.stripeThinDestinationId
+      ? " Its webhook in Stripe is deleted too."
+      : cfg.razorpayWebhookId
+        ? " Its webhook in Razorpay is switched off (delete it there if you like)."
+        : "";
   const removeService: RowAction = {
     label: "Remove",
     icon: Trash2,
@@ -55,7 +63,7 @@ export function ServiceRows({
     confirm: {
       title: keys.length ? `Remove ${label} and its keys?` : `Remove ${label}?`,
       description: keys.length
-        ? `${keys.join(", ")} will be removed. Running apps lose access within seconds.`
+        ? `${keys.join(", ")} will be removed. Running apps lose access within seconds.${providerSide}`
         : "No variable uses this service. Removing it deletes its stored credentials.",
       confirmLabel: "Remove service",
       onConfirm: () => services.remove.mutateAsync(group.resource.id),

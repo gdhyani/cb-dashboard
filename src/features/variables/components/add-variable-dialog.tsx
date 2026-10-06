@@ -106,8 +106,15 @@ export function AddVariableDialog({
     return Boolean(ed && !ed.field && !e.value?.trim() && !(ed.defaultFrom && draft.fields[ed.defaultFrom]?.trim()));
   });
   const fieldsInvalid = Boolean(fieldError([...required, ...advanced], draft.fields));
+  const valueError = valueMode !== "none" && draft.value.trim() ? def.value?.validate?.(draft.value.trim()) : undefined;
   const canSave =
-    KEY_PATTERN.test(draft.key) && !valueMissing && !requiredMissing && !extrasInvalid && !fieldsInvalid && !pending;
+    KEY_PATTERN.test(draft.key) &&
+    !valueMissing &&
+    !requiredMissing &&
+    !extrasInvalid &&
+    !fieldsInvalid &&
+    !valueError &&
+    !pending;
 
   const update = (patch: Partial<DraftState>) => setDraft((d) => ({ ...d, ...patch }));
   const setField = (name: string, value: string) => setDraft((d) => ({ ...d, fields: { ...d.fields, [name]: value } }));
@@ -166,7 +173,7 @@ export function AddVariableDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ServiceLogo icon={def.icon} />
-              {created.provider === "razorpay" ? "Add this webhook in Razorpay" : `Connect ${providerName}`}
+              {`Connect ${providerName}`}
             </DialogTitle>
             <DialogDescription>
               {created.key} is saved. {providerName} sends webhooks to cb; cb checks them with the real secret and
@@ -285,6 +292,7 @@ export function AddVariableDialog({
                 }}
                 value={draft.value}
                 onChange={(v) => update({ value: v })}
+                error={valueError}
               />
             )
           )}
@@ -295,6 +303,7 @@ export function AddVariableDialog({
               def={f}
               value={draft.fields[f.name] ?? ""}
               onChange={(v) => setField(f.name, v)}
+              error={draft.fields[f.name]?.trim() ? f.validate?.(draft.fields[f.name]?.trim() ?? "") : undefined}
             />
           ))}
           <ExtrasSection defs={extraDefs} extras={draft.extras} onChange={(extras) => update({ extras })} />

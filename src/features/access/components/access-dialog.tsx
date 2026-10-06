@@ -8,6 +8,7 @@ import { useProfiles, useResources } from "@/features/resources/hooks/use-resour
 import { KINDS } from "@/features/resources/lib/kinds";
 import type { Resource } from "@/features/resources/types";
 import { AvatarInitials } from "@/shared/components/avatar-initials";
+import { ChoiceCards } from "@/shared/components/choice-cards";
 import { notifySuccess } from "@/shared/lib/notify";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
@@ -291,34 +292,16 @@ export function AccessDialog({
 
         <section className="flex flex-col gap-2.5">
           <SectionTitle step={editing ? 1 : 2} title="Where" />
-          <fieldset className="grid gap-2 sm:grid-cols-2">
-            <legend className="sr-only">Where</legend>
-            {(
-              [
-                ["project", "All environments", "Including environments added later"],
-                ["environments", "Specific environments", "Only the ones you choose"],
-              ] as const
-            ).map(([value, title, hint]) => (
-              <label
-                key={value}
-                className={cn(
-                  "flex cursor-pointer flex-col items-start gap-0.5 rounded-md border px-3 py-2.5 text-left transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
-                  scope === value ? "border-foreground bg-white/[0.04]" : "border-border hover:border-border-strong",
-                )}
-              >
-                <input
-                  type="radio"
-                  name="access-scope"
-                  value={value}
-                  checked={scope === value}
-                  onChange={() => setScope(value)}
-                  className="sr-only"
-                />
-                <span className="text-sm font-medium">{title}</span>
-                <span className="text-xs text-subtle">{hint}</span>
-              </label>
-            ))}
-          </fieldset>
+          <ChoiceCards
+            name="access-scope"
+            legend="Where"
+            value={scope}
+            onChange={setScope}
+            choices={[
+              { value: "project", title: "All environments", hint: "Including environments added later" },
+              { value: "environments", title: "Specific environments", hint: "Only the ones you choose" },
+            ]}
+          />
           {scope === "environments" && (
             <div className="divide-y divide-border overflow-hidden rounded-md border border-border">
               {matrix.environments.map((e) => (
