@@ -13,7 +13,7 @@ import { WebhookFlowDiagram } from "@/features/docs/components/webhook-flow-diag
 
 vi.mock("next/image", () => ({
   // biome-ignore lint/performance/noImgElement: test double for next/image
-  default: (props: { src: string; alt: string; className?: string }) => <img {...props} />,
+  default: ({ alt, ...props }: { src: string; alt: string; className?: string }) => <img alt={alt} {...props} />,
 }));
 
 describe("FR-DOC-007 Frame", () => {

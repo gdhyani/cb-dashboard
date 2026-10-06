@@ -74,7 +74,8 @@ const FORBIDDEN = [
   /rzp_(live|test)_(?!cb)[A-Za-z0-9]{10,}/,
   /\bghp_[A-Za-z0-9]{30,}/,
   /\bAIza[0-9A-Za-z_-]{35}\b/,
-  /-----BEGIN [A-Z ]*PRIVATE KEY-----/,
+  // A PEM header is fine as text; a header followed by key material is not.
+  /-----BEGIN [A-Z ]*PRIVATE KEY-----\s*(?:\\n)?[A-Za-z0-9+/]{40,}/,
   /\bclaude\b/i,
   /generated with/i,
   /co-authored-by/i,

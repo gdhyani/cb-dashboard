@@ -245,3 +245,16 @@
 :root {
   --docs-frame-gradient: linear-gradient(135deg, #6d28d9 0%, #a21caf 55%, #db2777 100%);
 }
+
+/* Docs top tabs (Fumadocs tabMode="top") share the page's grid cell; keep them a sticky strip above the page. */
+@media (min-width: 768px) {
+  #nd-docs-layout > div.border-b[class*="grid-area:main"] {
+    align-self: start;
+    position: sticky;
+    top: 0;
+    height: auto;
+  }
+  #nd-docs-layout:has(> div.border-b[class*="grid-area:main"]) #nd-page {
+    padding-top: 3.25rem;
+  }
+}

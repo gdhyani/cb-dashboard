@@ -29,3 +29,6 @@ next-env.d.ts
 .pnp
 .pnp.*
 npm-debug.log*
+
+# Raw docs screenshots (framed copies go to public/docs/images)
+docs-images-raw/

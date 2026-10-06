@@ -49,6 +49,12 @@ describe("FR-DOC-007 docs checker", () => {
     expect(out.join("\n")).not.toMatch(/sk_test_cb|sk-cb/);
   });
 
+  it("allows a PEM header in prose but not a pasted key", () => {
+    const body = `paste from \`-----BEGIN PRIVATE KEY-----\` to the END line\n-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7\n`;
+    const root = fixture({ "content/docs/a.mdx": page("title: A\ndescription: a", body) });
+    expect(forbidden(listPages(path.join(root, "content/docs")))).toHaveLength(1);
+  });
+
   it("requires title and description, and matches status: beta to the catalog", () => {
     const root = fixture({
       "content/docs/connectors/databases/postgres.mdx": page("title: PostgreSQL\ndescription: d"),
