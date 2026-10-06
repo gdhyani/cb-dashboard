@@ -37,8 +37,8 @@ To pick the right type for a key, see [Choosing a type](/docs/connectors/choosin
 
 ## Quick add
 
-Above the table, the **Quick add** row holds shortcuts for common services: MongoDB, Postgres, Redis, Stripe,
-OpenAI, Anthropic, Firebase, Google sign-in, AWS S3, SMTP, Random secret and Other API. The row scrolls sideways;
+Above the table, the **Quick add** row holds shortcuts for common services: MongoDB, Postgres, Redis, Supabase, Stripe,
+OpenAI, Anthropic, Firebase, Google sign-in, AWS S3, Amazon SES, SMTP, Random secret and Other API. The row scrolls sideways;
 use the trackpad, mouse wheel or a swipe to see the rest.
 
 A shortcut only sets the type (and provider) of the **Add variable** dialog. You still type the key name yourself.
@@ -135,8 +135,10 @@ AI keys. Azure OpenAI, a company proxy, or a regional endpoint instead of the de
 <Field name="Extra headers" type="text">
 AI keys and Other API key. Sent on every call, one `Name: value` per line. Not for keys.
 </Field>
-<Field name="Custom endpoint" type="url">
-AWS / S3-compatible. Cloudflare R2, MinIO, Backblaze or any S3-compatible storage.
+<Field name="Service" type="select">
+AWS / S3-compatible. Amazon S3, Amazon SES, Amazon SQS or S3-compatible storage; fills the endpoint from the region
+and suggests the endpoint variable the AWS SDK reads. With S3-compatible, the **Endpoint** (Cloudflare R2, MinIO,
+Backblaze…) is entered instead. See [AWS / S3-compatible](/docs/connectors/cloud/aws).
 </Field>
 <Field name="More hosts to catch" type="text">
 Other API key. Comma-separated `host:port`, if the SDK also calls other hosts. Google service accounts have the

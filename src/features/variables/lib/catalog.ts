@@ -78,6 +78,8 @@ export interface TypeDef {
   kind?: ResourceKind;
   presetId?: string;
   providers?: ProviderDef[];
+  /** What the provider choice is called ("Provider" unless set, e.g. "Service" for AWS). */
+  providerLabel?: string;
   value?: FieldDef;
   /** Whether the real value must be typed: optional (Stripe webhook: Connect fills it) or none (cb makes it). */
   valueMode?: (provider?: string) => "required" | "optional" | "none";
@@ -287,6 +289,43 @@ export const OAUTH_PROVIDERS: ProviderDef[] = [
 ];
 
 const providerOf = (list: ProviderDef[], id?: string) => list.find((p) => p.id === id) ?? list[0];
+
+/**
+ * AWS: which API the key is for. cb sends each AWS variable's requests to one endpoint, so the choice fills the endpoint
+ * (from the region) and suggests the variable the AWS SDK reads for that service's endpoint.
+ */
+export const AWS_SERVICES: ProviderDef[] = [
+  { id: "s3", name: "Amazon S3", icon: "aws", placeholder: "the secret access key", baseUrlKey: "" },
+  { id: "ses", name: "Amazon SES (email)", icon: "aws", placeholder: "the secret access key", baseUrlKey: "" },
+  { id: "sqs", name: "Amazon SQS (queues)", icon: "aws", placeholder: "the secret access key", baseUrlKey: "" },
+  {
+    id: "compatible",
+    name: "S3-compatible (R2, MinIO, Backblaze)",
+    icon: "aws",
+    placeholder: "the secret access key",
+    baseUrlKey: "",
+  },
+];
+const AWS_HOST: Record<string, string> = { s3: "s3", ses: "email", sqs: "sqs" };
+/** The AWS endpoint for a service in a region (S3-compatible storage has its own). */
+export const awsEndpoint = (service: string | undefined, region: string) =>
+  AWS_HOST[service ?? "s3"] ? `https://${AWS_HOST[service ?? "s3"]}.${region}.amazonaws.com` : undefined;
+function awsEndpointExtras(p?: string): ExtraDef[] {
+  const endpoint = (suggestedKey: string, what: string, preticked = true): ExtraDef => ({
+    suggestedKey,
+    what,
+    field: "endpoint",
+    preticked,
+  });
+  if (p === "ses")
+    return [
+      endpoint("AWS_ENDPOINT_URL_SESV2", "Endpoint for SESv2Client (a local URL set by cb)"),
+      endpoint("AWS_ENDPOINT_URL_SES", "Endpoint for the classic SESClient", false),
+    ];
+  if (p === "sqs") return [endpoint("AWS_ENDPOINT_URL_SQS", "Endpoint for SQSClient (a local URL set by cb)")];
+  if (p === "compatible") return [endpoint("AWS_ENDPOINT_URL", "Endpoint (a local URL set by cb)")];
+  return [endpoint("AWS_ENDPOINT_URL_S3", "Endpoint for S3Client (a local URL set by cb)")];
+}
 
 /** FR-WH-001: where each provider shows the signing secret (and takes the URL). */
 export const WEBHOOK_PROVIDERS: ProviderDef[] = [
@@ -622,12 +661,14 @@ export const TYPES: Record<TypeId, TypeDef> = {
     name: "AWS / S3-compatible",
     title: "AWS / S3-compatible",
     group: "Cloud & email",
-    desc: "secret access key",
+    desc: "S3, SES, SQS, R2…",
     icon: "aws",
     kind: "aws",
     presetId: "aws-s3",
+    providers: AWS_SERVICES,
+    providerLabel: "Service",
     value: { name: "secretAccessKey", label: "Secret access key", secret: true },
-    required: () => [
+    required: (p) => [
       {
         name: "accessKeyId",
         label: "Access key ID",
@@ -635,9 +676,29 @@ export const TYPES: Record<TypeId, TypeDef> = {
         placeholder: "AKIA…",
         hint: "The real one; cb needs it to sign requests.",
       },
-      { name: "region", label: "Region", placeholder: "us-east-1", defaultValue: "us-east-1" },
+      {
+        name: "region",
+        label: "Region",
+        placeholder: p === "compatible" ? "auto" : "us-east-1",
+        defaultValue: p === "compatible" ? "auto" : "us-east-1",
+        hint: p === "compatible" ? "Cloudflare R2 uses auto." : undefined,
+      },
+      ...(p === "compatible"
+        ? [
+            {
+              name: "endpoint",
+              label: "Endpoint",
+              placeholder: "https://<account>.r2.cloudflarestorage.com",
+              validate: (v: string) =>
+                /^https?:\/\/[^\s/]+/.test(v)
+                  ? undefined
+                  : "Use the storage's URL, e.g. https://<account>.r2.cloudflarestorage.com",
+              hint: "Cloudflare R2, MinIO, Backblaze or any S3-compatible storage.",
+            },
+          ]
+        : []),
     ],
-    extras: () => [
+    extras: (p) => [
       {
         suggestedKey: "AWS_ACCESS_KEY_ID",
         what: "Access key ID (stand-in), needed by AWS SDKs",
@@ -645,17 +706,9 @@ export const TYPES: Record<TypeId, TypeDef> = {
         preticked: true,
       },
       { suggestedKey: "AWS_REGION", what: "Region", field: "region" },
-      { suggestedKey: "AWS_ENDPOINT_URL", what: "Endpoint (a local URL set by cb)", field: "endpoint" },
+      ...awsEndpointExtras(p),
     ],
-    advanced: () => [
-      {
-        name: "endpoint",
-        label: "Custom endpoint",
-        optional: true,
-        placeholder: "https://<account>.r2.cloudflarestorage.com",
-        hint: "Cloudflare R2, MinIO, Backblaze or any S3-compatible storage.",
-      },
-    ],
+    advanced: none,
   },
   smtp: {
     id: "smtp",
@@ -736,7 +789,8 @@ export const QUICK_ADD: { id: string; label: string; type: TypeId; provider?: st
   { id: "anthropic", label: "Anthropic", type: "ai", provider: "anthropic", icon: "anthropic" },
   { id: "firebase", label: "Firebase", type: "gcp", icon: "firebase" },
   { id: "google", label: "Google sign-in", type: "oauth", provider: "google", icon: "google" },
-  { id: "aws", label: "AWS S3", type: "aws", icon: "aws" },
+  { id: "aws", label: "AWS S3", type: "aws", provider: "s3", icon: "aws" },
+  { id: "ses", label: "Amazon SES", type: "aws", provider: "ses", icon: "aws" },
   { id: "smtp", label: "SMTP", type: "smtp", icon: "mail" },
   { id: "gen", label: "Random secret", type: "gen", icon: "secret" },
   { id: "http", label: "Other API", type: "http", icon: "api" },
@@ -858,8 +912,12 @@ export function buildCreateRequest(d: DraftState): CreateRequest {
           : "credentialsJson";
   if (typeof fields.extraHeaders === "string")
     resource.extraHeaders = parseHeaderLines(fields.extraHeaders).headers ?? {};
-  if (d.type === "aws" && !fields.endpoint && fields.region)
-    resource.endpoint = `https://s3.${fields.region}.amazonaws.com`;
+  if (d.type === "aws") {
+    const service = d.provider ?? "s3";
+    const derived = fields.region ? awsEndpoint(service, fields.region) : undefined;
+    if (derived) resource.endpoint = derived;
+    if (service !== "compatible") resource.awsService = service;
+  }
   if (
     (d.type === "http" || d.type === "supabase") &&
     typeof fields.upstreamUrl === "string" &&

@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/shared/ui/input";
 import { useVariableMutations } from "../hooks/use-variables";
 import {
+  awsEndpoint,
   dialogTitle,
   type FieldDef,
   fieldError,
@@ -133,9 +134,17 @@ export function EditVariableDialog({
   const editing = mode === "edit";
 
   // review I5: a new address for the service needs the key again (the backend refuses it otherwise).
-  const moved = ["upstreamUrl", "endpoint", "tokenUrl"].some(
-    (k) => k in initialSettings && hostOf(settings[k]) !== hostOf(initialSettings[k]),
-  );
+  // AWS S3/SES/SQS: the endpoint follows the region, so a new region is a new address too.
+  const awsService = group?.resource.kind === "aws" && group.provider !== "compatible" ? group.provider : undefined;
+  const awsNewEndpoint =
+    awsService && settings.region?.trim() && settings.region.trim() !== (initialSettings.region ?? "")
+      ? awsEndpoint(awsService, settings.region.trim())
+      : undefined;
+  const moved =
+    Boolean(awsNewEndpoint && hostOf(awsNewEndpoint) !== hostOf(config.endpoint)) ||
+    ["upstreamUrl", "endpoint", "tokenUrl"].some(
+      (k) => k in initialSettings && hostOf(settings[k]) !== hostOf(initialSettings[k]),
+    );
   const replacingNow = editing && (replacing || (isMain && moved));
   const mainOptional = def.valueMode?.(group?.provider) === "optional" && !(isMain && moved);
   const secretRequired = (f: FieldDef) => !(f.optional && (f.name !== def.value?.name || mainOptional));
@@ -197,6 +206,7 @@ export function EditVariableDialog({
                   ? null
                   : next;
         }
+        if (awsNewEndpoint) body.endpoint = awsNewEndpoint;
         if (Object.keys(body).length > 0)
           await services.update.mutateAsync({ id: group.resource.id, body: { ...body, test: true } });
       }

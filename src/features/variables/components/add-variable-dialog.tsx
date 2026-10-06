@@ -243,7 +243,7 @@ export function AddVariableDialog({
             />
           </FormField>
           {def.providers && (
-            <FormField id="add-provider" label="Provider">
+            <FormField id="add-provider" label={def.providerLabel ?? "Provider"}>
               <ProviderSelect
                 id="add-provider"
                 providers={def.providers}

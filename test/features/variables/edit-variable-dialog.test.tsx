@@ -344,3 +344,41 @@ describe("FR-WH-001 editing a webhook signing secret", () => {
     expect(screen.queryByRole("button", { name: "Copy webhook URL" })).toBeNull();
   });
 });
+
+describe("FR-GW-005 AWS: a new region moves the endpoint, so the keys are asked again", () => {
+  const AWS_VAR = variable({ key: "SES_SECRET_ACCESS_KEY", resourceId: "ra", field: "secretAccessKey" });
+  const AWS: ServiceGroup = {
+    resource: resource({
+      id: "ra",
+      kind: "aws",
+      name: "SES_SECRET_ACCESS_KEY",
+      config: { region: "ap-southeast-1", endpoint: "https://email.ap-southeast-1.amazonaws.com", awsService: "ses" },
+    }),
+    type: "aws",
+    provider: "ses",
+    main: AWS_VAR,
+    rows: [{ variable: AWS_VAR, extra: false }],
+  };
+
+  it("sends the SES endpoint of the new region together with the keys", async () => {
+    renderEdit({ variable: AWS_VAR, group: AWS, initialMode: "edit" });
+    fireEvent.change(await screen.findByLabelText(/^Region/), { target: { value: "eu-west-1" } });
+    expect(screen.getByText(/A new address needs the key again/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/Secret access key \(new value\)/), {
+      target: { value: "new-secret-0000" },
+    });
+    fireEvent.change(screen.getByLabelText(/Access key ID \(new value\)/), { target: { value: "AKIANEW" } });
+    fireEvent.click(screen.getByRole("button", { name: /Save/ }));
+    await waitFor(() =>
+      expect(resources.updateResource).toHaveBeenCalledWith(
+        "ra",
+        expect.objectContaining({
+          region: "eu-west-1",
+          endpoint: "https://email.eu-west-1.amazonaws.com",
+          secretAccessKey: "new-secret-0000",
+          accessKeyId: "AKIANEW",
+        }),
+      ),
+    );
+  });
+});
