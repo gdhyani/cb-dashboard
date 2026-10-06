@@ -2,8 +2,8 @@
 
 import { AlertTriangle, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
+import { WebhookEndpoint } from "@/features/webhooks";
 import { ApiError } from "@/shared/api/api-error";
-import { CopyCommand } from "@/shared/components/copy-command";
 import { FormError } from "@/shared/components/form-error";
 import { FormField } from "@/shared/components/form-field";
 import { Button } from "@/shared/ui/button";
@@ -22,7 +22,6 @@ import {
   TYPES,
   type TypeId,
   WEBHOOK_PROVIDERS,
-  WEBHOOK_SETUP,
 } from "../lib/catalog";
 import { GENERATED_FORMATS } from "../types";
 import { AdvancedSection } from "./advanced-section";
@@ -163,8 +162,10 @@ export function AddVariableDialog({
               delivers each one only to the developer whose app caused it.
             </DialogDescription>
           </DialogHeader>
-          <CopyCommand command={created.url} prompt={false} label="Copy webhook URL" toastLabel="Webhook URL copied" />
-          <p className="text-sm text-subtle">{WEBHOOK_SETUP[created.provider]}</p>
+          <WebhookEndpoint url={created.url} provider={created.provider} />
+          <p className="text-xs text-subtle">
+            You can find this URL again in the key's Edit dialog and on the Webhooks tab.
+          </p>
           <DialogFooter>
             <Button type="button" onClick={() => onOpenChange(false)}>
               Done

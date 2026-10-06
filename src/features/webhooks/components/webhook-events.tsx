@@ -12,6 +12,7 @@ import { timeAgo } from "@/shared/lib/format-time";
 import { Button } from "@/shared/ui/button";
 import { useReplayWebhook, useWebhookEvents } from "../hooks/use-webhook-events";
 import type { WebhookDelivery, WebhookEvent } from "../types";
+import { WebhookEndpoints } from "./webhook-endpoints";
 
 /** The backend keeps re-routing an unclaimed event for 15 s (an owner record or linking event may still arrive). */
 const ROUTING_WINDOW_MS = 20_000;
@@ -90,31 +91,34 @@ export function WebhookEvents({ envId }: { envId: string }) {
   const events = useWebhookEvents(envId, page);
   const replay = useReplayWebhook(envId);
   return (
-    <QueryState isPending={events.isPending} error={events.error} skeleton={<SkeletonRows rows={4} />}>
-      {events.data && events.data.items.length === 0 ? (
-        <EmptyState
-          title="No webhooks yet"
-          description="Add a Webhook signing secret in Variables and paste its URL into Stripe or Razorpay. Each event shows up here and goes only to the developer whose app caused it."
-        />
-      ) : (
-        events.data && (
-          <div className="flex flex-col gap-3">
-            <ul className="divide-y divide-border rounded-lg border border-border px-4">
-              {events.data.items.map((e, i) => (
-                <EventRow
-                  key={e.id}
-                  event={e}
-                  index={i}
-                  replaying={replay.isPending && replay.variables === e.id}
-                  onReplay={() => replay.mutate(e.id)}
-                />
-              ))}
-            </ul>
-            <p className="text-xs text-subtle">Kept for 24 hours.</p>
-            <PaginationBar pagination={events.data.pagination} onPage={setPage} />
-          </div>
-        )
-      )}
-    </QueryState>
+    <div className="flex flex-col gap-4">
+      <WebhookEndpoints envId={envId} />
+      <QueryState isPending={events.isPending} error={events.error} skeleton={<SkeletonRows rows={4} />}>
+        {events.data && events.data.items.length === 0 ? (
+          <EmptyState
+            title="No webhooks yet"
+            description="Add a Webhook signing secret in Variables and paste its URL into Stripe or Razorpay. Each event shows up here and goes only to the developer whose app caused it."
+          />
+        ) : (
+          events.data && (
+            <div className="flex flex-col gap-3">
+              <ul className="divide-y divide-border rounded-lg border border-border px-4">
+                {events.data.items.map((e, i) => (
+                  <EventRow
+                    key={e.id}
+                    event={e}
+                    index={i}
+                    replaying={replay.isPending && replay.variables === e.id}
+                    onReplay={() => replay.mutate(e.id)}
+                  />
+                ))}
+              </ul>
+              <p className="text-xs text-subtle">Kept for 24 hours.</p>
+              <PaginationBar pagination={events.data.pagination} onPage={setPage} />
+            </div>
+          )
+        )}
+      </QueryState>
+    </div>
   );
 }

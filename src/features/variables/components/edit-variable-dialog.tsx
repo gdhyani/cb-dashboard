@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useServiceMutations } from "@/features/resources";
+import { WebhookEndpoint } from "@/features/webhooks";
 import { ApiError } from "@/shared/api/api-error";
 import { FormError } from "@/shared/components/form-error";
 import { FormField } from "@/shared/components/form-field";
@@ -282,6 +283,10 @@ export function EditVariableDialog({
                   />
                 ))}
             </div>
+          )}
+
+          {isMain && group?.resource.webhookUrl && (
+            <WebhookEndpoint url={group.resource.webhookUrl} provider={group.provider} />
           )}
 
           {settingsDefs

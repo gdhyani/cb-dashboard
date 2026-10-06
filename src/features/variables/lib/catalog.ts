@@ -297,13 +297,6 @@ export const WEBHOOK_PROVIDERS: ProviderDef[] = [
   },
 ];
 
-export const WEBHOOK_SETUP: Record<string, string> = {
-  stripe:
-    "In the Stripe Dashboard, open Developers → Webhooks, add a destination with this URL, then copy its signing secret.",
-  razorpay:
-    "In the Razorpay Dashboard, open Account & Settings → Webhooks, add this URL and the same secret you saved here.",
-};
-
 export const TYPES: Record<TypeId, TypeDef> = {
   plain: {
     id: "plain",

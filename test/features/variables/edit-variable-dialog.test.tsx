@@ -280,6 +280,18 @@ describe("FR-WH-001 editing a webhook signing secret", () => {
     );
   });
 
+  it("shows the URL to paste into Stripe again, with the setup steps", () => {
+    renderEdit({ variable: WH_VAR, group: WH });
+    expect(screen.getByText("https://cb.example/api/hooks/r9")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy webhook URL" })).toBeInTheDocument();
+    expect(screen.getByText(/Stripe Dashboard/)).toBeInTheDocument();
+  });
+
+  it("other services show no webhook URL", () => {
+    renderEdit();
+    expect(screen.queryByRole("button", { name: "Copy webhook URL" })).toBeNull();
+  });
+
   it("an emptied port is cleared", async () => {
     renderEdit({ variable: WH_VAR, group: WH });
     fireEvent.change(await screen.findByLabelText(/App port/), { target: { value: "" } });
