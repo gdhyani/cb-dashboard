@@ -1,0 +1,73 @@
+---
+title: Members
+description: Invite people with a link, set their role and remove them from the organization.
+---
+
+The **Members** page lists everyone in your [organization](/docs/overview/concepts#organization) and lets owners and
+admins invite new people. Inviting someone makes them a member; it doesn't give them access to any environment yet.
+
+<Frame src="/docs/images/guides/members.png" alt="Members page with the Invite panel and the People list" caption="Members page with the Invite panel and the People list" />
+
+## Invite someone
+
+cb doesn't send email. You generate an invite link and share it yourself, for example in your team chat.
+
+<Steps>
+<Step>
+### Choose a role
+
+Under **Invite**, pick a **Role**: `developer`, `admin` or, if you are an owner, `owner`.
+</Step>
+<Step>
+### Limit it to one address (optional)
+
+Enter an **Email (optional)** to make sure only that address can accept. Leave it empty for **Anyone with the link**.
+</Step>
+<Step>
+### Generate and copy the link
+
+Select **Generate invite link**, then **Copy invite link**. The link works once and expires in 7 days.
+</Step>
+<Step>
+### Share it
+
+Send the link to the person. They open it, create an account or sign in, and join the organization.
+</Step>
+</Steps>
+
+<Callout type="tip" title="Grant access next">
+A new developer can't run anything until you grant access. See
+[Grant and revoke access](/docs/guides/admin/access).
+</Callout>
+
+### Pending invites
+
+Links that haven't been used yet appear under **Pending invites**, with the email (or **Anyone with the link**), the
+role and when it expires. Choose **Revoke invite** in the "…" menu to stop a link from working.
+
+## Roles
+
+| Role | Can do |
+|---|---|
+| `owner` | Everything, including inviting and promoting owners. |
+| `admin` | Manage projects, variables, access, members (except owners), devices, activity and emergency stops. |
+| `developer` | Run the environments they are granted; see projects read-only; manage their own devices. |
+
+To change a role, pick a new one in the person's role list. Admins can't change an owner's role or give the owner
+role; only owners can. The full permission table is on [Projects and environments](/docs/guides/dashboard/projects#roles).
+
+## See what someone can reach
+
+Select a member's name, or choose **View access** in their "…" menu, to open a panel with everything that person can
+reach, grouped by project. Use it when someone changes role or leaves. Owners and admins have access to every
+project, so the panel says so instead of listing projects.
+
+## Remove a member
+
+Choose **Remove member** in the person's "…" menu. You can't remove yourself, and admins can't remove owners.
+
+<Callout type="danger" title="Removing a member closes their connections">
+The person loses access to every project in the organization, and their live connections are closed. To pause
+someone without removing them, use an [emergency stop](/docs/guides/dashboard/emergency-stop) on **A person**
+instead.
+</Callout>

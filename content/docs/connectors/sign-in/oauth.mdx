@@ -1,0 +1,173 @@
+---
+title: Other OAuth provider
+description: Keep the client secret of any OAuth 2.0 provider on the cb server by giving cb its token URL.
+status: beta
+---
+
+Use the **Other (any OAuth provider)** option for sign-in providers without a preset, such as Auth0, Okta, Keycloak,
+Microsoft Entra ID or your own authorization server. You give cb the provider's token URL and the client secret.
+Every developer's app gets a stand-in secret that starts with `cb-`; when the app calls the token URL, the cb gateway
+checks the stand-in and replaces it with the real secret.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have the OAuth client's ID and secret, and the provider's token endpoint URL, for example
+  `https://auth.example.com/oauth/token`. It is listed in the provider's settings or its
+  `/.well-known/openid-configuration` as `token_endpoint`.
+- Your local callback URL is registered with the provider.
+- Developers who will run the app have [access](/docs/guides/dashboard/access) to the environment.
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**Add variable**, set **What is this?** to **Sign-in client secret** and **Provider** to **Other (any OAuth
+provider)**. The dialog is titled **Add sign-in variable**.
+</Step>
+<Step>
+### Name the key, paste the secret and the token URL
+
+Type the **Key** your code reads, for example `OAUTH_CLIENT_SECRET` or `AUTH_AUTH0_SECRET`, paste the real secret
+into **Client secret**, and enter the **Token URL**. It must be `https://`.
+</Step>
+<Step>
+### Add the client ID
+
+Open **Suggested extra keys**, tick `OAUTH_CLIENT_ID` ("Client ID (public)"), rename it to match your code, and type
+the client ID.
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb checks that the token endpoint is reachable from its server.
+
+<Callout type="warning">
+  The secret itself is only confirmed during a real sign-in, so a mistyped secret still saves. Sign in once after
+  saving.
+</Callout>
+</Step>
+</Steps>
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads for the client secret. cb never names it for you.
+  </Field>
+  <Field name="What is this?" type="select" required default="Sign-in client secret">
+    The variable type.
+  </Field>
+  <Field name="Provider" type="select" required>
+    Choose **Other (any OAuth provider)**.
+  </Field>
+  <Field name="Client secret" type="secret" required>
+    The real client secret. Write-only: nobody can view it after saving, but you can replace it.
+  </Field>
+  <Field name="Token URL" type="text" required>
+    The provider's token endpoint, such as `https://auth.example.com/oauth/token`. cb catches requests to this
+    host and swaps the secret on requests to this path.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="OAUTH_CLIENT_ID" type="extra key + text">
+    Under **Suggested extra keys**: "Client ID (public)". Tick it, rename it, and type the client ID. This provider
+    option has no **Advanced** section.
+  </Field>
+</Fields>
+
+## What your app sees
+
+<EnvTable rows={[
+  { name: "OAUTH_CLIENT_SECRET", example: "cb-…", kind: "stand-in" },
+  { name: "OAUTH_CLIENT_ID", example: "my-app-client", kind: "plain" },
+]} />
+
+## Use it in code
+
+Configure the provider in your auth library as usual, with the secret from the environment.
+
+<Tabs items={["Auth.js", "Passport (OAuth 2.0)", "openid-client"]}>
+<Tab value="Auth.js">
+```ts title="auth.ts"
+import NextAuth from "next-auth";
+
+export const { handlers, auth } = NextAuth({
+  providers: [
+    {
+      id: "acme",
+      name: "Acme",
+      type: "oidc",
+      issuer: "https://auth.example.com",
+      clientId: process.env.OAUTH_CLIENT_ID,
+      clientSecret: process.env.OAUTH_CLIENT_SECRET,
+    },
+  ],
+});
+```
+</Tab>
+<Tab value="Passport (OAuth 2.0)">
+```ts title="src/auth.ts"
+import passport from "passport";
+import OAuth2Strategy from "passport-oauth2";
+
+passport.use(
+  new OAuth2Strategy(
+    {
+      authorizationURL: "https://auth.example.com/authorize",
+      tokenURL: "https://auth.example.com/oauth/token",
+      clientID: process.env.OAUTH_CLIENT_ID!,
+      clientSecret: process.env.OAUTH_CLIENT_SECRET!,
+      callbackURL: "http://localhost:3000/auth/callback",
+    },
+    (accessToken: string, refreshToken: string, profile: unknown, done: (e: null, u: unknown) => void) =>
+      done(null, profile),
+  ),
+);
+```
+</Tab>
+<Tab value="openid-client">
+```ts title="src/auth.ts"
+import * as client from "openid-client";
+
+const config = await client.discovery(
+  new URL("https://auth.example.com"),
+  process.env.OAUTH_CLIENT_ID!,
+  process.env.OAUTH_CLIENT_SECRET!,
+);
+```
+</Tab>
+</Tabs>
+
+cb accepts the secret in either form libraries use: as `client_secret` in the request body, or in HTTP Basic auth.
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+Sign in once through the app. If you ran `cb init`, your package scripts already run under cb. See
+[cb run](/docs/guides/develop/cb-run).
+
+## Limits
+
+- The token request must come from the server, in a process started by `cb run`, and go to the host in the
+  **Token URL**.
+- Only `POST` requests to the token URL's path are changed. Discovery, user info and other requests to the same host
+  pass through as they are.
+- Client authentication with a signed JWT (`private_key_jwt`) is not supported; use `client_secret_post` or
+  `client_secret_basic`.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| "must be an https:// URL" on **Token URL** | Use the `https://` token endpoint. |
+| Sign-in fails with `invalid_client` and "cb: client secret not valid for this device" | The app sent a secret that isn't this device's stand-in, for example an old value from a `.env` file. Run `npx cb doctor`. |
+| Sign-in fails with `invalid_client` from the provider | The real secret is wrong. Use **Replace value** in the variable's Edit dialog. |
+| The secret isn't swapped | The library calls a different token URL (for example one from discovery). Set **Token URL** to exactly the `token_endpoint` the library uses. |
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

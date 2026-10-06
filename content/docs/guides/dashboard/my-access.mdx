@@ -1,0 +1,46 @@
+---
+title: My access
+description: The developer view of cb, with your environments, your devices and the commands to get started.
+---
+
+**My access** (under **You** in the sidebar) shows what you can run locally and the devices you are logged in on.
+Every member has this page, whatever their role. It is the page to open first if you are a developer.
+
+<Frame src="/docs/images/guides/me.png" alt="My access page with Quick start, environments and devices" caption="My access page with Quick start, environments and devices" />
+
+## Quick start
+
+The **Quick start** section lists the four commands to run a project with cb. Each has a copy button.
+
+```bash
+npm i -D @cb/env
+npx cb login
+npx cb init
+npm run dev
+```
+
+`npx cb login` opens the dashboard to approve your device. `npx cb init` links the folder to a project and
+environment and wires your `package.json` scripts. After that, `npm run dev` works as before, through
+[`cb run`](/docs/guides/develop/cb-run). The full walkthrough is in the [Quick start](/docs/quick-start).
+
+## Environments you can use
+
+This list shows every environment you have access to, as `Project / environment`. Each shows **Access granted**, or
+**Suspended** if an admin suspended it. Select one to open its variables.
+
+If the list says **No access yet**, ask an admin to grant you an environment. Your access may also end on its own
+if it was granted for a limited time.
+
+## My devices
+
+Every laptop you logged in on with `npx cb login` appears here, with its OS, when it was last seen, and whether its
+agent is online.
+
+If you no longer use a laptop, or you lost it, choose **Revoke device** in its "…" menu. Its token stops working
+immediately and every open connection from it is closed. To use that laptop again, run `npx cb login` on it.
+
+<Callout type="tip" title="Lost your laptop?">
+Revoke the device here right away, then tell an admin. Your app only had stand-in values for protected keys, so no
+real database password or API key was on the laptop. Revoking makes sure the stand-ins can't be used either. If the
+project has any **Secret shown as-is** variables, ask an admin to replace those values too.
+</Callout>

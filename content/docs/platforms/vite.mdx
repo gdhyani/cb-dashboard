@@ -1,0 +1,131 @@
+---
+title: Vite
+description: Run the Vite dev server under cb so your config, SSR code and server middleware get cb values, while browser code stays on plain values.
+status: beta
+---
+
+Vite runs on Node.js, so the dev server, the build and the preview server all run under cb like any other Node.js process. What matters with Vite is the line between the two sides of your project: `vite.config.*`, SSR code and dev-server middleware run on Node.js and can use protected values, while everything Vite bundles for the browser — including `import.meta.env.VITE_*` — only gets plain values.
+
+## How cb hooks in
+
+[`cb run`](/docs/guides/develop/cb-run) starts `vite` with your environment's [variables](/docs/overview/concepts#variable) merged into the process environment and the cb [preload](/docs/guides/develop/preload-and-api) added to `NODE_OPTIONS`. The Vite process itself — config, plugins, SSR modules and server middleware — sees the [stand-in values](/docs/overview/concepts#stand-in-values), and its connections to protected services go through cb.
+
+Vite then exposes variables whose names start with `VITE_` to your client code by writing their values into the browser bundle. Those come from the same environment, so they come from cb too — which is why they must be plain.
+
+## Set it up
+
+<Steps>
+<Step>
+### Install `@cb/env`
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+<Tab value="npm">
+```bash
+npm install @cb/env
+```
+</Tab>
+<Tab value="pnpm">
+```bash
+pnpm add @cb/env
+```
+</Tab>
+<Tab value="yarn">
+```bash
+yarn add @cb/env
+```
+</Tab>
+</Tabs>
+</Step>
+<Step>
+### Link the project
+
+```bash
+npx cb init
+```
+
+`cb init` asks for your organization, project and environment, writes `.cb/project.json`, then lists the scripts it wants to change and asks `Update these scripts?`. If you haven't signed in on this machine yet, run `npx cb login` first.
+</Step>
+<Step>
+### Check the `package.json` change
+
+Scripts that start with `vite` are prefixed with `cb run --`. A build script that starts with `tsc` is left as it is.
+
+```diff title="package.json"
+ {
+   "scripts": {
+-    "dev": "vite",
++    "dev": "cb run -- vite",
+     "build": "tsc -b && vite build",
+-    "preview": "vite preview"
++    "preview": "cb run -- vite preview"
+   }
+ }
+```
+
+If your build needs cb values (for example `VITE_*` variables managed in cb), prefix the Vite part yourself: `"build": "tsc -b && cb run -- vite build"`.
+</Step>
+<Step>
+### Start the dev server
+
+```bash
+npm run dev
+```
+</Step>
+</Steps>
+
+## Where your code reads values
+
+| Place | Runs on | Gets protected values? |
+| --- | --- | --- |
+| `vite.config.*` (`process.env`, `loadEnv`) | Node.js | Yes |
+| Plugins and dev-server middleware (`configureServer`) | Node.js | Yes |
+| SSR entry and server-only modules | Node.js | Yes |
+| Client code, `import.meta.env.VITE_*` | The browser | No — plain `VITE_*` values only |
+
+`loadEnv(mode, process.cwd(), "")` merges `.env` files with `process.env`, and values already in `process.env` take precedence — so in `vite.config.*` you get the values from cb.
+
+<Callout type="warning" title="VITE_ values are bundled into the browser">
+Anything named `VITE_*` ends up in the JavaScript your users download. Make these plain variables. For a protected service, call it from a dev-server middleware or your own API instead, and have the browser call that.
+</Callout>
+
+## Example
+
+A small dev-server middleware that proxies a chat request to OpenAI. It runs inside the Vite process, so `OPENAI_API_KEY` is a stand-in and cb routes the request through the gateway. The browser only calls `/api/chat`.
+
+```ts title="vite.config.ts"
+import OpenAI from "openai";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [
+    {
+      name: "chat-api",
+      configureServer(server) {
+        const openai = new OpenAI(); // reads OPENAI_API_KEY from the environment
+        server.middlewares.use("/api/chat", async (_req, res) => {
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: "hi" }],
+          });
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ text: completion.choices[0]?.message.content }));
+        });
+      },
+    },
+  ],
+});
+```
+
+## Limits
+
+- **Browser code gets plain values only.** This includes every `VITE_*` variable and anything imported by client code.
+- **A dev-server middleware is for development.** In production, the same call needs a real server. Running that server under `cb run` during development keeps it consistent — see [React (single-page app)](/docs/platforms/react-spa).
+- **`@cb/env` can't be imported from client code.** Its browser entry throws `@cb/env is server-only`.
+
+## Troubleshooting
+
+**A `VITE_*` value is missing in the browser.** Vite reads these when the dev server starts or the build runs. Restart `npm run dev` after the variable changes, and make sure `vite build` runs under `cb run` if the value comes from cb.
+
+**`@cb/env is server-only`** — client code imports `@cb/env`. Read the value in config, SSR or middleware code instead.
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

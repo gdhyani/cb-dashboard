@@ -1,0 +1,163 @@
+---
+title: Custom AI (self-hosted)
+description: Connect a self-hosted or OpenAI-compatible model server, such as vLLM or Ollama behind a key, through cb.
+status: beta
+---
+
+Use the **Custom / self-hosted** provider for any AI server without a preset: a vLLM or Ollama server on your
+network, an internal gateway, or a hosted OpenAI-compatible API. You give cb the server's base URL, its key and how
+the key is sent. Your app calls a local base URL with a stand-in key, and the cb gateway forwards each call with the
+real key.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You know the server's base URL, for example `http://10.0.4.12:8000/v1` or `https://llm.example.com/v1`.
+- You have the key the server expects, and you know how it is sent (a Bearer token, an `x-api-key` header, another
+  header, or Basic auth).
+- The **cb server** can reach that URL. It is the cb server that connects to your model server, not the developer's
+  laptop.
+- Developers who will run the app have [access](/docs/guides/dashboard/access) to the environment.
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**Add variable**, set **What is this?** to **AI API key** and **Provider** to **Custom / self-hosted**. The dialog
+is titled **Add AI variable**.
+</Step>
+<Step>
+### Name the key and paste the real value
+
+Type the **Key** your code reads, for example `LLM_API_KEY`, and paste the real key into **API key**.
+</Step>
+<Step>
+### Set the base URL and how the key is sent
+
+Enter the server's **Base URL**. Pick **How the key is sent**; for **Another header…**, type the **Header name**,
+and for **Basic auth (key as password)**, you can add the public **Username**.
+
+<Callout type="warning">
+  The base URL must be `https://`, or plain `http://` only for a private or loopback address (`10.x`, `172.16–31.x`,
+  `192.168.x`, `localhost`, `127.x`, `::1`). `localhost` means the cb server itself. A self-hosted cb server can turn
+  plain `http://` off entirely; see [Backend setup](/docs/guides/self-host/backend).
+</Callout>
+</Step>
+<Step>
+### Keep the base URL key
+
+**Suggested extra keys** has `LLM_BASE_URL` ticked already: "Base URL your app calls (a local URL set by cb)". Keep
+it, renamed to match your code if you like. A custom server has no host that cb redirects, so this local URL is how
+your app's calls reach cb.
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb sends a `GET` to the base URL with the real key from its server. The test passes unless
+the server answers `401` or `403`; on failure nothing is saved and the dialog shows the error.
+</Step>
+</Steps>
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `LLM_API_KEY`. cb never names it for you.
+  </Field>
+  <Field name="What is this?" type="select" required default="AI API key">
+    The variable type.
+  </Field>
+  <Field name="Provider" type="select" required>
+    Choose **Custom / self-hosted**.
+  </Field>
+  <Field name="API key" type="secret" required>
+    The key your server expects. Write-only: nobody can view it after saving, but you can replace it.
+  </Field>
+  <Field name="Base URL" type="text" required>
+    Where your model server listens, for example `http://10.0.4.12:8000/v1`. A path here is kept: your app's
+    calls are appended to it.
+  </Field>
+  <Field name="How the key is sent" type="select" required default="Authorization: Bearer <key>">
+    **Authorization: Bearer &lt;key&gt;**, **x-api-key header**, **Another header…** or **Basic auth (key as
+    password)**. cb looks for the stand-in in the same place and puts the real key there.
+  </Field>
+  <Field name="Header name" type="text">
+    Shown for **Another header…**, and then required. The header that carries the key, for example
+    `x-goog-api-key`.
+  </Field>
+  <Field name="Username" type="text">
+    Shown for **Basic auth**. The public part of Basic auth (often a key ID); the key is the password.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="LLM_BASE_URL" type="extra key" default="ticked">
+    Under **Suggested extra keys**: "Base URL your app calls (a local URL set by cb)". Keep it ticked; rename it to
+    match your code. The custom provider has no **Advanced** section.
+  </Field>
+</Fields>
+
+## What your app sees
+
+<EnvTable rows={[
+  { name: "LLM_API_KEY", example: "cb_…", kind: "stand-in" },
+  { name: "LLM_BASE_URL", example: "http://127.0.0.1:7408", kind: "stand-in" },
+]} />
+
+The local base URL has no path. cb adds the path from your **Base URL**, so a call to
+`http://127.0.0.1:7408/chat/completions` reaches `http://10.0.4.12:8000/v1/chat/completions`.
+
+## Use it in code
+
+Point your client at the base URL key. For an OpenAI-compatible server:
+
+```ts title="lib/ai.ts"
+import OpenAI from "openai";
+
+const llm = new OpenAI({
+  apiKey: process.env.LLM_API_KEY,
+  baseURL: process.env.LLM_BASE_URL,
+});
+
+const stream = await llm.chat.completions.create({
+  model: "llama3.1:8b",
+  messages: [{ role: "user", content: "Write a haiku" }],
+  stream: true,
+});
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
+}
+```
+
+Streaming responses pass through as they arrive. cb scrubs every response: if the real key, or its base64 form,
+ever appears in a response body, it is replaced with `[cb-redacted]`.
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+If you ran `cb init`, your package scripts already run under cb. To see the stand-in values, run
+`npx cb env print`. See [cb run](/docs/guides/develop/cb-run).
+
+## Limits
+
+- Your app must use the base URL key; calls straight to the server's own address don't go through cb.
+- Plain `http://` works only for private and loopback addresses, and only while the cb server allows it. If an
+  admin turns it off later, calls get `403` with `cb_upstream_not_allowed`.
+- TLS to an `https://` server is always verified against public certificate authorities.
+- Revoking a developer's access stops their calls; requests then get `403` with `cb_access_revoked`.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| "must be https:// (http:// only for private addresses such as 10.x, 192.168.x or localhost)" | The base URL is plain `http://` to a public address. Use `https://`, or a private address. |
+| "must be https:// (plain http is turned off on this server)" | This cb server refuses plain `http://`. Serve the model over `https://`. |
+| **Save & test** times out or fails to connect | The cb server can't reach the base URL. Check the address from the cb server's network, not your laptop's. |
+| Your app gets `401` with `{"error":"cb_invalid_credential"}` | The app sent the key somewhere other than **How the key is sent**, or a key that isn't this device's stand-in. |
+| Your app gets `502` with `cb_upstream_unreachable` | The cb server lost the connection to your model server. |
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

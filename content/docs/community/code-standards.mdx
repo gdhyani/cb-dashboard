@@ -1,0 +1,79 @@
+---
+title: Code standards
+description: The conventions every cb repository follows, and the rules specific to the CLI, the backend and the dashboard.
+---
+
+cb's job is to keep real credentials off developer machines, so the code is held to a few strict rules. This page
+lists the conventions shared by all three repositories, then the rules that apply to each one. Reviewers check
+pull requests against them.
+
+## Shared conventions
+
+| Area | Rule |
+|---|---|
+| Language | TypeScript with `strict` on. No `any` unless a comment explains why it is needed. |
+| Runtime | Node.js 22 and 24 are supported; CI also runs a newer release. npm only — no pnpm, yarn or monorepo tooling. |
+| Validation | zod at every boundary: HTTP requests and responses, IPC messages, files read from disk, WebSocket open parameters and environment variables. |
+| Lint and format | Biome (`npm run lint`). Do not add ESLint or Prettier. |
+| Tests | Vitest. Write the failing test first, then the code. Every new behaviour has at least one test. |
+| Names and ports | Product names, ports and paths live only in each repository's `src/constants.ts`, so a rename touches one file. |
+| Dependencies | Pick the most relevant, actively maintained package at its latest stable version, and only when the work needs it. |
+
+### Never log secrets
+
+Never log, print or return a secret or a token — not in errors, debug output or test snapshots. Pass anything
+that might contain one through the repository's redaction helper: `src/shared/redact.ts` in cb-env, the logger in
+`src/logger/logger.ts` and `src/gateway/http/redaction.ts` in cb-backend. Tests enforce this.
+
+<Callout type="danger" title="Stand-ins only">
+  Tests, fixtures and examples use stand-in values with a `cb` marker, such as `sk_test_cb…`, `sk-cb-…` or
+  `cbu_ab12cd34`, and `ada@acme.example` for email addresses. A real-looking key fails review, and in the docs it
+  fails `npm test`.
+</Callout>
+
+## cb-env (CLI, agent, preload)
+
+- **The agent is a byte pipe.** It never parses a protocol, terminates TLS or handles credentials. If a change
+  needs to understand PostgreSQL or HTTP bytes, it belongs in the cb-backend gateway.
+- **It holds no real secret, ever** — only its own identity tokens: the refresh token in the operating system
+  keychain and the access token in the agent's memory.
+- Local listeners bind to `127.0.0.1` only.
+- Certificate trust is added per connection inside `cb run` processes. Never install a certificate system-wide
+  and never set `NODE_TLS_REJECT_UNAUTHORIZED`.
+- The preload fails closed, never touches the network, and stays small and synchronous.
+- Changes must work on macOS, Linux and Windows; CI runs all three.
+
+## cb-backend (API and gateway)
+
+- **No endpoint ever returns a stored secret.** Secret fields are excluded from queries by default, and tests
+  check every response.
+- Real secrets are decrypted per use, held only as long as needed, and never logged.
+- Upstream TLS always verifies certificates. Plain `http://` upstreams are allowed only for private and loopback
+  addresses.
+- Stand-in credential checks use constant-time comparison.
+- Code is layered, one file per module per layer, named `<module>.<layer>.ts` — for example
+  `project.routes.ts`, `project.controller.ts`, `project.service.ts`, `project.model.ts`, `project.schema.ts`.
+- Every response uses one envelope, `{ success: true, data, meta: { correlationId } }`, sent only through
+  `sendSuccess` or `sendPaginated`. Every error uses one shape, `{ success: false, error: { code, message,
+  statusCode, details?, correlationId } }`, produced only by the error handler.
+- Services throw `AppError` with a code from `src/errors/error-codes.ts`; never invent an error code inline.
+  Controllers catch errors and pass them on with a short context string naming where the failure happened.
+- Provider presets are data in `src/presets/presets.json`, not new code paths.
+
+## cb-dashboard (web app and docs)
+
+- **Never build the same component twice.** Before creating a component, search `src/shared/` and
+  `src/features/*/components/`, and extend what exists with props or variants.
+- Generic building blocks (buttons, inputs, dialogs, tables, badges, skeletons) live only in `src/shared/ui/`.
+  Composites used by more than one feature live only in `src/shared/components/`.
+- A feature never imports another feature's internals. If two features need the same component, move it to
+  `src/shared/`.
+- One component per file, as a named export, with a kebab-case file name.
+- All HTTP goes through the single client in `src/shared/api/http.ts`, wrapped in TanStack Query hooks.
+  Components never call `fetch` or axios directly.
+- The dashboard never keeps a secret after a form is submitted — not in component state, query caches, URLs,
+  browser storage or logs.
+- Every page works at 375px wide, shows skeletons while loading, and uses the shared entrance motion.
+  Destructive actions are never primary buttons and always ask for confirmation.
+- Colour carries meaning only. Badges use the shared tones in `src/shared/lib/badge-tones.ts`.
+- Check every UI change in a real browser, at desktop width and at 375px, and read the console for errors.

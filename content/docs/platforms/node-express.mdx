@@ -1,0 +1,138 @@
+---
+title: Node.js (Express)
+description: Run a Node.js or Express server under cb with node, tsx or nodemon, and read values from process.env or @cb/env.
+---
+
+Any Node.js server runs under cb, and Express is the reference case: a plain app that reads `process.env` and uses official SDKs such as Mongoose, ioredis, the AWS SDK, Razorpay or nodemailer works without code changes. This page covers the script change for `node`, `tsx` and `nodemon`, and the two ways your code can read values.
+
+## How cb hooks in
+
+[`cb run`](/docs/guides/develop/cb-run) starts your server with your environment's [variables](/docs/overview/concepts#variable) merged into the process environment and the cb [preload](/docs/guides/develop/preload-and-api) added to `NODE_OPTIONS`. The preload runs before your first `import`, so by the time your code connects to a database or calls a provider, the [stand-in values](/docs/overview/concepts#stand-in-values) are in place and connections to protected services go through cb.
+
+Watchers such as `nodemon`, `tsx watch` and `node --watch` restart your server as a child process. The child inherits the environment and `NODE_OPTIONS`, so every restart gets the preload too.
+
+## Set it up
+
+<Steps>
+<Step>
+### Install `@cb/env`
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+<Tab value="npm">
+```bash
+npm install @cb/env
+```
+</Tab>
+<Tab value="pnpm">
+```bash
+pnpm add @cb/env
+```
+</Tab>
+<Tab value="yarn">
+```bash
+yarn add @cb/env
+```
+</Tab>
+</Tabs>
+</Step>
+<Step>
+### Link the project
+
+```bash
+npx cb init
+```
+
+`cb init` asks for your organization, project and environment, writes `.cb/project.json`, then lists the scripts it wants to change and asks `Update these scripts?`. If you haven't signed in on this machine yet, run `npx cb login` first.
+</Step>
+<Step>
+### Check the `package.json` change
+
+Scripts that start with `node`, `tsx`, `ts-node`, `ts-node-dev` or `nodemon` are prefixed with `cb run --`. Others, such as a plain `tsc` build, are left alone.
+
+```diff title="package.json"
+ {
+   "scripts": {
+-    "dev": "nodemon src/server.js",
+-    "dev:ts": "tsx watch src/server.ts",
+-    "start": "node dist/server.js",
++    "dev": "cb run -- nodemon src/server.js",
++    "dev:ts": "cb run -- tsx watch src/server.ts",
++    "start": "cb run -- node dist/server.js",
+     "build": "tsc"
+   }
+ }
+```
+</Step>
+<Step>
+### Start your server
+
+```bash
+npm run dev
+```
+</Step>
+</Steps>
+
+## Where your code reads values
+
+| Place | Runs on | Gets protected values? |
+| --- | --- | --- |
+| Route handlers, middleware, background jobs | Node.js | Yes |
+| `process.env` anywhere in the server | Node.js | Yes |
+| `import { env } from "@cb/env"` | Node.js | Yes |
+| Static HTML or JavaScript you send to the browser | The browser | No — plain values only |
+
+You can read values two ways, and both return exactly the same string:
+
+- **`process.env.NAME`** — what your code and your SDKs already do. Nothing to change.
+- **`env.NAME` from `@cb/env`** — typed names, and under `cb run` a variable that isn't set throws an error naming it and pointing to the dashboard, instead of returning `undefined`.
+
+```ts title="src/config.ts"
+import { env } from "@cb/env";
+
+export const mongoUri = env.MONGODB_URI; // same value as process.env.MONGODB_URI
+```
+
+[Preload and explicit API](/docs/guides/develop/preload-and-api) explains both in detail, including how to generate the types.
+
+## Example
+
+A plain Express server with Mongoose and ioredis. `MONGODB_URI` and `REDIS_URL` are stand-in URLs that point at the local agent; the gateway connects to the real database with the real credentials.
+
+```js title="src/server.js"
+import express from "express";
+import { Redis } from "ioredis";
+import mongoose from "mongoose";
+
+await mongoose.connect(process.env.MONGODB_URI);
+const Order = mongoose.model("Order", new mongoose.Schema({ sku: String, qty: Number }));
+const redis = new Redis(process.env.REDIS_URL);
+
+const app = express();
+
+app.get("/orders", async (_req, res) => {
+  await Order.create({ sku: "A1", qty: 2 });
+  res.json(await Order.find().lean());
+});
+
+app.get("/greeting", async (_req, res) => {
+  await redis.set("greeting", "hello");
+  res.json({ greeting: await redis.get("greeting") });
+});
+
+app.listen(Number(process.env.PORT ?? 3000));
+```
+
+## Limits
+
+- **Only processes started through `cb run` get values.** Running `node src/server.js` directly gives your app none of the cb-managed variables.
+- **`dotenv` doesn't override cb.** `dotenv` skips keys that are already set, and `cb run` sets the cb-managed ones first. Remove those keys from your `.env` files anyway — `cb init` warns about any it finds — so no real secret stays on disk.
+
+## Troubleshooting
+
+**A variable is `undefined`.** Check that the script starts with `cb run --` and that the key exists in your environment. `npx cb env print` shows exactly what your app will see.
+
+**`cb: this process wasn't started with "cb run"`** — the cb preload was loaded without `cb run`, for example from a debugger configuration. Start the server through your `package.json` script or `npx cb run -- <command>`.
+
+**`cb: access revoked by admin`** — an admin revoked your access or stopped the environment. Your app didn't receive any real credentials. Ask the admin to restore access; see [Revoke a device](/docs/guides/admin/revoke-device).
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

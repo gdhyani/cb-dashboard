@@ -1,0 +1,1 @@
+{ "title": "Admin", "pages": ["access", "revoke-device", "rotate-secret", "kill-switch"] }

@@ -1,0 +1,156 @@
+---
+title: React (single-page app)
+description: Use cb with a React single-page app by keeping protected values in your own API and giving the browser plain values only.
+status: beta
+---
+
+A React single-page app runs entirely in the browser, and a browser never holds protected values. With cb, the pattern is the one you'd use in production anyway: put provider calls behind your own API, run that API under cb, and let the React app call it. This page shows how to wire both halves when the SPA is built with Vite.
+
+## How cb hooks in
+
+cb hooks into Node.js processes started by [`cb run`](/docs/guides/develop/cb-run). In a React SPA there are two of them:
+
+- **The dev server** (`vite`). It bundles your app and exposes `VITE_*` variables to it. Under `cb run`, those values come from your cb environment — they must be plain.
+- **Your API** (Express, Fastify, Hono, NestJS…). It talks to databases and providers with [stand-in values](/docs/overview/concepts#stand-in-values), and cb routes those connections through the gateway.
+
+The React code in between never sees a protected value. It calls your API, and your API uses the service.
+
+## Set it up
+
+<Steps>
+<Step>
+### Install `@cb/env`
+
+Install it in the package that runs your API, and in the SPA package if you want its dev server under cb too.
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+<Tab value="npm">
+```bash
+npm install @cb/env
+```
+</Tab>
+<Tab value="pnpm">
+```bash
+pnpm add @cb/env
+```
+</Tab>
+<Tab value="yarn">
+```bash
+yarn add @cb/env
+```
+</Tab>
+</Tabs>
+</Step>
+<Step>
+### Link the project
+
+```bash
+npx cb init
+```
+
+`cb init` asks for your organization, project and environment, writes `.cb/project.json`, then lists the scripts it wants to change and asks `Update these scripts?`. If you haven't signed in on this machine yet, run `npx cb login` first.
+</Step>
+<Step>
+### Check the `package.json` change
+
+For an app with the Vite dev server and a small API in the same package, both start scripts are prefixed:
+
+```diff title="package.json"
+ {
+   "scripts": {
+-    "dev": "vite",
+-    "api": "tsx watch server/index.ts",
++    "dev": "cb run -- vite",
++    "api": "cb run -- tsx watch server/index.ts",
+     "build": "tsc -b && vite build",
+-    "preview": "vite preview"
++    "preview": "cb run -- vite preview"
+   }
+ }
+```
+</Step>
+<Step>
+### Start both
+
+```bash
+npm run api
+npm run dev
+```
+
+Run each in its own terminal. Point the dev server at the API with Vite's `server.proxy` so the browser calls a relative path like `/api/chat`.
+</Step>
+</Steps>
+
+## Where your code reads values
+
+| Place | Runs on | Gets protected values? |
+| --- | --- | --- |
+| Your API server | Node.js | Yes |
+| `vite.config.*` | Node.js | Yes |
+| React components, hooks, `import.meta.env.VITE_*` | The browser | No — plain `VITE_*` values only |
+
+<Callout type="warning" title="Browser apps never hold protected values">
+Don't call a provider such as OpenAI or Stripe's secret API from React code, and don't put a protected key in a `VITE_*` variable. The browser would only get a stand-in, and its requests don't pass through cb. Call your own API instead.
+</Callout>
+
+## Example
+
+The API calls OpenAI with the official SDK:
+
+```ts title="server/index.ts"
+import express from "express";
+import OpenAI from "openai";
+
+const openai = new OpenAI(); // reads OPENAI_API_KEY from the environment
+const app = express();
+app.use(express.json());
+
+app.post("/api/chat", async (req, res) => {
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", content: String(req.body.message) }],
+  });
+  res.json({ text: completion.choices[0]?.message.content });
+});
+
+app.listen(3001);
+```
+
+The dev server forwards `/api` to it:
+
+```ts title="vite.config.ts"
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [react()],
+  server: { proxy: { "/api": "http://localhost:3001" } },
+});
+```
+
+And the component only knows about your API:
+
+```tsx title="src/chat.tsx"
+export async function ask(message: string) {
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+  return (await res.json()) as { text: string };
+}
+```
+
+## Limits
+
+- **The browser gets plain values only.** Publishable keys meant for the browser (for example a Stripe publishable key) can be plain `VITE_*` variables.
+- **`@cb/env` can't be imported from client code.** Its browser entry throws `@cb/env is server-only`.
+- **Other bundlers.** Any dev server that runs on Node.js can be started with `cb run --`; `cb init` only prefixes the commands listed on [Supported platforms](/docs/platforms), so wire others yourself as shown in [Custom scripts](/docs/guides/develop/custom-scripts).
+
+## Troubleshooting
+
+**The API gets `undefined` for a key.** Check that the API's script starts with `cb run --` — the dev server running under cb doesn't pass values to a separate API process.
+
+**The provider rejects the key from the browser.** The browser got a stand-in. Move the call into your API.
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

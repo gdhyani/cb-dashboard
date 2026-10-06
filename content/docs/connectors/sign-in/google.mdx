@@ -1,0 +1,161 @@
+---
+title: Google sign-in
+description: Run "Sign in with Google" through Auth.js, NextAuth or Passport without giving developers the real client secret.
+status: beta
+---
+
+Store your Google OAuth client secret in cb once. Every developer's app gets a stand-in secret that starts with
+`cb-`, while the client ID stays a plain value. When your app exchanges a sign-in code for tokens at
+`oauth2.googleapis.com`, the cb gateway checks the stand-in and replaces it with the real secret. Everything else in
+the sign-in flow is untouched, so your auth library works unchanged.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have an OAuth client (type **Web application**) in Google Cloud: its client ID
+  (`…apps.googleusercontent.com`) and client secret (`GOCSPX-…`).
+- The client's **Authorized redirect URIs** include your local callback URL, for example
+  `http://localhost:3000/api/auth/callback/google`. Google redirects the browser there; cb doesn't change it.
+- Developers who will run the app have [access](/docs/guides/dashboard/access) to the environment.
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**Google sign-in** in the **Quick add** row, or click **Add variable**, set **What is this?** to **Sign-in client
+secret** and **Provider** to **Google**. The dialog is titled **Add sign-in variable**.
+</Step>
+<Step>
+### Name the key and paste the client secret
+
+Type the **Key** your code reads and paste the real secret into **Client secret**. With Auth.js v5, name it
+`AUTH_GOOGLE_SECRET` so the Google provider picks it up on its own; otherwise `GOOGLE_CLIENT_SECRET` is common.
+</Step>
+<Step>
+### Add the client ID
+
+Open **Suggested extra keys**, tick `GOOGLE_CLIENT_ID` ("Client ID (public)") and type the client ID into the box
+that appears. Rename it to `AUTH_GOOGLE_ID` for Auth.js v5. The client ID is public, so developers see it as is.
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb checks that Google's token endpoint is reachable from its server.
+
+<Callout type="warning">
+  Google can only confirm the secret during a real sign-in, so a mistyped secret still saves. Sign in once after
+  saving; if the token exchange fails with `invalid_client`, use **Replace value**.
+</Callout>
+</Step>
+</Steps>
+
+<Frame src="/docs/images/connectors/add-google.png" alt="Add sign-in variable dialog with Provider Google, Key AUTH_GOOGLE_SECRET, Client secret filled (masked), Suggested extra keys open with the client ID ticked and typed" caption="Add sign-in variable dialog with Provider Google, Key AUTH_GOOGLE_SECRET, Client secret filled (masked), Suggested extra keys open with the client ID ticked and typed" />
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `AUTH_GOOGLE_SECRET` or `GOOGLE_CLIENT_SECRET`. cb never names it for you.
+  </Field>
+  <Field name="What is this?" type="select" required default="Sign-in client secret">
+    The variable type.
+  </Field>
+  <Field name="Provider" type="select" required default="Google">
+    Which sign-in provider the client belongs to.
+  </Field>
+  <Field name="Client secret" type="secret" required>
+    The real client secret, such as `GOCSPX-…`. Write-only: nobody can view it after saving, but you can replace it.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="GOOGLE_CLIENT_ID" type="extra key + text">
+    Under **Suggested extra keys**: "Client ID (public)". Tick it, rename it if you like, and type the client ID.
+    Google sign-in has no **Advanced** section; the token URL is always `https://oauth2.googleapis.com/token`.
+  </Field>
+</Fields>
+
+## What your app sees
+
+<EnvTable rows={[
+  { name: "AUTH_GOOGLE_SECRET", example: "cb-…", kind: "stand-in" },
+  { name: "AUTH_GOOGLE_ID", example: "1234567890-abc.apps.googleusercontent.com", kind: "plain" },
+]} />
+
+## Use it in code
+
+<Tabs items={["Auth.js (NextAuth v5)", "NextAuth v4", "Passport"]}>
+<Tab value="Auth.js (NextAuth v5)">
+```ts title="auth.ts"
+import NextAuth from "next-auth";
+import Google from "next-auth/providers/google";
+
+// Reads AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET from the environment.
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  providers: [Google],
+});
+```
+</Tab>
+<Tab value="NextAuth v4">
+```ts title="pages/api/auth/[...nextauth].ts"
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+
+export default NextAuth({
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+  ],
+});
+```
+</Tab>
+<Tab value="Passport">
+```ts title="src/auth.ts"
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      callbackURL: "http://localhost:3000/auth/google/callback",
+    },
+    (accessToken, refreshToken, profile, done) => done(null, profile),
+  ),
+);
+```
+</Tab>
+</Tabs>
+
+cb accepts the secret in either form libraries use: as `client_secret` in the request body, or in HTTP Basic auth.
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+Open the app, click **Sign in with Google**, and finish the sign-in. If you ran `cb init`, your package scripts
+already run under cb. See [cb run](/docs/guides/develop/cb-run).
+
+## Limits
+
+- The token exchange must happen on the server, in a process started by `cb run`. cb catches it by host
+  (`oauth2.googleapis.com`); a browser-only flow that sends the secret from the browser is not supported.
+- Only the token request is changed. Other requests to the same host pass through as they are.
+- The access and refresh tokens Google returns are real tokens for the signed-in user, as in production.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| Sign-in fails with `invalid_client` and "cb: client secret not valid for this device" | The app sent a secret that isn't this device's stand-in, for example an old value from a `.env` file. Run `npx cb doctor`. |
+| Sign-in fails with `invalid_client` from Google | The real secret is wrong. Use **Replace value** in the variable's Edit dialog. |
+| `redirect_uri_mismatch` | Add the local callback URL to the client's **Authorized redirect URIs** in Google Cloud. |
+| Auth.js says the client ID or secret is missing | Name the keys `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`, or pass them to the provider yourself. |
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

@@ -1,0 +1,145 @@
+---
+title: Mistral
+description: Call the Mistral API with the official SDK or any OpenAI-compatible client while the real key stays on the cb server.
+status: beta
+---
+
+Store your real Mistral API key in cb once. Every developer's app gets a stand-in key that starts with
+`mistral_cb_`, and the cb gateway swaps in the real key on the way to `api.mistral.ai`. The official
+`@mistralai/mistralai` SDK and OpenAI-compatible clients work unchanged, including streaming.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have a real Mistral API key from the Mistral console.
+- Developers who will run the app have [access](/docs/guides/dashboard/access) to the environment.
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**Add variable**, set **What is this?** to **AI API key** and **Provider** to **Mistral**. The dialog is titled
+**Add AI variable**.
+</Step>
+<Step>
+### Name the key and paste the real value
+
+Type the **Key** your code reads, usually `MISTRAL_API_KEY`, and paste the real key into **API key**.
+</Step>
+<Step>
+### Add the base URL key only for OpenAI-compatible clients
+
+**Suggested extra keys** offers `MISTRAL_BASE_URL`. Its value ends in `/v1`, the base an OpenAI-compatible client
+expects. The Mistral SDK needs no base URL: cb catches calls to `api.mistral.ai` from processes started with
+`cb run`.
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb calls `GET /v1/models` with the real key from its server before saving. If Mistral
+rejects the key, nothing is saved and the dialog shows the error.
+</Step>
+</Steps>
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `MISTRAL_API_KEY`. cb never names it for you.
+  </Field>
+  <Field name="What is this?" type="select" required default="AI API key">
+    The variable type.
+  </Field>
+  <Field name="Provider" type="select" required>
+    Choose **Mistral**.
+  </Field>
+  <Field name="API key" type="secret" required>
+    The real key. Write-only: nobody can view it after saving, but you can replace it.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="Different endpoint" type="text">
+    A company proxy or another endpoint instead of `https://api.mistral.ai`. Must be `https://`. When you set it,
+    have your app use the base URL key so its calls reach cb.
+  </Field>
+  <Field name="Extra headers" type="multiline">
+    Non-secret headers sent on every call, one `Name: value` per line, at most 10. Not for keys.
+  </Field>
+</Fields>
+
+## What your app sees
+
+<EnvTable rows={[
+  { name: "MISTRAL_API_KEY", example: "mistral_cb_…", kind: "stand-in" },
+]} />
+
+If you ticked the base URL key, it holds a local address such as `http://127.0.0.1:7406/v1`.
+
+## Use it in code
+
+<Tabs items={["Mistral SDK", "OpenAI SDK"]}>
+<Tab value="Mistral SDK">
+```ts title="lib/ai.ts"
+import { Mistral } from "@mistralai/mistralai";
+
+const mistral = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const stream = await mistral.chat.stream({
+  model: "mistral-small-latest",
+  messages: [{ role: "user", content: "Write a haiku" }],
+});
+for await (const event of stream) {
+  const text = event.data.choices[0]?.delta.content;
+  if (typeof text === "string") process.stdout.write(text);
+}
+```
+</Tab>
+<Tab value="OpenAI SDK">
+```ts title="lib/ai.ts"
+import OpenAI from "openai";
+
+const mistral = new OpenAI({
+  apiKey: process.env.MISTRAL_API_KEY,
+  baseURL: process.env.MISTRAL_BASE_URL ?? "https://api.mistral.ai/v1",
+});
+
+const completion = await mistral.chat.completions.create({
+  model: "mistral-small-latest",
+  messages: [{ role: "user", content: "Say hello" }],
+});
+console.log(completion.choices[0]?.message.content);
+```
+</Tab>
+</Tabs>
+
+Streaming responses pass through as they arrive. cb scrubs every response: if the real key, or its base64 form,
+ever appears in a response body, it is replaced with `[cb-redacted]`.
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+If you ran `cb init`, your package scripts already run under cb. To see the stand-in values, run
+`npx cb env print`. See [cb run](/docs/guides/develop/cb-run).
+
+## Limits
+
+- The app must send the stand-in in the `Authorization: Bearer` header, as both SDKs do.
+- Host redirection of `api.mistral.ai` works in processes started by `cb run`. Other processes need the base URL
+  key with an OpenAI-compatible client.
+- Revoking a developer's access stops their calls; requests then get `403` with `cb_access_revoked`.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| **Save & test** says "The API rejected the key (HTTP 401)" | The real key is wrong or revoked. Create a new key in the Mistral console and paste it again. |
+| Your app gets `401` with `{"error":"cb_invalid_credential"}` | The app sent a key that isn't this device's stand-in, for example a real key from a `.env` file. Run `npx cb doctor`. |
+| `404` from Mistral when the SDK gets the base URL key | The Mistral SDK adds `/v1` itself. Don't pass the base URL key to it; host redirection covers it. |
+| Your app gets `502` with `cb_upstream_unreachable` | The cb server couldn't reach Mistral. |
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

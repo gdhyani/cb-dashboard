@@ -1,0 +1,55 @@
+---
+title: Access tab
+description: See who can run an environment locally, when their access ends and which login each person uses.
+---
+
+[Access](/docs/overview/concepts#access) decides who can run an environment on their own machine. The **Access**
+tab of an environment lists those people. Owners and admins see this tab; developers don't. This page explains what
+the tab shows. For step-by-step granting and revoking, see [Grant and revoke access](/docs/guides/admin/access).
+
+<Frame src="/docs/images/guides/access-tab.png" alt="Access tab of an environment with people, expiry and profile counts" caption="Access tab of an environment with people, expiry and profile counts" />
+
+## What the tab shows
+
+The tab lists the developers who can run this environment locally. Owners and admins always can, so they aren't
+listed. Each row shows:
+
+| Column | Meaning |
+|---|---|
+| Name | The developer. |
+| **Via project access** / **This environment** | Whether access comes from a project-wide grant (all environments) or a grant for this environment only. |
+| **Expires in …** / **No expiry** | When the access ends on its own. |
+| **N profile(s)** | How many services use a non-default login for this person, such as a read-only database user. |
+
+## Row actions
+
+Each person's "…" menu has:
+
+- **Preview access**: shows exactly what their app receives in this environment, as `KEY=value` lines. Secret
+  values are never displayed; protected keys show their stand-in description. If the person has no access, the
+  preview says their sessions will be refused.
+- **Edit access** (or **Edit project access** when access comes from the project): change where, how long and which
+  logins.
+- **Revoke access to `<environment>`**: only for access granted to this environment. Access to other environments
+  is unchanged.
+
+<Callout type="note" title="Revoking takes effect within seconds">
+When you revoke access, active connections to the environment are terminated within seconds. The developer's
+`cb run` prints a banner and their app's database clients get a `cb: access revoked by admin` error.
+</Callout>
+
+## Add people
+
+Select **Add people** to grant access to this environment. People you add here get this environment only; to give
+someone every environment, grant access from the project page instead.
+
+## Project-wide access
+
+The project page has its own **Access** section. It lists everyone with access to any environment of the project,
+with the scope (all environments, or the ones listed), the expiry and the profile count. A collapsed line at the
+bottom lists owners and admins, who have access to everything.
+
+## Per-key logins
+
+You can also choose a login per key from the Variables tab: open a main key's "…" menu and choose
+**Who can use it**. See [Choose a login per key](/docs/guides/admin/access#choose-a-login-per-key).

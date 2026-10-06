@@ -1,0 +1,126 @@
+---
+title: Astro
+description: Run an Astro app under cb so server endpoints and on-demand rendered pages use protected values, while PUBLIC_ variables stay plain.
+status: beta
+---
+
+Astro renders on the server and ships as little JavaScript to the browser as it can, which suits cb well. Server endpoints, on-demand rendered pages and actions run on Node.js and can use [stand-in values](/docs/overview/concepts#stand-in-values) for protected services. Variables named `PUBLIC_*` and anything inside a client island reach the browser and must be plain. This page shows the script change and where that line falls.
+
+## How cb hooks in
+
+[`cb run`](/docs/guides/develop/cb-run) starts `astro` with your environment's [variables](/docs/overview/concepts#variable) merged into the process environment and the cb [preload](/docs/guides/develop/preload-and-api) added to `NODE_OPTIONS`. In development, `astro dev` renders pages and runs endpoints in that process, so `process.env` and `import.meta.env` on the server hold the values from cb, and connections to protected services go through cb.
+
+## Set it up
+
+<Steps>
+<Step>
+### Install `@cb/env`
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+<Tab value="npm">
+```bash
+npm install @cb/env
+```
+</Tab>
+<Tab value="pnpm">
+```bash
+pnpm add @cb/env
+```
+</Tab>
+<Tab value="yarn">
+```bash
+yarn add @cb/env
+```
+</Tab>
+</Tabs>
+</Step>
+<Step>
+### Link the project
+
+```bash
+npx cb init
+```
+
+`cb init` asks for your organization, project and environment, writes `.cb/project.json`, then lists the scripts it wants to change and asks `Update these scripts?`. If you haven't signed in on this machine yet, run `npx cb login` first.
+</Step>
+<Step>
+### Check the `package.json` change
+
+Every script that starts with `astro` is prefixed with `cb run --`:
+
+```diff title="package.json"
+ {
+   "scripts": {
+-    "dev": "astro dev",
+-    "build": "astro build",
+-    "preview": "astro preview",
+-    "astro": "astro"
++    "dev": "cb run -- astro dev",
++    "build": "cb run -- astro build",
++    "preview": "cb run -- astro preview",
++    "astro": "cb run -- astro"
+   }
+ }
+```
+</Step>
+<Step>
+### Start your app
+
+```bash
+npm run dev
+```
+</Step>
+</Steps>
+
+## Where your code reads values
+
+| Place | Runs on | Gets protected values? |
+| --- | --- | --- |
+| Endpoints (`src/pages/**/*.ts`) | Node.js | Yes |
+| Frontmatter of on-demand rendered pages and layouts | Node.js | Yes |
+| Actions (`src/actions`) and middleware (`src/middleware.ts`) | Node.js | Yes |
+| `astro:env/server` secrets, `process.env` on the server | Node.js | Yes |
+| `PUBLIC_*` variables, `astro:env/client` | The browser | No — plain values only |
+| Client islands (`client:*` components) and `<script>` tags | The browser | No — plain values only |
+
+<Callout type="warning" title="Pre-rendered pages bake values in">
+Pages that are pre-rendered at build time turn their frontmatter into static HTML. A value you print there ends up in a file. Read protected values only in endpoints, actions and pages rendered on demand, and don't print them.
+</Callout>
+
+## Example
+
+An endpoint that calls Stripe with the official SDK. `STRIPE_SECRET_KEY` is a stand-in; cb routes the request to `api.stripe.com` through the gateway, which uses the real key.
+
+```ts title="src/pages/api/checkout.ts"
+import type { APIRoute } from "astro";
+import Stripe from "stripe";
+
+export const prerender = false;
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+export const POST: APIRoute = async () => {
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
+    success_url: "http://localhost:4321/thanks",
+  });
+  return Response.json({ url: session.url });
+};
+```
+
+A client island posts to `/api/checkout` and redirects to the returned URL; it never sees the key.
+
+## Limits
+
+- **Browser code gets plain values only** — `PUBLIC_*`, `astro:env/client`, client islands and inline scripts.
+- **Static output.** In a fully static build, every page is pre-rendered; only plain values belong there.
+- **`@cb/env` can't be imported from client code.** Its browser entry throws `@cb/env is server-only`.
+
+## Troubleshooting
+
+**An endpoint gets `undefined` for a key.** Check that `npm run dev` starts with `cb run --` and that the key exists in your environment. `npx cb env print` shows what your app will see.
+
+**A provider rejects the key from the browser.** The call runs in a client island or `<script>`. Move it into an endpoint or action.
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

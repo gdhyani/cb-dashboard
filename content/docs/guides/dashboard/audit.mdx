@@ -1,0 +1,58 @@
+---
+title: Activity
+description: Read the audit log of connections, API calls, access changes and admin actions, and filter it by category.
+---
+
+The **Activity** page (under **Security** in the sidebar) is the audit log of your organization: who did what, and
+when. It covers access changes, configuration, logins and app usage. Owners and admins see this page.
+
+<Frame src="/docs/images/guides/audit.png" alt="Activity page with filters, day headers and an expanded app session" caption="Activity page with filters, day headers and an expanded app session" />
+
+## What is recorded
+
+| Area | Events |
+|---|---|
+| App usage | An app started on an environment, or was blocked from running (with the reason); a connection to a service opened, closed (with bytes in and out) or was refused; every HTTP request through the gateway, with method, host, path and response status. |
+| Access | Access granted (marked temporary when it has an expiry), revoked or expired. |
+| Team | Organization created; member invited, joined, role changed or removed. |
+| Config | Projects created, updated or deleted; environments created, renamed, deleted, suspended or resumed; services created, updated, rotated or deleted; variables created, updated or deleted. |
+| Devices | Device approved after `cb login`, device revoked. |
+
+Each entry records who did it, the project and environment it applies to, and the outcome. Entries that didn't
+succeed carry an outcome badge, and security-relevant ones (a revoked device, a refused connection) are highlighted.
+Secret values never appear in the log.
+
+## Read the feed
+
+Entries are grouped by day (**Today**, **Yesterday**, then the date) and show the time on the right. Hover the time
+to see the full date.
+
+App usage is noisy, so cb folds it into one line per run: "Ada used development · 3 connections · 12 API calls",
+with the services involved and the time span. Select the line to expand every event in that run.
+
+## Filter
+
+Use the tabs above the feed to show one category:
+
+| Filter | Shows |
+|---|---|
+| **All** | Everything |
+| **Access** | Grants, revocations and expiries |
+| **Team** | Invites, joins, role changes and removals |
+| **Config** | Projects, environments, services and variables |
+| **Devices** | Device approvals and revocations |
+| **Usage** | App starts, connections and HTTP requests |
+
+The feed is paginated; use the controls at the bottom to go back in time.
+
+## Correlation ids
+
+Every request to cb carries a correlation id in the `x-correlation-id` header. When something fails, the dashboard
+shows the error message with its code and correlation id, and the CLI prints `correlation id: …` under the error.
+Quote that id when you report a problem: it finds the matching entries in the cb server logs.
+
+<Callout type="tip" title="Where to look first">
+If a developer says their app can't connect, filter by **Usage** and look for a refused connection or a blocked
+start on their name. The reason usually tells you whether it is missing access, an expired grant or an emergency
+stop.
+</Callout>

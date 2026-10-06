@@ -1,0 +1,159 @@
+---
+title: OpenAI
+description: Call the OpenAI API with the official SDK while the real API key stays on the cb server.
+status: beta
+---
+
+Store your real OpenAI API key in cb once. Every developer's app gets a stand-in key that starts with `sk-cb-`, and
+the cb gateway swaps in the real key on the way to `api.openai.com`. The official `openai` SDK works unchanged,
+including streaming.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have a real OpenAI API key (`sk-proj-…`) from the OpenAI platform.
+- Developers who will run the app have [access](/docs/guides/dashboard/access) to the environment.
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**OpenAI** in the **Quick add** row, or click **Add variable**, set **What is this?** to **AI API key** and
+**Provider** to **OpenAI**. The dialog is titled **Add AI variable**.
+</Step>
+<Step>
+### Name the key and paste the real value
+
+Type the **Key** your code reads, usually `OPENAI_API_KEY`, and paste the real key into **API key**.
+</Step>
+<Step>
+### Add the base URL key if your code reads one
+
+Open **Suggested extra keys** and tick `OPENAI_BASE_URL` only if your code or SDK reads a base URL. The official SDK
+reads `OPENAI_BASE_URL` on its own when it is set. Without it, cb still catches calls to `api.openai.com` from
+processes started with `cb run`.
+
+<Callout type="tip">
+  Add the base URL key when part of your app runs outside Node's normal runtime (for example an edge runtime). A
+  local URL works everywhere; host redirection needs cb's preload.
+</Callout>
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb calls `GET /v1/models` with the real key from its server before saving. If OpenAI rejects
+the key, nothing is saved and the dialog shows the error.
+</Step>
+</Steps>
+
+<Frame src="/docs/images/connectors/add-ai-provider.png" alt="Add AI variable dialog with Provider OpenAI, Key OPENAI_API_KEY, API key filled (masked), Suggested extra keys open" caption="Add AI variable dialog with Provider OpenAI, Key OPENAI_API_KEY, API key filled (masked), Suggested extra keys open" />
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `OPENAI_API_KEY`. cb never names it for you.
+  </Field>
+  <Field name="What is this?" type="select" required default="AI API key">
+    The variable type.
+  </Field>
+  <Field name="Provider" type="select" required default="OpenAI">
+    Which AI provider the key belongs to.
+  </Field>
+  <Field name="API key" type="secret" required>
+    The real key, such as `sk-proj-…`. Write-only: nobody can view it after saving, but you can replace it.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="Different endpoint" type="text">
+    Azure OpenAI, a company proxy, or a regional endpoint instead of the default `https://api.openai.com`. Must be
+    `https://`. When you set it, have your app use the base URL key so its calls reach cb.
+  </Field>
+  <Field name="Extra headers" type="multiline">
+    Non-secret headers sent on every call, one `Name: value` per line, at most 10. For example
+    `OpenAI-Organization: org_123`. Not for keys: `Authorization`, `x-api-key`, `Cookie` and transport headers are
+    set by cb.
+  </Field>
+</Fields>
+
+<Callout type="note">
+  Developers get a stand-in that cb makes for each device; there is nothing to enter for it. A stand-in copied to
+  another laptop or environment does not work there. See [stand-in values](/docs/overview/concepts#stand-in-values).
+</Callout>
+
+## What your app sees
+
+<EnvTable rows={[
+  { name: "OPENAI_API_KEY", example: "sk-cb-…", kind: "stand-in" },
+  { name: "OPENAI_BASE_URL", example: "http://127.0.0.1:7402/v1", kind: "stand-in" },
+]} />
+
+`OPENAI_BASE_URL` appears only if you ticked it. The port belongs to the local agent and is kept between runs.
+
+## Use it in code
+
+Use the official SDK as you do in production. It reads `OPENAI_API_KEY` and `OPENAI_BASE_URL` from the environment.
+
+<Tabs items={["Chat", "Streaming"]}>
+<Tab value="Chat">
+```ts title="lib/ai.ts"
+import OpenAI from "openai";
+
+const openai = new OpenAI(); // reads OPENAI_API_KEY (and OPENAI_BASE_URL if set)
+
+const completion = await openai.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [{ role: "user", content: "Say hello" }],
+});
+console.log(completion.choices[0]?.message.content);
+```
+</Tab>
+<Tab value="Streaming">
+```ts title="lib/ai-stream.ts"
+import OpenAI from "openai";
+
+const openai = new OpenAI();
+
+const stream = await openai.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [{ role: "user", content: "Write a haiku" }],
+  stream: true,
+});
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
+}
+```
+</Tab>
+</Tabs>
+
+Streaming responses (server-sent events) pass through as they arrive. cb scrubs every response: if the real key, or
+its base64 form, ever appears in a response body, it is replaced with `[cb-redacted]`.
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+If you ran `cb init`, your package scripts already run under cb and `npm run dev` is enough. To see the stand-in
+values your app gets, run `npx cb env print`. See [cb run](/docs/guides/develop/cb-run).
+
+## Limits
+
+- The app must send the stand-in in the `Authorization: Bearer` header, as the SDK does.
+- Calls go through the cb gateway, which adds a network hop between your laptop and OpenAI.
+- Host redirection of `api.openai.com` works in processes started by `cb run`. Other processes need the base URL key.
+- Revoking a developer's access stops their calls; requests then get `403` with `cb_access_revoked`.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| **Save & test** says "The API rejected the key (HTTP 401)" | The real key is wrong or revoked. Create a new key in OpenAI and paste it again. |
+| Your app gets `401` with `{"error":"cb_invalid_credential"}` | The app sent a key that isn't this device's stand-in, for example a real key from a `.env` file. Run `npx cb doctor` to find stray `.env` files. |
+| Your app gets `502` with `cb_upstream_unreachable` | The cb server couldn't reach OpenAI (or the **Different endpoint**). Check the server's outbound network. |
+| Calls go to OpenAI directly and fail with an invalid key | The process didn't start under `cb run`. Start it with `cb run`, or add `OPENAI_BASE_URL`. |
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

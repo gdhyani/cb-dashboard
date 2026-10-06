@@ -1,0 +1,127 @@
+---
+title: How webhooks work
+description: How cb takes Stripe and Razorpay webhooks at one public URL and delivers each event to the developer whose app caused it.
+---
+
+Payment providers send webhooks to a public URL, but your app runs on `localhost` and only has a
+[stand-in value](/docs/overview/concepts#stand-in-values) for the signing secret. cb solves both: the provider
+calls cb, cb checks the event with the real secret, and then hands it to the one developer whose app caused it,
+signed so that your existing webhook code accepts it. You change nothing in your code.
+
+<WebhookFlowDiagram />
+
+## The path of one event
+
+1. **The provider calls cb.** Each webhook variable has one cb URL, for example
+   `https://cb.example.com/api/hooks/<id>`. You paste it into Stripe or Razorpay once (or let cb do it with
+   **Connect Stripe** / **Connect Razorpay**). The URL is not a secret: cb only accepts calls that carry a valid
+   signature.
+2. **cb verifies it with the real signing secret** and answers the provider at once, so the provider never waits
+   for a laptop. The real secret never leaves the cb server.
+3. **cb finds the developer who caused it.** When your app calls Stripe or Razorpay through cb, cb remembers which
+   device created each payment object (a payment intent, a checkout session, an order…). The event goes to the
+   device that created the object it describes.
+4. **cb re-signs the event for that device.** Every developer's app reads the webhook secret from an environment
+   variable such as `STRIPE_WEBHOOK_SECRET`. That variable holds a stand-in that is unique to the device. cb signs
+   the event again with that stand-in, with a fresh timestamp, so the provider's official SDK verifies it as usual.
+5. **The local agent posts it to your app** at `http://127.0.0.1:<port><path>`, byte for byte, and prints one line
+   in the terminal where `cb run` is running:
+
+```bash
+cb: webhook stripe payment_intent.succeeded → 200 (14 ms)
+```
+
+Because each developer gets only the events their own app caused, 20 people can test checkout at the same time
+without seeing each other's payments.
+
+## What your app sees
+
+Your webhook handler stays exactly as the provider's docs show it. The signing-secret variable holds a stand-in:
+
+<EnvTable rows={[{ name: "STRIPE_WEBHOOK_SECRET", example: "whsec_cb…", kind: "stand-in" }]} />
+
+```ts title="app/api/webhooks/stripe/route.ts"
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+export async function POST(req: Request) {
+  const body = await req.text();
+  const signature = req.headers.get("stripe-signature")!;
+  // Verifies with the stand-in; cb signed this delivery with the same value.
+  const event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!);
+  // …handle the event
+  return new Response(null, { status: 200 });
+}
+```
+
+<Callout type="note">
+  The stand-in only verifies events that cb delivered to this device. A webhook copied from another developer's
+  machine fails verification, because their stand-in is different.
+</Callout>
+
+## Your app needs no port setting
+
+`cb run` finds the port your app listens on and delivers there. If the port changes, delivery follows it. When the
+app starts, the terminal shows where webhooks go:
+
+```bash
+cb: webhooks → 127.0.0.1:3000 (the port your app listens on)
+```
+
+Events that arrive while the app is still starting wait and are sent as soon as the port is known. If no listening
+port is seen within 10 seconds (for example, a process that is not Node.js), cb falls back to `PORT`, or to `3000`.
+
+To choose the port yourself, pass `--webhook-port` to [`cb run`](/docs/guides/develop/cb-run), or set
+`webhookPort` in [`.cb/project.json`](/docs/reference/project-json). Either one turns detection off.
+
+```bash
+cb run --webhook-port 4000 -- npm run dev
+```
+
+## Events nobody caused
+
+Some events are not caused by any app on your team: test events sent from the provider's dashboard, events from
+`stripe trigger`, or objects created by hand in the provider's dashboard. cb keeps looking for an owner for about
+15 seconds (in case the event that links the object arrives later). After that, the event is:
+
+- delivered to devices that opted in with [`cb webhooks listen`](/docs/guides/webhooks/listen), and
+- kept in the [delivery log](/docs/guides/webhooks/delivery-log), where an admin can **Send to me**.
+
+cb never sends such an event to the whole team.
+
+## Retries and how long events are kept
+
+| Situation | What cb does |
+|---|---|
+| Your app answers with a 2xx status | Delivered. |
+| Your app answers with another status, refuses the connection or takes longer than 10 seconds | Retries after 5 s, 15 s, 1 min, 5 min, 15 min, then every 30 minutes. |
+| Your app is not running under `cb run` | The delivery waits and is sent as soon as `cb run` starts. Waiting is not a failed attempt. |
+| The developer's access is paused (for example by an emergency stop) | The delivery waits until access returns. |
+| The device was revoked, or the webhook variable was removed | The delivery is not sent. |
+| The provider sends the same event again | cb stores it once and does not deliver it twice. |
+
+Events are kept for **24 hours**, encrypted at rest. An event not delivered within 24 hours is marked expired.
+Event bodies never appear in the dashboard or the logs.
+
+## Limits
+
+- Event bodies up to 1 MB.
+- Up to 60 verified events per second per webhook variable.
+
+## Next steps
+
+<Cards>
+  <Card title="Give cb a public address" href="/docs/guides/webhooks/public-url">
+    Providers can't call localhost. Set PUBLIC_URL first.
+  </Card>
+  <Card title="Stripe webhooks" href="/docs/guides/webhooks/stripe">
+    Connect Stripe in one click, for full events, thin events or both.
+  </Card>
+  <Card title="Razorpay webhooks" href="/docs/guides/webhooks/razorpay">
+    Connect Razorpay, or paste the URL and a secret cb makes.
+  </Card>
+  <Card title="Delivery log" href="/docs/guides/webhooks/delivery-log">
+    See where every event went, and replay it.
+  </Card>
+</Cards>

@@ -1,0 +1,79 @@
+---
+title: Custom scripts
+description: Wrap any script with cb run, see what cb init changes in package.json, and run one-off commands with cb shell.
+---
+
+Anything that talks to your services needs to run under `cb run`: your dev server, but also migrations, seed
+scripts, queues and tests. `cb init` wraps the common scripts for you. This page shows what it changes, what it
+leaves alone, and how to wrap the rest yourself.
+
+## What cb init changes
+
+`cb init` looks at the `scripts` in your `package.json` and offers to prefix the ones that start a Node tool with
+`cb run --`. It shows a diff first and asks **Update these scripts?** before writing anything:
+
+```text
+package.json scripts:
+  - dev: next dev
+  + dev: cb run -- next dev
+  - test: vitest
+  + test: cb run -- vitest
+```
+
+A script is wrapped when its command starts with one of these tools: `node`, `nodemon`, `tsx`, `ts-node`,
+`ts-node-dev`, `next`, `nest`, `vite`, `remix`, `nuxt`, `astro`, `react-router`, `tsup`, `jest`, `vitest` or
+`mocha`.
+
+`cb init` leaves alone:
+
+- Scripts that already start with `cb run`.
+- Scripts that start with any other command, including chains such as `prisma generate && next dev`.
+- Your code and your `.env*` files. If those files still define keys that cb now manages, `cb init` prints a
+  warning so you can delete them.
+
+Run `cb init --yes` to accept the changes without prompting, for example in a setup script.
+
+## Wrap a script yourself
+
+Put `cb run --` in front of the part of the script that needs your services:
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "prisma generate && cb run -- next dev",
+    "db:push": "cb run -- prisma db push",
+    "seed": "cb run -- tsx scripts/seed.ts",
+    "worker": "cb run -- node dist/worker.js"
+  }
+}
+```
+
+In a chain joined with `&&`, `cb run` applies only to the command right after it. Wrap each part that connects to
+a service; steps that don't, such as `prisma generate`, can stay outside.
+
+<Callout type="note" title="cb is a dev dependency">
+Scripts can call `cb` directly because `npm i -D @cb/env` installs it into `node_modules/.bin`. Outside a script,
+use `npx cb …`.
+</Callout>
+
+## One-off commands with cb shell
+
+For commands you type rather than script, open a cb shell:
+
+```bash
+cb shell
+```
+
+```text
+(cb:development) $ npx prisma studio
+(cb:development) $ node scripts/backfill.js
+```
+
+Everything you start from that shell gets the same variables and brokered connections as `cb run`. See
+[cb shell](/docs/guides/develop/cb-run#cb-shell).
+
+## Other runtimes
+
+`cb run` sets the variables for any command, but brokered connections rely on the Node.js preload. Support for
+containers is listed on [Docker](/docs/platforms/docker) <StatusBadge status="coming-soon" />. See
+[Supported platforms](/docs/platforms) for every runtime and framework.

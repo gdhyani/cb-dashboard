@@ -1,0 +1,25 @@
+{
+  "title": "Connectors",
+  "root": true,
+  "icon": "Plug",
+  "pages": [
+    "index",
+    "choosing-a-type",
+    "---Basic---",
+    "...basic",
+    "---Databases---",
+    "...databases",
+    "---Payments---",
+    "...payments",
+    "---AI---",
+    "...ai",
+    "---Cloud & email---",
+    "...cloud",
+    "---Sign-in---",
+    "...sign-in",
+    "---Push---",
+    "...push",
+    "---Other---",
+    "...other"
+  ]
+}

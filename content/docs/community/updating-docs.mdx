@@ -1,0 +1,158 @@
+---
+title: Updating the docs
+description: Where the documentation lives, the components you can use in a page, and how to add screenshots.
+---
+
+These docs are part of the product. When a change alters something a user or contributor can see, the docs
+change with it, in the same pull request. This page shows where pages live, the components available in every
+page, and how screenshots are captured and framed.
+
+## When to update the docs
+
+Update the docs in the same change whenever you touch something visible: a page or flow, a label or button text,
+a CLI command or flag, a connector, configuration, or an error message. The docs live in the cb-dashboard
+repository, so a change in cb-env or cb-backend gets a companion pull request in cb-dashboard, merged no later
+than the code.
+
+If nothing a user or contributor sees has changed, say so in the pull request description:
+
+```text
+Docs: not needed — internal refactor, no behaviour change
+```
+
+## Where pages live
+
+| Path | What it holds |
+|---|---|
+| `content/docs/` | Every page, as an `.mdx` file. The path is the URL: `content/docs/guides/develop/cb-run.mdx` is `/docs/guides/develop/cb-run`, and `index.mdx` is the folder's own page. |
+| `content/docs/**/meta.json` | The sidebar title and page order for each folder. A page missing from `pages` is not listed in the sidebar. |
+| `public/docs/images/` | Framed screenshots, committed. |
+| `src/features/docs/` | The docs components and the connector and platform catalogs. |
+
+A folder's `meta.json` lists its pages in order. `"---Title---"` adds a separator, and `"...folder"` inlines a
+subfolder's pages:
+
+```json title="content/docs/community/meta.json"
+{
+  "title": "Community",
+  "root": true,
+  "icon": "Users",
+  "pages": ["index", "local-development", "---Policies---", "security"]
+}
+```
+
+Every page starts with frontmatter. `title` and `description` are required, and the description is one plain
+sentence ending with a period. Add `status: beta` or `status: coming-soon` only where it applies. Do not repeat
+the title as a heading; start the body at `##`.
+
+```mdx title="content/docs/guides/example.mdx"
+---
+title: Example
+description: One sentence that says what the page helps you do.
+---
+
+A short intro: what this is and what the reader will do.
+
+## First section
+```
+
+## Writing style
+
+- Second person, present tense, short paragraphs. Explain *why* in a sentence where it helps.
+- Write dashboard labels in **bold**, exactly as the app shows them.
+- Link each concept once per page, on first use, with an absolute `/docs/...` path.
+- Give every code block a language, and a `title` when it shows a file.
+- Put guidance in a `<Callout>` at the step it applies to, not in a separate list of tips.
+
+## Components cheat-sheet
+
+These components are available in every page without an import.
+
+| Component | Use it for |
+|---|---|
+| `<Callout type="note">` | Guidance at the point it applies. `note` is context, `tip` the recommended way, `warning` a common mistake, `danger` something irreversible or security-sensitive. Optional `title`. |
+| `<Steps>` with `<Step>` | A numbered flow. Start each step with a `###` heading. |
+| `<Tabs items={["npm", "pnpm", "yarn"]}>` with `<Tab value="npm">` | Alternatives such as package managers or operating systems. |
+| `<Fields title="Required">` with `<Field name="Key" type="text" required>` | A dashboard form. Put required and optional fields in separate blocks; use `collapsible` for **Advanced**. `Field` also takes `default`. |
+| `<EnvTable rows={[…]} />` | "What your app sees": each row has `name`, `example` and `kind` (`plain`, `stand-in` or `generated`). |
+| `<Frame src="…" alt="…" caption="…" />` | A screenshot from `public/docs/images/`. |
+| `<Cards>` with `<Card title="…" href="…">` | Next steps and landing pages. |
+| `<ConnectorCards />`, `<ConnectorCards group="databases" />` | The connector grid, from the connector catalog. |
+| `<PlatformCards />` | The platform support matrix. |
+| `<StatusBadge status="beta" />` | An inline status: `supported`, `beta` or `coming-soon`. |
+| `<ArchitectureDiagram />`, `<RequestFlowDiagram />`, `<RoutingLayersDiagram />`, `<WebhookFlowDiagram />` | The standard diagrams. |
+
+A short example combining them:
+
+```mdx title="content/docs/guides/example.mdx"
+<Steps>
+<Step>
+### Add the key
+
+Open the **Variables** tab and choose **Add variable**.
+
+<Callout type="warning">
+  Paste the secret key, not the publishable key.
+</Callout>
+</Step>
+</Steps>
+
+<EnvTable rows={[{ name: "STRIPE_SECRET_KEY", example: "sk_test_cb…", kind: "stand-in" }]} />
+```
+
+## Screenshots
+
+Screenshots show real dashboard screens, framed on the docs gradient so they read clearly in light and dark
+themes.
+
+<Steps>
+<Step>
+### Capture from a demo organization
+
+Capture the browser viewport at **1440×900** from a demo organization filled with dummy values: stand-in keys
+such as `sk_test_cb…`, people such as `ada@acme.example`, and hosts such as `db.example.com`.
+</Step>
+<Step>
+### Save the raw capture
+
+Save it as `docs-images-raw/<section>/<name>.png` in cb-dashboard, for example
+`docs-images-raw/guides/variables-table.png`. This folder is gitignored; raw captures are never committed.
+</Step>
+<Step>
+### Frame it
+
+```bash
+npm run docs:images
+```
+
+This places every raw capture on the gradient with rounded corners and a shadow, and writes it to
+`public/docs/images/<section>/<name>.png`.
+</Step>
+<Step>
+### Use it in the page
+
+```mdx
+<Frame src='/docs/images/guides/variables-table.png' alt='The Variables tab with grouped keys' />
+```
+
+When a change alters a screen, recapture its screenshots in the same pull request.
+</Step>
+</Steps>
+
+<Callout type="danger" title="Never a real value">
+  A screenshot must never show a real secret, token, email address or customer name — check every field, the
+  address bar and any open toast before you capture.
+</Callout>
+
+## Check your changes
+
+```bash
+npm test
+npm run dev        # then open http://localhost:4201/docs
+```
+
+`npm test` fails if a page links to a `/docs` path that does not exist, references an image that is missing,
+leaves an image in `public/docs/images/` unused, contains something that looks like a real secret, or lacks a
+title and description. It also checks that every connector and platform has a page whose status matches the
+catalog, and that coming-soon pages carry no setup steps. Read the pages you changed in the browser before you
+open the pull request.

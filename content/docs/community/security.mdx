@@ -1,0 +1,48 @@
+---
+title: Security
+description: How to report a vulnerability in cb privately, and what happens after you do.
+---
+
+cb exists to keep real credentials away from developer machines, so security reports get priority. This page
+summarises the security policy that each repository publishes in its `SECURITY.md`. To learn how cb protects
+credentials by design, see [Security model](/docs/overview/security).
+
+## Report a vulnerability
+
+Report vulnerabilities privately through GitHub's private vulnerability reporting, in the repository that is
+affected:
+
+| Repository | Report privately |
+|---|---|
+| cb-env (CLI, agent, preload) | [github.com/gdhyani/cb-env/security/advisories/new](https://github.com/gdhyani/cb-env/security/advisories/new) |
+| cb-backend (API, gateway) | [github.com/gdhyani/cb-backend/security/advisories/new](https://github.com/gdhyani/cb-backend/security/advisories/new) |
+| cb-dashboard (web app, docs) | [github.com/gdhyani/cb-dashboard/security/advisories/new](https://github.com/gdhyani/cb-dashboard/security/advisories/new) |
+
+If you are not sure which repository is affected, pick the closest one; the maintainers coordinate the fix across
+repositories.
+
+<Callout type="danger" title="Never in public">
+  Do not open a public issue, discussion or pull request for a vulnerability.
+</Callout>
+
+## What to include
+
+- What you found and the impact you expect.
+- Steps to reproduce, and the affected version or commit.
+- **No real secrets, tokens or customer data.** Use stand-in values such as `sk_test_cb…` or `cbu_ab12cd34`, and
+  describe where the real value would appear instead.
+
+## What happens next
+
+1. The maintainers aim to acknowledge your report within **3 working days**.
+2. They keep you updated while they investigate and fix the issue, and agree with you on when to publish.
+3. The advisory credits you unless you ask not to be named.
+
+## Supported versions
+
+cb is pre-1.0. Security fixes land on the latest `main` only; there are no maintained release branches yet.
+
+| Version | Supported |
+|---|---|
+| latest `main` | Yes |
+| anything older | No |

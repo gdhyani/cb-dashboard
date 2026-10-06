@@ -1,0 +1,63 @@
+---
+title: Revoke a device
+description: Cut off one laptop immediately when it is lost, stolen or no longer used.
+---
+
+Every laptop that runs `npx cb login` becomes a [device](/docs/overview/concepts#device-and-session) with its own
+token. Revoking a device stops that token and closes every connection from it at once, without touching the person's
+other devices or their access. This guide is for owners and admins; developers can revoke their own devices from
+[My access](/docs/guides/dashboard/my-access).
+
+## When to revoke a device
+
+- A laptop is lost or stolen.
+- Someone replaced their laptop and the old one should stop working.
+- A device you don't recognise appears in the list.
+
+Nothing on a revoked laptop gives access to your real services: apps there only ever had stand-in values, and those
+work only through the cb gateway, which now refuses them.
+
+## Revoke it
+
+<Steps>
+<Step>
+### Open Devices & sessions
+
+In the sidebar, under **Security**, open **Devices & sessions**.
+</Step>
+<Step>
+### Find the device
+
+Under **CLI devices**, find the device by its name, owner and OS. **Agent online** with a count of open connections
+means it is in use right now.
+</Step>
+<Step>
+### Revoke
+
+Open the row's "…" menu, choose **Revoke device** and confirm.
+</Step>
+</Steps>
+
+The token stops working immediately and every open connection from the device is closed. Apps there get
+`cb: access revoked by admin`, and `cb run` refuses to start. The revocation is recorded in
+[Activity](/docs/guides/dashboard/audit).
+
+<Callout type="danger" title="Revoking can't be undone">
+A revoked device can't be re-enabled. If the person still uses that laptop, they run `npx cb login` on it again and
+approve the new device in the dashboard.
+</Callout>
+
+## Revoke device, sign out or emergency stop?
+
+| Situation | Use |
+|---|---|
+| One known laptop is lost or retired | **Revoke device** |
+| A browser is still signed in to the dashboard somewhere | **Sign out** under **Dashboard sessions** |
+| You don't know which device is affected, or want a person blocked everywhere for now | [Emergency stop](/docs/guides/dashboard/emergency-stop) on **A person** |
+| You want to pause one device and maybe allow it again later | Emergency stop on **A device**, then **Restore access** |
+| Someone leaves the team | **Remove member** on [Members](/docs/guides/dashboard/members) |
+
+<Callout type="tip" title="Secrets shown as-is">
+If the environment has any **Secret shown as-is** variables, the real values were on that laptop. Replace them
+after revoking. See [Rotate a secret](/docs/guides/admin/rotate-secret).
+</Callout>

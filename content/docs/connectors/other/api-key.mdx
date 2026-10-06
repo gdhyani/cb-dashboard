@@ -1,0 +1,181 @@
+---
+title: Other API key
+description: Broker the key of any HTTP API without a preset, with a Bearer, x-api-key, Basic or custom-header key.
+status: beta
+---
+
+Use **Other API key** for any HTTP API that cb has no preset for: a SaaS API, a partner API or an internal service.
+You tell cb where the API lives and how the key is sent. Every developer's app gets a stand-in key that starts with
+`cb_`; the cb gateway checks it on each request, puts the real key in its place, and forwards the call.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have the real API key and the API's base URL, such as `https://api.example.com`.
+- You know how the API expects the key: `Authorization: Bearer …`, an `x-api-key` header, another named header, or
+  HTTP Basic auth with the key as the password.
+- Developers who will run the app have [access](/docs/guides/dashboard/access) to the environment.
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**Other API** in the **Quick add** row, or click **Add variable** and set **What is this?** to **Other API key**.
+The dialog is titled **Add API key variable**.
+</Step>
+<Step>
+### Name the key, paste it, and set the base URL
+
+Type the **Key** your code reads, for example `ACME_API_KEY`, and paste the real key into **API key**. Enter the
+**API base URL**.
+
+<Callout type="note">
+  For an `https://` base URL, cb also catches calls to that host by name, so SDKs with a fixed host work without
+  changes. A plain `http://` URL is allowed only for private or loopback addresses; then your app must use the base
+  URL key below.
+</Callout>
+</Step>
+<Step>
+### Choose how the key is sent
+
+Pick **How the key is sent**:
+
+| Option | The app sends | cb sends upstream |
+|---|---|---|
+| **Authorization: Bearer &lt;key&gt;** | `Authorization: Bearer cb_…` | `Authorization: Bearer <real key>` |
+| **x-api-key header** | `x-api-key: cb_…` | `x-api-key: <real key>` |
+| **Another header…** | the stand-in in the **Header name** you type, such as `x-acme-key` | the real key in the same header |
+| **Basic auth (key as password)** | `Authorization: Basic` with any username and the stand-in as password | the same username with the real key |
+
+For Basic auth, the optional **Username** is the public part (often a key ID) that **Save & test** uses.
+</Step>
+<Step>
+### Add the base URL key if your code reads one
+
+Open **Suggested extra keys** and tick `API_BASE_URL` ("Base URL, only if the SDK accepts one") if your code takes a
+base URL. Rename it to match your code.
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb sends a `GET` to the base URL with the real key from its server. The test passes unless
+the API answers `401` or `403`; on failure nothing is saved and the dialog shows the error.
+</Step>
+</Steps>
+
+<Frame src="/docs/images/connectors/add-api-key.png" alt="Add API key variable dialog, API base URL filled, How the key is sent set to 'Another header…' with Header name, Advanced open showing More hosts to catch, Extra headers and CA certificate" caption="Add API key variable dialog, API base URL filled, How the key is sent set to 'Another header…' with Header name, Advanced open showing More hosts to catch, Extra headers and CA certificate" />
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `ACME_API_KEY`. cb never names it for you.
+  </Field>
+  <Field name="What is this?" type="select" required default="Other API key">
+    The variable type.
+  </Field>
+  <Field name="API key" type="secret" required>
+    The real key. Write-only: nobody can view it after saving, but you can replace it.
+  </Field>
+  <Field name="API base URL" type="text" required>
+    Where your app's calls go, such as `https://api.example.com`. A path here is kept and your app's paths are
+    appended to it.
+  </Field>
+  <Field name="How the key is sent" type="select" required default="Authorization: Bearer <key>">
+    **Authorization: Bearer &lt;key&gt;**, **x-api-key header**, **Another header…** or **Basic auth (key as
+    password)**.
+  </Field>
+  <Field name="Header name" type="text">
+    Shown for **Another header…**, and then required. The header that carries the key, for example `x-acme-key`.
+  </Field>
+  <Field name="Username" type="text">
+    Shown for **Basic auth**. The public part of Basic auth (often a key ID); the key above is the password.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="More hosts to catch" type="text">
+    Comma-separated `host:port`, such as `uploads.example.com:443`, if the SDK also calls other hosts with the same
+    key. At most 10.
+  </Field>
+  <Field name="Extra headers" type="multiline">
+    Non-secret headers sent on every call, one `Name: value` per line, at most 10. They override the same headers
+    from your app. Not for keys: `Authorization`, `Proxy-Authorization`, `x-api-key`, `Cookie`, `Host` and transport
+    headers are refused, and so is the header that carries the key.
+  </Field>
+  <Field name="CA certificate (PEM)" type="multiline">
+    Only for internal APIs that use a private certificate authority. cb trusts it for this API only, on top of the
+    public certificate authorities. TLS verification is never turned off.
+  </Field>
+</Fields>
+
+## What your app sees
+
+<EnvTable rows={[
+  { name: "ACME_API_KEY", example: "cb_…", kind: "stand-in" },
+  { name: "API_BASE_URL", example: "http://127.0.0.1:7411", kind: "stand-in" },
+]} />
+
+`API_BASE_URL` appears only if you ticked it. The port belongs to the local agent and is kept between runs.
+
+## Use it in code
+
+Send the key exactly as the API expects. With an SDK, pass the key (and the base URL, if it takes one) from the
+environment.
+
+<Tabs items={["fetch", "SDK"]}>
+<Tab value="fetch">
+```ts title="lib/acme.ts"
+const base = process.env.API_BASE_URL ?? "https://api.example.com";
+
+const res = await fetch(`${base}/v1/orders`, {
+  headers: { authorization: `Bearer ${process.env.ACME_API_KEY}` },
+});
+console.log(await res.json());
+```
+</Tab>
+<Tab value="SDK">
+```ts title="lib/acme.ts"
+import { Acme } from "@acme/sdk";
+
+export const acme = new Acme({
+  apiKey: process.env.ACME_API_KEY,
+  baseUrl: process.env.API_BASE_URL, // optional with an https:// base URL
+});
+```
+</Tab>
+</Tabs>
+
+Streaming and chunked responses pass through as they arrive. cb scrubs every response: if the real key, or its
+base64 form, ever appears in a response body, it is replaced with `[cb-redacted]`.
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+If you ran `cb init`, your package scripts already run under cb. To see the stand-in values, run
+`npx cb env print`. See [cb run](/docs/guides/develop/cb-run).
+
+## Limits
+
+- The key must travel in the place set in **How the key is sent**. A key in the URL query string is not recognised.
+- Catching a host by name works in processes started by `cb run`. Other processes need the base URL key.
+- Plain `http://` works only for private and loopback addresses, and only while the cb server allows it; see
+  [Backend setup](/docs/guides/self-host/backend).
+- Revoking a developer's access stops their calls; requests then get `403` with `cb_access_revoked`.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| **Save & test** says "The API rejected the key (HTTP 401)" | The key is wrong, or the API expects it elsewhere. Check **How the key is sent**. |
+| "must be https:// (http:// only for private addresses such as 10.x, 192.168.x or localhost)" | Use `https://`, or a private address. |
+| "Use one Name: value per line." or "At most 10 headers." | Fix the **Extra headers** box. |
+| "… is set by cb — put keys in the value above." | That header can't be an extra header. Put the key in **API key** and pick the matching **How the key is sent**. |
+| Your app gets `401` with `{"error":"cb_invalid_credential"}` | The app sent the key in a different place, or a key that isn't this device's stand-in. Run `npx cb doctor`. |
+| Your app gets `502` with `cb_upstream_unreachable` | The cb server couldn't reach the API. If it uses a private certificate authority, add its **CA certificate (PEM)**. |
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

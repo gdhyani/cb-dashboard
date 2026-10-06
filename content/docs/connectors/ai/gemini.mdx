@@ -1,0 +1,141 @@
+---
+title: Google Gemini
+description: Call the Gemini API with Google's official SDK while the real API key stays on the cb server.
+status: beta
+---
+
+Store your real Gemini API key in cb once. Every developer's app gets a stand-in key that starts with `AIzaCb`, and
+the cb gateway swaps in the real key on the way to `generativelanguage.googleapis.com`. Google's `@google/genai`
+SDK works unchanged, including streaming.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have a real Gemini API key (`AIza…`) from Google AI Studio.
+- Developers who will run the app have [access](/docs/guides/dashboard/access) to the environment.
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**Add variable**, set **What is this?** to **AI API key** and **Provider** to **Google Gemini**. The dialog is
+titled **Add AI variable**.
+</Step>
+<Step>
+### Name the key and paste the real value
+
+Type the **Key** your code reads, usually `GEMINI_API_KEY`, and paste the real key into **API key**.
+</Step>
+<Step>
+### Add the base URL key if your code reads one
+
+**Suggested extra keys** offers `GEMINI_BASE_URL`. Tick it only if your code passes a base URL to the SDK. Without
+it, cb catches calls to `generativelanguage.googleapis.com` from processes started with `cb run`.
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb calls `GET /v1beta/models` with the real key from its server before saving. If Google
+rejects the key, nothing is saved and the dialog shows the error.
+</Step>
+</Steps>
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `GEMINI_API_KEY`. cb never names it for you.
+  </Field>
+  <Field name="What is this?" type="select" required default="AI API key">
+    The variable type.
+  </Field>
+  <Field name="Provider" type="select" required>
+    Choose **Google Gemini**.
+  </Field>
+  <Field name="API key" type="secret" required>
+    The real key, such as `AIza…`. Write-only: nobody can view it after saving, but you can replace it.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="Different endpoint" type="text">
+    A company proxy or another endpoint instead of `https://generativelanguage.googleapis.com`. Must be `https://`.
+    When you set it, have your app use the base URL key so its calls reach cb.
+  </Field>
+  <Field name="Extra headers" type="multiline">
+    Non-secret headers sent on every call, one `Name: value` per line, at most 10. Not for keys.
+  </Field>
+</Fields>
+
+## What your app sees
+
+<EnvTable rows={[
+  { name: "GEMINI_API_KEY", example: "AIzaCb…", kind: "stand-in" },
+]} />
+
+If you ticked `GEMINI_BASE_URL`, it holds a local address such as `http://127.0.0.1:7404`.
+
+## Use it in code
+
+Gemini sends the key in a named header, `x-goog-api-key`. That is where cb looks for the stand-in, and it is what
+Google's SDK does.
+
+<Tabs items={["Generate", "Streaming"]}>
+<Tab value="Generate">
+```ts title="lib/ai.ts"
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+const response = await ai.models.generateContent({
+  model: "gemini-2.5-flash",
+  contents: "Say hello",
+});
+console.log(response.text);
+```
+</Tab>
+<Tab value="Streaming">
+```ts title="lib/ai-stream.ts"
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+const stream = await ai.models.generateContentStream({
+  model: "gemini-2.5-flash",
+  contents: "Write a haiku",
+});
+for await (const chunk of stream) {
+  process.stdout.write(chunk.text ?? "");
+}
+```
+</Tab>
+</Tabs>
+
+Streaming responses pass through as they arrive. cb scrubs every response: if the real key, or its base64 form,
+ever appears in a response body, it is replaced with `[cb-redacted]`.
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+If you ran `cb init`, your package scripts already run under cb. To see the stand-in values, run
+`npx cb env print`. See [cb run](/docs/guides/develop/cb-run).
+
+## Limits
+
+- The key must travel in the `x-goog-api-key` header. A key in the URL (`?key=…`) is not recognised.
+- Host redirection works in processes started by `cb run`. Other processes need the base URL key.
+- Revoking a developer's access stops their calls; requests then get `403` with `cb_access_revoked`.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| **Save & test** says "The API rejected the key (HTTP 400)" | Google answers an invalid key with 400. Check the key in Google AI Studio and paste it again. |
+| Your app gets `401` with `{"error":"cb_invalid_credential"}` | The app sent the key somewhere other than `x-goog-api-key` (for example `?key=` in a hand-written URL), or sent a key that isn't this device's stand-in. Use the SDK, or move the key to the header. |
+| Your app gets `502` with `cb_upstream_unreachable` | The cb server couldn't reach Google. |
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

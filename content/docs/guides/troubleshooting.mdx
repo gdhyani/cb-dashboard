@@ -1,0 +1,198 @@
+---
+title: Troubleshooting
+description: The messages cb shows, what causes each one, and how to fix it.
+---
+
+Every message cb prints starts with `cb:` and says what happened and what to do next. This page lists those messages
+with their causes and fixes, then covers the dashboard, ports, the backend and webhooks. Start with `cb doctor`: it
+checks the most common problems at once.
+
+## Run cb doctor first
+
+```bash
+npx cb doctor
+```
+
+```text
+✓ Node.js                      v22.…
+✓ Server                       http://localhost:4200
+✓ Login                        ada@acme.example on "ada-laptop"
+✓ Keychain                     device token stored in the OS keychain
+✓ Agent                        running (pid 48121, 1 environment(s))
+✓ Ports                        3 listener port(s) available
+✓ Project                      acme-web (development)
+✓ package.json scripts         dev use cb run
+✓ .env                         no secrets or cb-managed keys
+
+All good.
+```
+
+Each failed or warning check (`✗` or `!`) is followed by a line starting with `→` that says what to do. The command
+exits with code 1 when anything fails. Add `--json` for machine-readable output, or `--server <url>` to check another
+backend.
+
+| Check | What it looks at |
+|---|---|
+| Node.js | Version 22 or newer |
+| Server | Whether the backend answers on `/api/health` |
+| Login | Whether this device is logged in, and as whom |
+| Keychain | Whether the device token is in the OS keychain or in `~/.cb/credentials.json` |
+| Agent | Whether the background agent is running |
+| Ports | Whether this project's saved listener ports are free |
+| Project | Whether the folder is linked to a cb project |
+| package.json scripts | Whether `dev` / `start` run through `cb run` |
+| `.env` files | Real-looking secrets, and keys that cb already provides |
+
+## CLI and app messages
+
+### `cb: you're not logged in. Run "npx cb login".`
+
+**Cause:** this device has no cb login for the backend it is talking to.
+**Fix:** run `npx cb login`, approve the code in the browser, and run your command again. For a self-hosted backend at
+another address, add `--server <url>`.
+
+### `cb: this folder isn't linked to a cb project. Run "npx cb init".`
+
+**Cause:** there is no `.cb/project.json` in this folder or any parent folder.
+**Fix:** run `npx cb init` in the project root and pick the organization, project and environment.
+
+### `cb: this process wasn't started with "cb run". Use "npm run dev" (scripts are wired by "cb init") or "cb shell".`
+
+**Cause:** your app loaded cb, but it was started directly (for example `node server.js` or `next dev`) instead of
+through `cb run`, so it has no stand-in values.
+**Fix:** start it with `npm run dev` after `cb init` has wired the scripts, run `cb run -- <command>`, or open a
+`cb shell`. See [cb run](/docs/guides/develop/cb-run).
+
+### `cb: can't reach <server>. Gateway-only mode needs the backend for every connection.`
+
+**Cause:** the backend is down, the address is wrong, or the network blocks it. cb never falls back to local secrets,
+so every connection needs the backend.
+**Fix:** check that the backend is running (`curl <server>/api/health`), that `--server`, `CB_SERVER_URL` or the
+`server` in `.cb/project.json` points at it, and that your network allows it. See [Backend](#backend).
+
+### `cb: <server> answered with an unexpected response (HTTP <status>). Check that --server points at a cb backend.`
+
+**Cause:** something answered at that address, but it is not a cb backend (often the dashboard's port `4201`, or a
+proxy page).
+**Fix:** point `--server` or `CB_SERVER_URL` at the backend, by default `http://localhost:4200`.
+
+### `cb: you don't have access to "<environment>". Ask an admin to grant it in the dashboard (Access).`
+
+**Cause:** you are a member of the organization, but nobody has given you access to this environment.
+**Fix:** ask an admin to grant you access in the environment's **Access** tab. See
+[Grant access](/docs/guides/admin/access). Once granted, `cb run` picks it up.
+
+### `cb: access revoked by admin (reason: "<reason>"). Your app was not given any real credentials.`
+
+**Cause:** an admin revoked your access, stopped this device or turned on an emergency stop.
+**Fix:** talk to your admin. When access is restored, `cb run` reconnects your app by itself and prints
+`cb: access restored — reconnecting your app`.
+
+### `cb: <connection>: session expired or device revoked. Run "npx cb login".`
+
+**Cause:** this device's login expired, or an admin revoked the device.
+**Fix:** run `npx cb login`. If the device was revoked, an admin may need to restore your access first.
+
+### `cb: this device is signed out (…). Run "cb login" — your app keeps running and cb reconnects by itself.`
+
+**Cause:** the login of this device ended while `cb run` was running.
+**Fix:** run `npx cb login` in another terminal. You don't need to restart the app.
+
+### `cb: <NAME> is not set for this environment. Ask an admin to add it in the dashboard (project → environment → Variables), then restart with "cb run".`
+
+**Cause:** your code asked cb for a variable that the environment does not have.
+**Fix:** add the variable in the environment's **Variables** tab (or ask an admin to), then restart with `cb run`.
+See [Variables](/docs/guides/dashboard/variables).
+
+### `cb: env is read-only. Change values in the dashboard.`
+
+**Cause:** code tried to assign a value to cb's `env` object.
+**Fix:** change values in the dashboard; your code can only read them.
+
+### `cb: snapshot missing at <file>. Restart your app with "cb run".`
+
+**Cause:** the file that `cb run` writes for your app was removed, or the app was started outside `cb run`.
+**Fix:** stop the app and start it again with `cb run`.
+
+### `cb: the login code expired before it was approved. Run "npx cb login" again.`
+
+**Cause:** the code shown by `cb login` was not approved in the browser in time.
+**Fix:** run `npx cb login` again and approve it right away.
+
+### `cb: the background agent did not start. See <log file>`
+
+**Cause:** the local agent that runs behind `cb run` failed to start.
+**Fix:** open the log file named in the message. Common causes are an unsupported Node.js version (check with
+`cb doctor`) or a broken install of `@cb/env`; reinstall it with `npm install`.
+
+### `cb: no free port in 7400-7999. Close other cb runs and retry.`
+
+**Cause:** every local listener port cb can use is taken.
+**Fix:** stop other `cb run` processes you no longer need, then start again.
+
+### `cb run: --webhook-port must be a port number (got "<value>")`
+
+**Cause:** the value passed to `--webhook-port` is not a port between 1 and 65535.
+**Fix:** pass a number, for example `cb run --webhook-port 3000 -- npm run dev`, or leave the option out so cb finds
+the port itself.
+
+## Dashboard errors
+
+When an action fails, the dashboard shows the message, followed by an error code and a **correlation id**, for
+example `NOT_FOUND · correlation id 3f6c…`. The same id appears on every backend log line for that request. If you run
+the backend yourself, search its log for the id to see what went wrong; otherwise include it when you report the
+problem.
+
+## Port conflicts
+
+| Port | Used by | If it is taken |
+|---|---|---|
+| `4200` | Backend | The backend cannot start. Stop the other process, or set `PORT` in the backend's `.env` and point the dashboard's `CB_API_URL` and the CLI's `--server` at the new port. |
+| `4201` | Dashboard | `npm run dev` cannot start. Stop the other process. |
+| `7400`–`7999` | Local listeners that `cb run` opens for brokered connections | cb keeps the same port per connection and moves to a free one when its saved port is taken. `cb doctor` lists saved ports that another process holds. |
+
+On the developer's side, `cb run` also needs your app's own port to be free, exactly as without cb.
+
+## Backend
+
+The backend checks its settings when it starts and stops with a list of what is wrong:
+
+```text
+Invalid environment:
+  - MASTER_KEY: must be 32 bytes, base64-encoded (openssl rand -base64 32)
+```
+
+| Message | Fix |
+|---|---|
+| `MONGODB_URI: is required` / `must be a mongodb:// or mongodb+srv:// URI` | Set `MONGODB_URI` in `.env`. |
+| `MASTER_KEY: is required` / `must be 32 bytes, base64-encoded (openssl rand -base64 32)` | Generate a key with `openssl rand -base64 32`. The same applies to `SERVER_SECRET`. |
+| `UPSTREAM_EXTRA_CA_FILE: is test-only and refused in production` | Remove `UPSTREAM_EXTRA_CA_FILE`. It is for cb's test suite only. |
+
+If `curl localhost:4200/api/health` answers with `"status": "degraded"`, the backend is running but cannot reach
+MongoDB. See [Run the backend](/docs/guides/self-host/backend).
+
+## Webhook not arriving
+
+Work through this list in order:
+
+1. **Is the app running under `cb run`?** Webhooks reach only apps started with `cb run`. The terminal shows
+   `cb: webhooks → 127.0.0.1:<port> (the port your app listens on)` when delivery is ready.
+2. **Does the backend have a public address?** If the dashboard shows "can't reach this address" under the webhook URL,
+   set `PUBLIC_URL`. See [Give cb a public address](/docs/guides/webhooks/public-url).
+3. **Does the provider point at the current address?** If the Webhooks tab says the provider "still sends to an old
+   address of this cb server", click **Reconnect**. If you set the webhook up yourself, paste the current URL into the
+   provider.
+4. **Is a signing secret set?** A Stripe webhook saved without a secret receives nothing until you click
+   **Connect Stripe** or paste the secret with **Replace value**. Calls signed with any other secret are refused
+   (Stripe or Razorpay shows "Signature does not match this endpoint's signing secret." as cb's answer).
+5. **Did your app cause the event?** Test events from the provider's dashboard and `stripe trigger` belong to nobody.
+   Run `cb webhooks listen`, or use **Send to me** in the delivery log. See
+   [Receive events nobody caused](/docs/guides/webhooks/listen).
+6. **What does the delivery log say?** Open **Webhooks → Delivery log** and read the status and reason next to your
+   device. See [Delivery log](/docs/guides/webhooks/delivery-log).
+7. **Does your handler read the right variable?** Your code must verify with the variable cb provides (for example
+   `STRIPE_WEBHOOK_SECRET`), not a value from a local `.env` file. `cb doctor` warns when a `.env` file still defines a
+   key that cb provides. Verify against the raw request body: a parsed and re-serialized body fails the signature
+   check.
+8. **Is the path right?** The webhook variable's **Path in your app** must match your route, for example
+   `/api/webhooks/stripe`.

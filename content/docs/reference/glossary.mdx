@@ -1,0 +1,36 @@
+---
+title: Glossary
+description: Short definitions of the terms used across the cb documentation.
+---
+
+The terms below appear throughout the docs and the dashboard. Each links to the page that explains it in
+depth.
+
+| Term | Definition |
+|---|---|
+| **Access** | Permission for a person to use an environment's protected keys, granted by an admin. See [Access](/docs/overview/concepts#access). |
+| **Agent** | The background process on your machine that `cb run` starts. It opens local ports and pipes bytes to the gateway; it holds no secrets and understands no protocols. See [How it works](/docs/overview/how-it-works). |
+| **Audit log** | The record of admin actions and of every brokered connection, allowed or denied. See [Audit](/docs/guides/dashboard/audit). |
+| **Connector** | Built-in support for one kind of service, such as PostgreSQL, Stripe or OpenAI. See [Connectors](/docs/connectors). |
+| **Correlation ID** | An ID attached to every API request and log line, shown with errors so a problem can be traced. See [REST API](/docs/reference/rest-api#correlation-id). |
+| **Delivery log** | The list of webhook events cb received and where each was delivered. See [Delivery log](/docs/guides/webhooks/delivery-log). |
+| **Device** | A machine logged in with `cb login`. Each device can be revoked on its own. See [Devices and sessions](/docs/overview/concepts#device-and-session). |
+| **Emergency stop** | A switch that immediately stops brokered access for an organization, environment, service, user or device until it is cleared. See [Emergency stop](/docs/overview/concepts#emergency-stop). |
+| **Environment** | One set of variables within a project, such as `development` or `staging`. See [Environment](/docs/overview/concepts#environment). |
+| **Gateway** | The part of the cb backend that checks each connection, verifies the stand-in value and uses the real credential to reach the service. See [Security](/docs/overview/security). |
+| **Layer 1** | Routing by URL: a protected key's value points at a local port the agent listens on, such as `127.0.0.1:7401`. |
+| **Layer 2** | Routing by host: the preload redirects connections to a known host, such as `api.openai.com:443`, to the agent, without changing the URL your app uses. |
+| **Organization** | The top-level account that owns projects, members and services. See [Organization](/docs/overview/concepts#organization). |
+| **Plain value** | A variable whose value is not secret and is given to your app as is. See [Plain value](/docs/connectors/basic/plain). |
+| **Preload** | `@cb/env/register`, loaded into every Node process `cb run` starts. It sets variables and redirects connections. See [`@cb/env` API](/docs/reference/api#preload-cbenvregister). |
+| **Project** | One app or codebase, linked to a folder by `.cb/project.json`. See [Project](/docs/overview/concepts#project). |
+| **Protected key** | A variable whose real value stays on the cb server; your app gets a stand-in value that only works through cb. |
+| **Public URL** | The address payment providers use to reach your cb server for webhooks. See [Public URL](/docs/guides/webhooks/public-url). |
+| **Random secret** | A value cb generates per developer, such as a session secret. It is visible but works nowhere else. See [Random secret](/docs/connectors/basic/random-secret). |
+| **Secret shown as-is** | A real value given to the developer unchanged. A last resort, flagged in the dashboard. See [Secret shown as-is](/docs/connectors/basic/shown-as-is). |
+| **Service** | The real external system a protected key logs into, such as a database or an API. It is created behind its variable. See [Service](/docs/overview/concepts#service). |
+| **Session** | A logged-in browser or CLI device. Revoking it ends its access at once. |
+| **Snapshot** | The file the agent writes with the environment your app sees. It holds no real secrets. See [Paths](/docs/reference/paths). |
+| **Stand-in value** | The value your app receives for a protected key. It has the right format but works only through cb. See [Stand-in values](/docs/overview/concepts#stand-in-values). |
+| **Variable** | A key your app reads from `process.env`, managed in the dashboard's **Variables** tab. See [Variable](/docs/overview/concepts#variable). |
+| **Webhook** | An event a provider such as Stripe sends to your app. cb receives it centrally and delivers it to the device that caused it. See [How webhooks work](/docs/guides/webhooks/how-it-works). |

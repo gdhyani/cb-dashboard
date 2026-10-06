@@ -1,0 +1,161 @@
+---
+title: GitHub sign-in
+description: Run "Sign in with GitHub" through Auth.js, NextAuth or Passport without giving developers the real client secret.
+status: beta
+---
+
+Store your GitHub OAuth app's client secret in cb once. Every developer's app gets a stand-in secret that starts
+with `cb-`, while the client ID stays a plain value. When your app exchanges a sign-in code for a token at
+`github.com/login/oauth/access_token`, the cb gateway checks the stand-in and replaces it with the real secret.
+Your auth library works unchanged.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have a GitHub OAuth app (or a GitHub App used for sign-in): its client ID and a client secret.
+- The app's **Authorization callback URL** matches your local callback, for example
+  `http://localhost:3000/api/auth/callback/github`.
+- Developers who will run the app have [access](/docs/guides/dashboard/access) to the environment.
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**Add variable**, set **What is this?** to **Sign-in client secret** and **Provider** to **GitHub**. The dialog is
+titled **Add sign-in variable**.
+</Step>
+<Step>
+### Name the key and paste the client secret
+
+Type the **Key** your code reads and paste the real secret into **Client secret**. With Auth.js v5, name it
+`AUTH_GITHUB_SECRET` so the GitHub provider picks it up on its own; otherwise `GITHUB_CLIENT_SECRET` is common.
+</Step>
+<Step>
+### Add the client ID
+
+Open **Suggested extra keys**, tick `GITHUB_CLIENT_ID` ("Client ID (public)") and type the client ID into the box
+that appears. Rename it to `AUTH_GITHUB_ID` for Auth.js v5.
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb checks that GitHub's token endpoint is reachable from its server.
+
+<Callout type="warning">
+  GitHub can only confirm the secret during a real sign-in, so a mistyped secret still saves. Sign in once after
+  saving; if it fails with an incorrect client credentials error, use **Replace value**.
+</Callout>
+</Step>
+</Steps>
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `AUTH_GITHUB_SECRET` or `GITHUB_CLIENT_SECRET`. cb never names it for you.
+  </Field>
+  <Field name="What is this?" type="select" required default="Sign-in client secret">
+    The variable type.
+  </Field>
+  <Field name="Provider" type="select" required>
+    Choose **GitHub**.
+  </Field>
+  <Field name="Client secret" type="secret" required>
+    The real client secret. Write-only: nobody can view it after saving, but you can replace it.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="GITHUB_CLIENT_ID" type="extra key + text">
+    Under **Suggested extra keys**: "Client ID (public)". Tick it, rename it if you like, and type the client ID.
+    GitHub sign-in has no **Advanced** section; the token URL is always
+    `https://github.com/login/oauth/access_token`.
+  </Field>
+</Fields>
+
+## What your app sees
+
+<EnvTable rows={[
+  { name: "AUTH_GITHUB_SECRET", example: "cb-…", kind: "stand-in" },
+  { name: "AUTH_GITHUB_ID", example: "Ov23li…", kind: "plain" },
+]} />
+
+## Use it in code
+
+<Tabs items={["Auth.js (NextAuth v5)", "NextAuth v4", "Passport"]}>
+<Tab value="Auth.js (NextAuth v5)">
+```ts title="auth.ts"
+import NextAuth from "next-auth";
+import GitHub from "next-auth/providers/github";
+
+// Reads AUTH_GITHUB_ID and AUTH_GITHUB_SECRET from the environment.
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  providers: [GitHub],
+});
+```
+</Tab>
+<Tab value="NextAuth v4">
+```ts title="pages/api/auth/[...nextauth].ts"
+import NextAuth from "next-auth";
+import GitHubProvider from "next-auth/providers/github";
+
+export default NextAuth({
+  providers: [
+    GitHubProvider({
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    }),
+  ],
+});
+```
+</Tab>
+<Tab value="Passport">
+```ts title="src/auth.ts"
+import passport from "passport";
+import { Strategy as GitHubStrategy } from "passport-github2";
+
+passport.use(
+  new GitHubStrategy(
+    {
+      clientID: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      callbackURL: "http://localhost:3000/auth/github/callback",
+    },
+    (accessToken: string, refreshToken: string, profile: unknown, done: (e: null, u: unknown) => void) =>
+      done(null, profile),
+  ),
+);
+```
+</Tab>
+</Tabs>
+
+cb accepts the secret in either form libraries use: as `client_secret` in the request body, or in HTTP Basic auth.
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+Open the app, click **Sign in with GitHub**, and finish the sign-in. If you ran `cb init`, your package scripts
+already run under cb. See [cb run](/docs/guides/develop/cb-run).
+
+## Limits
+
+- The token exchange must happen on the server, in a process started by `cb run`. cb catches it by host
+  (`github.com`).
+- Only the token request is changed. Other requests to `github.com` pass through as they are, and calls to
+  `api.github.com` with the user's token are not touched.
+- The token GitHub returns is a real token for the signed-in user, as in production.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| Sign-in fails with `invalid_client` and "cb: client secret not valid for this device" | The app sent a secret that isn't this device's stand-in, for example an old value from a `.env` file. Run `npx cb doctor`. |
+| GitHub says the client ID and/or secret are incorrect | The real secret is wrong or was regenerated. Use **Replace value** in the variable's Edit dialog. |
+| GitHub shows a redirect URI error | Set the OAuth app's **Authorization callback URL** to your local callback. |
+| Auth.js says the client ID or secret is missing | Name the keys `AUTH_GITHUB_ID` and `AUTH_GITHUB_SECRET`, or pass them to the provider yourself. |
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

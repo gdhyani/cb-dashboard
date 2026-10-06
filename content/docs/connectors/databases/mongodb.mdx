@@ -1,0 +1,138 @@
+---
+title: MongoDB
+description: Connect your app to MongoDB Atlas or any MongoDB server with mongoose or the official driver, without the real connection string.
+---
+
+Store your real MongoDB connection URL in cb once, and every developer's app gets a stand-in URL that points at the
+local cb agent. The cb gateway logs in to your cluster with the real user and passes the traffic through, so
+mongoose and the official `mongodb` driver work unchanged.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have the real connection URL with a database user and password, for example from your
+  cluster's connect dialog in MongoDB Atlas. Both `mongodb+srv://` and classic `mongodb://` URLs work, including multi-host replica-set lists.
+- The cb server can reach your cluster. On Atlas, add the cb server's outbound IP to the project's IP access list.
+
+<Callout type="tip">
+  Include the database name in the URL (`…mongodb.net/shop`). Without one, cb uses `test`.
+</Callout>
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**MongoDB** in the **Quick add** row, or click **Add variable** and set **What is this?** to **MongoDB**.
+</Step>
+<Step>
+### Name the key and paste the URL
+
+The dialog is titled **Add MongoDB variable**. Type the **Key** your code reads, such as `MONGODB_URI`, and paste
+the real URL into **Connection URL**.
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb connects to the cluster with the real URL and pings it before saving. On success the row
+appears with "real value hidden"; if the test fails, nothing is saved and the dialog shows the error.
+</Step>
+</Steps>
+
+<Frame src="/docs/images/connectors/add-mongodb.png" alt="Add MongoDB variable dialog, Key MONGODB_URI, Connection URL filled (masked)" caption="Add MongoDB variable dialog, Key MONGODB_URI, Connection URL filled (masked)" />
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `MONGODB_URI` or `DATABASE_URL`.
+  </Field>
+  <Field name="What is this?" type="select" required default="MongoDB">
+    The variable type.
+  </Field>
+  <Field name="Connection URL" type="secret" required>
+    The real URL, such as `mongodb+srv://user:password@cluster0.xxxx.mongodb.net/db`. Write-only: nobody can view it
+    after saving, but you can replace it.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="CA certificate (PEM)" type="multiline">
+    Only for self-hosted servers or providers that give you a CA file. cb trusts it for this database only, on top of
+    the public certificate authorities. Atlas doesn't need it.
+  </Field>
+</Fields>
+
+<Callout type="note">
+  Developers get a stand-in made by cb for each device; there is nothing to enter for it. To give some people a
+  different database user, use **Who can use it** from the row's "…" menu; see [Access](/docs/guides/dashboard/access).
+</Callout>
+
+## What your app sees
+
+A local `mongodb://` URL with a stand-in user and password, even when the real one is `mongodb+srv://`. The port is
+the local agent's, picked once per project and kept between runs.
+
+<EnvTable rows={[
+  {
+    name: "MONGODB_URI",
+    example: "mongodb://cbu_ab12cd34:…@127.0.0.1:7401/shop?directConnection=true&authSource=admin&authMechanism=SCRAM-SHA-256",
+    kind: "stand-in",
+  },
+]} />
+
+## Use it in code
+
+Pass the variable to the driver as you do in production. No cb-specific options.
+
+<Tabs items={["mongoose", "mongodb driver"]}>
+<Tab value="mongoose">
+```ts title="src/db.ts"
+import mongoose from "mongoose";
+
+await mongoose.connect(process.env.MONGODB_URI as string);
+
+export const Order = mongoose.model("Order", new mongoose.Schema({ sku: String, qty: Number }));
+```
+</Tab>
+<Tab value="mongodb driver">
+```ts title="src/db.ts"
+import { MongoClient } from "mongodb";
+
+const client = new MongoClient(process.env.MONGODB_URI as string);
+await client.connect();
+
+export const db = client.db();
+```
+</Tab>
+</Tabs>
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+`cb run` loads the stand-in URL and starts the local agent. Each new connection opens a tunnel to the cb gateway,
+which checks your access, finds the primary, and logs in with the real user. See [cb run](/docs/guides/develop/cb-run).
+
+## Limits
+
+- **Primary only.** The gateway connects to the replica set's primary, so every operation, including reads with a
+  secondary read preference, goes to the primary.
+- **Username and password logins.** The stored URL must use SCRAM authentication (SCRAM-SHA-256, or SCRAM-SHA-1
+  when that is all the user has).
+- The app must use SCRAM-SHA-256 towards cb, which the stand-in URL already sets.
+- A `mongodb+srv://` URL takes one host name and no port.
+- If an admin revokes your access, pending operations fail with "cb: access revoked by admin" and the connection
+  closes within seconds.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| **Save & test** fails with a timeout | The cb server can't reach the cluster. Check the IP access list on Atlas or your firewall. |
+| "mongodb: no reachable primary" | None of the hosts answered as primary. Check the hosts in the URL and that the replica set has a primary. |
+| "mongodb+srv takes one host name and no port" | Remove the port and any extra hosts from an SRV URL, or use a `mongodb://` host list. |
+| Authentication fails in your app | Make sure the app runs under `cb run` and reads the variable, not an old value from a `.env` file. Run `npx cb doctor` to find stray `.env` files. |
+| `cb: … no access` in the `cb run` output | You don't have access to this service. Ask an admin; see [Access](/docs/guides/admin/access). |

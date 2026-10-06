@@ -1,0 +1,151 @@
+---
+title: tsx, nodemon, Prisma CLI
+description: Run TypeScript runners, file watchers and migration CLIs such as Prisma, Drizzle Kit and Knex under cb.
+status: beta
+---
+
+Besides your app, a project has tools that need the same values: TypeScript runners and watchers that start your server, and migration CLIs that connect to your database. They all run under `cb run`. `cb init` wires the runners and watchers for you; migration CLIs need a prefix you add yourself. This page covers both.
+
+## How cb hooks in
+
+[`cb run`](/docs/guides/develop/cb-run) starts the tool with your environment's [variables](/docs/overview/concepts#variable) merged into the process environment and the cb [preload](/docs/guides/develop/preload-and-api) added to `NODE_OPTIONS`.
+
+- **Runners and watchers** (`tsx`, `ts-node`, `ts-node-dev`, `nodemon`, `node --watch`) start your code as a child process, which inherits both — on every restart.
+- **Database CLIs** connect using a database URL such as `DATABASE_URL`. Under cb that URL is a [stand-in](/docs/overview/concepts#stand-in-values) pointing at the local agent on `127.0.0.1`, and the gateway connects to the real database. Because this works through a local address, it also works for tools that ship their own engine binaries, such as Prisma's migration engine.
+
+## Set it up
+
+<Steps>
+<Step>
+### Install `@cb/env`
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+<Tab value="npm">
+```bash
+npm install @cb/env
+```
+</Tab>
+<Tab value="pnpm">
+```bash
+pnpm add @cb/env
+```
+</Tab>
+<Tab value="yarn">
+```bash
+yarn add @cb/env
+```
+</Tab>
+</Tabs>
+</Step>
+<Step>
+### Link the project
+
+```bash
+npx cb init
+```
+
+`cb init` asks for your organization, project and environment, writes `.cb/project.json`, then lists the scripts it wants to change and asks `Update these scripts?`. If you haven't signed in on this machine yet, run `npx cb login` first.
+</Step>
+<Step>
+### Check the `package.json` change, then wire the CLIs
+
+`cb init` prefixes scripts that start with `node`, `tsx`, `ts-node`, `ts-node-dev`, `nodemon` or `tsup`. It doesn't recognise `prisma`, `drizzle-kit` or `knex`, so add `cb run --` to those scripts yourself:
+
+```diff title="package.json"
+ {
+   "scripts": {
+-    "dev": "nodemon --exec tsx src/server.ts",
+-    "seed": "tsx scripts/seed.ts",
+-    "db:migrate": "prisma migrate dev",
+-    "db:studio": "prisma studio",
+-    "drizzle:push": "drizzle-kit push",
+-    "knex:migrate": "knex migrate:latest",
++    "dev": "cb run -- nodemon --exec tsx src/server.ts",
++    "seed": "cb run -- tsx scripts/seed.ts",
++    "db:migrate": "cb run -- prisma migrate dev",
++    "db:studio": "cb run -- prisma studio",
++    "drizzle:push": "cb run -- drizzle-kit push",
++    "knex:migrate": "cb run -- knex migrate:latest",
+     "db:generate": "prisma generate"
+   }
+ }
+```
+
+The first two lines are what `cb init` changes; the next four are yours. `prisma generate` doesn't connect to the database, so it doesn't need cb.
+</Step>
+<Step>
+### Run a one-off command
+
+For a command you don't keep in `package.json`, put `npx cb run --` in front of it:
+
+```bash
+npx cb run -- prisma migrate dev --name add-orders
+```
+</Step>
+</Steps>
+
+## Where your code reads values
+
+| Place | Runs on | Gets protected values? |
+| --- | --- | --- |
+| Code started by `tsx`, `ts-node`, `nodemon`, `node --watch` | Node.js | Yes |
+| `prisma.config.ts`, `schema.prisma` `env("DATABASE_URL")` | Prisma CLI | Yes |
+| `drizzle.config.ts` | Drizzle Kit | Yes |
+| `knexfile.*` | Knex CLI | Yes |
+| Seed and one-off scripts started with `cb run` | Node.js | Yes |
+
+<Callout type="warning" title="Remove the database URL from .env">
+Prisma, Drizzle Kit and Knex often read `DATABASE_URL` from a `.env` file. Once the key is managed by cb, delete it from `.env` — `cb init` warns about any cb-managed keys it finds there. Values from `cb run` already take precedence, but a real URL left on disk defeats the point.
+</Callout>
+
+## Example
+
+A Prisma config that reads the URL from the environment. `prisma generate` works without cb (it doesn't connect), and every command that connects runs under `cb run`.
+
+```ts title="prisma.config.ts"
+import { defineConfig } from "prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  datasource: { url: process.env.DATABASE_URL ?? "" },
+});
+```
+
+The same idea for Drizzle Kit and Knex:
+
+<Tabs items={["Drizzle Kit", "Knex"]}>
+<Tab value="Drizzle Kit">
+```ts title="drizzle.config.ts"
+import { defineConfig } from "drizzle-kit";
+
+export default defineConfig({
+  dialect: "postgresql",
+  schema: "./src/db/schema.ts",
+  dbCredentials: { url: process.env.DATABASE_URL! },
+});
+```
+</Tab>
+<Tab value="Knex">
+```js title="knexfile.js"
+export default {
+  client: "mysql2",
+  connection: process.env.DATABASE_URL,
+  migrations: { directory: "./migrations" },
+};
+```
+</Tab>
+</Tabs>
+
+## Limits
+
+- **Only commands started through `cb run` get values.** Running `npx prisma migrate dev` on its own has no `DATABASE_URL` from cb.
+- **Compound scripts need the prefix where it matters.** `cb run -- a && b` only runs `a` under cb; `b` is started by your shell. Write `a && cb run -- b`, or prefix each part that connects to a service.
+- **What the admin allows applies to tools too.** A migration that needs to create tables only works if your login for that service is allowed to.
+
+## Troubleshooting
+
+**`Environment variable not found: DATABASE_URL`** (or a similar message from Drizzle or Knex) — the CLI ran without `cb run`. Add the prefix to the script, or run it with `npx cb run --`.
+
+**The CLI connects to the wrong database.** An old `DATABASE_URL` in a `.env` file is being used because the command didn't run under cb. Remove the key from `.env` and run through `cb run`.
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

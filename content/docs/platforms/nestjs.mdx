@@ -1,0 +1,149 @@
+---
+title: NestJS
+description: Run a NestJS app under cb with the Nest CLI, keeping @nestjs/config and your official SDKs unchanged.
+---
+
+NestJS runs under cb without code changes. `@nestjs/config` keeps reading `process.env`, `ConfigService` returns the [stand-in values](/docs/overview/concepts#stand-in-values) cb provides, and official SDKs such as mysql2, Knex, Anthropic and the AWS SDK connect through cb. This page shows the script change for the Nest CLI and where your code reads values.
+
+## How cb hooks in
+
+[`cb run`](/docs/guides/develop/cb-run) starts the Nest CLI with your environment's [variables](/docs/overview/concepts#variable) merged into the process environment and the cb [preload](/docs/guides/develop/preload-and-api) added to `NODE_OPTIONS`. `nest start` compiles your app and starts it as a child process — and again on every change with `--watch` — and each child inherits the environment and the preload.
+
+`ConfigModule.forRoot()` loads `.env` files without overriding keys that are already set, so the values from cb win.
+
+## Set it up
+
+<Steps>
+<Step>
+### Install `@cb/env`
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+<Tab value="npm">
+```bash
+npm install @cb/env
+```
+</Tab>
+<Tab value="pnpm">
+```bash
+pnpm add @cb/env
+```
+</Tab>
+<Tab value="yarn">
+```bash
+yarn add @cb/env
+```
+</Tab>
+</Tabs>
+</Step>
+<Step>
+### Link the project
+
+```bash
+npx cb init
+```
+
+`cb init` asks for your organization, project and environment, writes `.cb/project.json`, then lists the scripts it wants to change and asks `Update these scripts?`. If you haven't signed in on this machine yet, run `npx cb login` first.
+</Step>
+<Step>
+### Check the `package.json` change
+
+Every script that starts with `nest`, `node` or `jest` is prefixed with `cb run --`. That includes `nest build`, which is harmless: the build simply runs with cb's environment.
+
+```diff title="package.json"
+ {
+   "scripts": {
+-    "build": "nest build",
+-    "start": "nest start",
+-    "start:dev": "nest start --watch",
+-    "start:prod": "node dist/main",
+-    "test": "jest",
++    "build": "cb run -- nest build",
++    "start": "cb run -- nest start",
++    "start:dev": "cb run -- nest start --watch",
++    "start:prod": "cb run -- node dist/main",
++    "test": "cb run -- jest",
+     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+   }
+ }
+```
+
+If you'd rather keep `build` as it was, change it back by hand — it doesn't connect to any service.
+</Step>
+<Step>
+### Start your app
+
+```bash
+npm run start:dev
+```
+</Step>
+</Steps>
+
+## Where your code reads values
+
+| Place | Runs on | Gets protected values? |
+| --- | --- | --- |
+| Controllers, providers, guards, interceptors | Node.js | Yes |
+| `ConfigService.get()` / `getOrThrow()` | Node.js | Yes |
+| `process.env` and `import { env } from "@cb/env"` | Node.js | Yes |
+| Anything you serve to the browser (static assets, rendered pages) | The browser | No — plain values only |
+
+## Example
+
+A controller that builds its clients from `ConfigService`, exactly as it would without cb. `DATABASE_URL` is a stand-in URL pointing at the local agent; `ANTHROPIC_API_KEY` is a stand-in key, and cb routes the SDK's requests to `api.anthropic.com` through the gateway, which uses the real key.
+
+```ts title="src/app.module.ts"
+import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { AppController } from "./app.controller";
+
+@Module({
+  imports: [ConfigModule.forRoot({ isGlobal: true })],
+  controllers: [AppController],
+})
+export class AppModule {}
+```
+
+```ts title="src/app.controller.ts"
+import Anthropic from "@anthropic-ai/sdk";
+import { Controller, Get, Inject } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import knex, { type Knex } from "knex";
+
+@Controller()
+export class AppController {
+  private readonly db: Knex;
+  private readonly anthropic: Anthropic;
+
+  constructor(@Inject(ConfigService) private readonly config: ConfigService) {
+    this.db = knex({ client: "mysql2", connection: config.getOrThrow<string>("DATABASE_URL") });
+    this.anthropic = new Anthropic({ apiKey: config.getOrThrow<string>("ANTHROPIC_API_KEY") });
+  }
+
+  @Get("orders")
+  orders() {
+    return this.db("orders").select("*").limit(10);
+  }
+
+  @Get("hello")
+  async hello() {
+    const msg = await this.anthropic.messages.create({
+      model: this.config.getOrThrow<string>("ANTHROPIC_MODEL"), // a plain variable
+      max_tokens: 64,
+      messages: [{ role: "user", content: "Say hello" }],
+    });
+    return msg.content;
+  }
+}
+```
+
+## Limits
+
+- **Only processes started through `cb run` get values.** A debugger or IDE run configuration that starts `node dist/main` directly needs `cb run` in front of it too; see [VS Code](/docs/guides/develop/vscode).
+
+## Troubleshooting
+
+**`ConfigService` returns `undefined`.** Check that the script starts with `cb run --` and that the key exists in your environment. `npx cb env print` shows what your app will see.
+
+**`cb: this process wasn't started with "cb run"`** — the cb preload was loaded without `cb run`, for example from a debugger configuration. Start the app through your `package.json` script or `npx cb run -- nest start`.
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

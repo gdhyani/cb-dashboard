@@ -1,0 +1,98 @@
+---
+title: Changelog
+description: What changed in cb, newest first, across the CLI, the backend and the dashboard.
+---
+
+This page lists notable changes across the three cb repositories, grouped by the day they were merged, newest
+first. Internal maintenance (dependency updates, CI and tooling) is left out. cb is pre-1.0, so every change lands
+on `main`.
+
+## 6 October 2026
+
+### Dashboard
+
+- **Documentation.** The docs you are reading are now built into the dashboard at `/docs`, with local search,
+  ⌘K, and links from the avatar menu, the login and sign-up pages and empty states.
+- **Webhooks setup in one panel.** Connect Stripe (full, thin or both event formats) and Connect Razorpay from
+  one panel, with the webhook URL, a cb-made Razorpay secret and **Send to me**.
+- **New secret** is offered only for Razorpay signing secrets that cb made, and toasts can now be closed.
+- The webhook URL is always visible, keys open in a read-only view, the Webhooks tab starts with setup, and
+  badges use consistent colours.
+
+### Backend
+
+- **Connect Stripe and Razorpay.** Webhook endpoints can be connected for you, with Stripe's full, thin or both
+  formats; one URL serves both Stripe formats, and **Send to me** delivers a test event to your device.
+- The backend records where each webhook signing secret came from.
+
+### CLI
+
+- Webhooks are delivered to the port your app really listens on, and wait while the app starts.
+- After an upgrade, `cb` replaces an older background agent automatically.
+
+## 5 October 2026
+
+### Dashboard
+
+- **Variables tab.** One place to add and manage keys: a quick-add row, one **Add variable** dialog with type,
+  provider, extra keys and **Advanced** settings, keys grouped under their service, and a connection map. The
+  separate Resources tab is gone.
+- **Edit a variable.** Rename it, replace its value (tested before it is stored) or change its settings.
+- **Import .env**, Google service-account key files, and a CA certificate and extra headers for API services.
+- **Webhook signing secret** type and a **Webhooks** tab.
+- **Who can use it**: choose per key which login it uses.
+- The dashboard now says *service* instead of *resource*; extra key names stay readable on phones.
+
+### Backend
+
+- **Webhooks.** A central webhook address for each project, routed to the right developer and delivered reliably
+  to each device.
+- **One-step service setup.** Adding a key with its service is a single request that tests the credential first
+  and saves nothing if the test fails.
+- **New AI providers:** Gemini, Groq, Mistral and OpenRouter, grouped under one AI type.
+- API keys can be sent in a named header; plain variables can link to a service.
+- Plain `http://` upstreams are allowed only for private addresses, with a switch for local development.
+- Google key files, and a CA certificate plus extra headers for API services.
+- Removing or disabling a service closes live connections within five seconds.
+- The connection test calls an authenticated path, so **Save & test** rejects a wrong API key.
+- A migration brings existing services into the new Variables format.
+- Fixes: MongoDB SCRAM-SHA-1 and SCRAM-SHA-256 negotiation upstream; MySQL connection tests decide TLS from the
+  URI like the gateway; one webhook stream per device.
+
+### CLI
+
+- **Webhooks delivered to your app,** with an event stream that stays up for days.
+- Stand-in key files for `GOOGLE_APPLICATION_CREDENTIALS`.
+- `cb run`, the agent and `cb types` now honour `CB_SERVER_URL` over the project's saved server.
+
+## 4 October 2026
+
+The first public versions of all three repositories.
+
+### Dashboard
+
+- Sign up, log in, and approve CLI devices.
+- Projects, environments and members, with a project switcher in the navbar and access flows for projects,
+  environments and people, including an access preview.
+- Provider presets with **Test connection**, and CA certificates for self-hosted and private-CA servers.
+- **Emergency stop**, and the **Devices & sessions** pages.
+
+### Backend
+
+- The REST API and the credential gateway, with adapters for PostgreSQL, MySQL, MongoDB, Redis, SMTP and HTTP
+  providers.
+- Access and refresh tokens with reuse detection.
+- Project-wide access and per-person project access.
+- Provider presets and connection tests.
+- Kill switches, sessions and agent heartbeat.
+- Per-request routing for providers that share a host.
+- MongoDB `mongodb+srv://` and replica-set URIs; verified TLS to MySQL; per-service CA certificates for
+  self-hosted databases.
+- Revoked connections fail with each protocol's own error.
+
+### CLI
+
+- `cb login`, `cb init` and `cb run`, with the background agent, the preload and the operating system keychain.
+- `cb shell`, `cb types`, `cb doctor`, `cb up` / `cb down` and the explicit `env` API.
+- `cb run` refuses to start while access is stopped, and the agent reacts to the emergency stop.
+- Tested on Linux, macOS and Windows.

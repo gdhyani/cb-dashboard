@@ -1,0 +1,143 @@
+---
+title: Nuxt
+description: Run a Nuxt app under cb, keeping protected values in server-side runtimeConfig keys and plain values in runtimeConfig.public.
+status: beta
+---
+
+Nuxt's `runtimeConfig` already has two halves: top-level keys are available only on the server, and keys under `public` are sent to the browser. With cb, protected values go in the server keys and plain values in `public`. This page shows the script change, how values reach `runtimeConfig`, and what each part of a Nuxt app can use.
+
+## How cb hooks in
+
+[`cb run`](/docs/guides/develop/cb-run) starts `nuxt` with your environment's [variables](/docs/overview/concepts#variable) merged into the process environment and the cb [preload](/docs/guides/develop/preload-and-api) added to `NODE_OPTIONS`. Nuxt's server (Nitro), which runs your server routes and server-side rendering, gets the same environment, so it sees [stand-in values](/docs/overview/concepts#stand-in-values) and connects to protected services through cb.
+
+Values reach `runtimeConfig` the usual Nuxt ways: from `process.env` in `nuxt.config.ts`, or at runtime from `NUXT_*` variables that override matching keys (`NUXT_OPENAI_API_KEY` sets `runtimeConfig.openaiApiKey`). You can name the variable either way in the cb dashboard.
+
+## Set it up
+
+<Steps>
+<Step>
+### Install `@cb/env`
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+<Tab value="npm">
+```bash
+npm install @cb/env
+```
+</Tab>
+<Tab value="pnpm">
+```bash
+pnpm add @cb/env
+```
+</Tab>
+<Tab value="yarn">
+```bash
+yarn add @cb/env
+```
+</Tab>
+</Tabs>
+</Step>
+<Step>
+### Link the project
+
+```bash
+npx cb init
+```
+
+`cb init` asks for your organization, project and environment, writes `.cb/project.json`, then lists the scripts it wants to change and asks `Update these scripts?`. If you haven't signed in on this machine yet, run `npx cb login` first.
+</Step>
+<Step>
+### Check the `package.json` change
+
+Every script that starts with `nuxt` is prefixed with `cb run --` — including `postinstall`:
+
+```diff title="package.json"
+ {
+   "scripts": {
+-    "build": "nuxt build",
+-    "dev": "nuxt dev",
+-    "generate": "nuxt generate",
+-    "preview": "nuxt preview",
+-    "postinstall": "nuxt prepare"
++    "build": "cb run -- nuxt build",
++    "dev": "cb run -- nuxt dev",
++    "generate": "cb run -- nuxt generate",
++    "preview": "cb run -- nuxt preview",
++    "postinstall": "cb run -- nuxt prepare"
+   }
+ }
+```
+
+<Callout type="warning" title="Change postinstall back">
+`nuxt prepare` only generates types and doesn't need cb. With the prefix, `npm install` would need a linked, signed-in project to finish — which breaks installs in CI and for new teammates. Set it back to `"postinstall": "nuxt prepare"`.
+</Callout>
+
+If your scripts use `nuxi` (for example `nuxi dev`), `cb init` doesn't recognise them. Add `cb run --` in front yourself, or switch them to `nuxt`.
+</Step>
+<Step>
+### Start your app
+
+```bash
+npm run dev
+```
+</Step>
+</Steps>
+
+## Where your code reads values
+
+| Place | Runs on | Gets protected values? |
+| --- | --- | --- |
+| `server/api/*`, `server/routes/*`, `server/middleware/*` | Node.js (Nitro) | Yes |
+| `useRuntimeConfig()` top-level keys, in server code | Node.js (Nitro) | Yes |
+| `nuxt.config.ts` | Node.js | Yes |
+| `useRuntimeConfig().public`, `NUXT_PUBLIC_*` | The browser | No — plain values only |
+| Components, pages, composables, client plugins | The browser (and the server for SSR) | No — plain values only |
+
+<Callout type="warning" title="runtimeConfig.public reaches the browser">
+Everything under `runtimeConfig.public` is serialised into the page for the browser. Keep protected values in top-level `runtimeConfig` keys and read them only in `server/` code.
+</Callout>
+
+## Example
+
+The protected key lives in a server-only `runtimeConfig` key; a server route uses it with the official SDK.
+
+```ts title="nuxt.config.ts"
+export default defineNuxtConfig({
+  runtimeConfig: {
+    openaiApiKey: process.env.OPENAI_API_KEY, // server only — a stand-in under cb
+    public: {
+      shopName: process.env.NUXT_PUBLIC_SHOP_NAME, // reaches the browser — a plain variable
+    },
+  },
+});
+```
+
+```ts title="server/api/chat.post.ts"
+import OpenAI from "openai";
+
+export default defineEventHandler(async (event) => {
+  const { openaiApiKey } = useRuntimeConfig(event);
+  const { message } = await readBody<{ message: string }>(event);
+  const openai = new OpenAI({ apiKey: openaiApiKey });
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", content: message }],
+  });
+  return { text: completion.choices[0]?.message.content };
+});
+```
+
+Components call `/api/chat` with `$fetch` and never see the key.
+
+## Limits
+
+- **Browser code gets plain values only** — `runtimeConfig.public`, `NUXT_PUBLIC_*`, and anything a component or client plugin reads.
+- **`nuxt generate` bakes values into static files.** Only plain values belong in a statically generated site.
+- **`@cb/env` can't be imported from client code.** Its browser entry throws `@cb/env is server-only`; use it in `server/` code.
+
+## Troubleshooting
+
+**`npm install` fails with a cb error.** The `postinstall` script was prefixed. Change it back to `nuxt prepare`.
+
+**A `runtimeConfig` key is empty on the server.** Check that `npm run dev` starts with `cb run --`, and that the variable name matches either what `nuxt.config.ts` reads or the `NUXT_*` override name. `npx cb env print` shows what your app will see.
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

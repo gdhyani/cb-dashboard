@@ -1,0 +1,183 @@
+---
+title: Run the backend
+description: Clone cb-backend, configure its settings and keys, and start it on port 4200.
+---
+
+The backend is the cb API and gateway. It keeps every real secret encrypted, checks each developer's access, and makes
+the real connections to your databases and APIs. This page takes you from a fresh clone to a running backend that
+answers on `http://localhost:4200`.
+
+## Set up and start
+
+<Steps>
+<Step>
+### Clone and install
+
+```bash
+git clone https://github.com/gdhyani/cb-backend.git
+cd cb-backend
+npm install
+```
+</Step>
+<Step>
+### Create your `.env`
+
+```bash
+cp .env.example .env
+```
+
+The `.env` file is ignored by git. The backend reads it when it starts.
+</Step>
+<Step>
+### Generate the two keys
+
+`MASTER_KEY` and `SERVER_SECRET` must each be **32 random bytes, base64-encoded**. Generate two different values:
+
+<Tabs items={["OpenSSL", "Node.js"]}>
+<Tab value="OpenSSL">
+```bash
+openssl rand -base64 32
+openssl rand -base64 32
+```
+</Tab>
+<Tab value="Node.js">
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
+node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
+```
+</Tab>
+</Tabs>
+
+Paste the first into `MASTER_KEY` and the second into `SERVER_SECRET`.
+
+<Callout type="danger" title="Back up MASTER_KEY">
+  `MASTER_KEY` encrypts every secret stored in the database. If you lose it, or change it, cb can no longer read any
+  stored secret, and every database password, API key and signing secret has to be entered again. Keep a copy
+  somewhere safe, outside the server, and never commit it.
+</Callout>
+
+<Callout type="warning" title="Keep SERVER_SECRET fixed">
+  Stand-in values and generated secrets are derived from `SERVER_SECRET`. Changing it gives every developer new
+  stand-in values and new generated secrets (for example a different `AUTH_SECRET`).
+</Callout>
+</Step>
+<Step>
+### Fill in the rest of `.env`
+
+```bash title=".env"
+NODE_ENV=development
+PORT=4200
+LOG_LEVEL=info
+MONGODB_URI=mongodb://127.0.0.1:27017/cb
+MASTER_KEY=<32 random bytes, base64>
+SERVER_SECRET=<32 random bytes, base64>
+DASHBOARD_URL=http://localhost:4201
+# PUBLIC_URL=https://cb.example.com
+COOKIE_SECURE=false
+```
+
+<Fields title="Required">
+  <Field name="MONGODB_URI" type="string" required>
+    The backend's own database. Must start with `mongodb://` or `mongodb+srv://`, for example
+    `mongodb://127.0.0.1:27017/cb`.
+  </Field>
+  <Field name="MASTER_KEY" type="base64, 32 bytes" required>
+    Encrypts every stored secret. Generate with `openssl rand -base64 32`.
+  </Field>
+  <Field name="SERVER_SECRET" type="base64, 32 bytes" required>
+    Derives stand-in values and generated secrets. Generate with `openssl rand -base64 32`; use a different value
+    from `MASTER_KEY`.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="PORT" type="number" default="4200">
+    The HTTP port the backend listens on.
+  </Field>
+  <Field name="NODE_ENV" type="development | test | production" default="development">
+    The run mode. In `production` the backend refuses to start with `UPSTREAM_EXTRA_CA_FILE` set.
+  </Field>
+  <Field name="LOG_LEVEL" type="error | warn | info | http | debug" default="info">
+    How much the backend logs. Secrets are never logged at any level.
+  </Field>
+  <Field name="DASHBOARD_URL" type="URL" default="http://localhost:4201">
+    Where the dashboard runs. Used in the links cb builds: the device login page that `cb login` opens, and invite
+    links.
+  </Field>
+  <Field name="PUBLIC_URL" type="URL">
+    The backend's public https address, used to build webhook URLs that Stripe and Razorpay can reach. Leave it unset
+    if you don't use webhooks. See [Expose the backend with a tunnel](/docs/guides/self-host/public-url-tunnel).
+  </Field>
+  <Field name="COOKIE_SECURE" type="true | false" default="false">
+    Marks the dashboard session cookie as https-only. Set `true` when the dashboard is served over https.
+  </Field>
+  <Field name="ALLOW_PRIVATE_HTTP_UPSTREAMS" type="true | false" default="true">
+    Allows plain `http://` API services on private or loopback addresses (handy for local services). Set `false` on a
+    backend shared by several teams.
+  </Field>
+  <Field name="UPSTREAM_EXTRA_CA_FILE" type="file path">
+    Test only: an extra CA certificate file trusted for upstream connections, used by cb's own test suite with mock
+    services. Never set it outside tests.
+  </Field>
+</Fields>
+
+<Callout type="danger" title="UPSTREAM_EXTRA_CA_FILE is for tests only">
+  This setting makes the gateway trust an extra certificate authority for every upstream connection. Never set it on
+  a backend that holds real secrets. With `NODE_ENV=production` the backend refuses to start when it is set. To trust
+  a private CA for one database or API, add its CA certificate to that variable in the dashboard instead.
+</Callout>
+
+There is no setting for the access-token signing key: the backend creates it on first start and stores it encrypted
+with `MASTER_KEY`.
+</Step>
+<Step>
+### Start the backend
+
+```bash
+npm run dev
+```
+
+The dev server reloads when you change code under `src/`. After changing `.env`, stop it and start it again.
+
+If a setting is missing or malformed, the backend stops at once and names it:
+
+```text
+Invalid environment:
+  - MASTER_KEY: must be 32 bytes, base64-encoded (openssl rand -base64 32)
+```
+</Step>
+<Step>
+### Check that it is running
+
+```bash
+curl localhost:4200/api/health
+```
+
+```json
+{
+  "success": true,
+  "data": { "status": "ok", "uptimeSec": 4, "version": "0.0.0", "checks": { "mongodb": "up" } },
+  "meta": { "correlationId": "…" }
+}
+```
+
+`"status": "degraded"` means the backend is running but cannot reach MongoDB. Check `MONGODB_URI`.
+</Step>
+</Steps>
+
+## Run the compiled build
+
+For a longer-running local backend, compile once and start the compiled server. It reads the same `.env`.
+
+```bash
+npm run build
+npm start
+```
+
+## Next step
+
+<Cards>
+  <Card title="Run the dashboard" href="/docs/guides/self-host/dashboard">
+    Start the admin UI on port 4201 and create your organization.
+  </Card>
+</Cards>

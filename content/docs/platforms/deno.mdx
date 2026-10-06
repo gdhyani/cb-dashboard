@@ -1,0 +1,19 @@
+---
+title: Deno
+description: Running apps on the Deno runtime under cb is not available yet.
+status: coming-soon
+---
+
+cb works with apps that run on Node.js today. Support for running your app on Deno is planned, but not available yet.
+
+## Status
+
+Deno isn't supported yet. cb's [preload](/docs/guides/develop/preload-and-api) — the part that routes your app's connections to protected services — is loaded by Node.js, and Deno doesn't load it. An app started with `deno` gets none of your cb values.
+
+## What to do meanwhile
+
+Run the app with Node.js. If your project uses npm packages and standard Web APIs, it often runs on Node.js with few or no changes. Once it does, follow [Node.js (Express)](/docs/platforms/node-express), [Fastify, Koa, Hono](/docs/platforms/node-frameworks) or your framework's page in [Supported platforms](/docs/platforms).
+
+## Follow along
+
+Track progress, or tell us what you need, on [GitHub issues](https://github.com/gdhyani/cb-env/issues).

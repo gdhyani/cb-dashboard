@@ -1,0 +1,61 @@
+---
+title: Prerequisites
+description: What you need on your machine to run the cb backend and dashboard yourself.
+---
+
+cb is two services you run yourself: the **backend** (the API and the gateway that holds the real secrets) and the
+**dashboard** (the admin UI). Developers on your team then install the `cb` CLI and point it at your backend. This
+section sets up both services on one machine for local use.
+
+<Callout type="note" title="Local setup only">
+  cb has no deployment tooling yet: no Docker image, no hosting templates and no install scripts for servers. These
+  guides cover running the backend and dashboard from source on your own machine.
+</Callout>
+
+## What you need
+
+| Tool | Version | Used for |
+|---|---|---|
+| Node.js | 22 or 24 | Running the backend, the dashboard and the CLI |
+| npm | Comes with Node.js | Installing dependencies (cb uses npm only) |
+| MongoDB | A local server or a hosted cluster | The backend's own database |
+| git | Any recent version | Cloning the repositories |
+| OpenSSL | Any recent version | Generating the backend's keys (or use Node.js, shown on the next page) |
+
+For webhooks you also need a way to give the backend a public https address, such as
+[cloudflared](/docs/guides/self-host/public-url-tunnel).
+
+Check your versions:
+
+```bash
+node --version
+npm --version
+git --version
+```
+
+## Ports
+
+| Service | Port |
+|---|---|
+| Backend | `4200` |
+| Dashboard | `4201` |
+| Local agent listeners (on each developer's machine) | `7400`–`7999` |
+
+Make sure nothing else is using `4200` and `4201` before you start.
+
+## MongoDB
+
+The backend stores organizations, projects, encrypted secrets and audit history in MongoDB. Any of these works:
+
+- A local MongoDB server, for example at `mongodb://127.0.0.1:27017/cb`.
+- A hosted cluster with a `mongodb+srv://` connection string.
+
+The backend needs read and write access to one database. It creates its collections itself.
+
+## Next step
+
+<Cards>
+  <Card title="Run the backend" href="/docs/guides/self-host/backend">
+    Clone, configure and start the API and gateway.
+  </Card>
+</Cards>

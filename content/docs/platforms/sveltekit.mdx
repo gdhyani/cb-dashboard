@@ -1,0 +1,139 @@
+---
+title: SvelteKit
+description: Run a SvelteKit app under cb, reading protected values from $env private modules and plain values from $env public modules.
+status: beta
+---
+
+SvelteKit already separates server values from browser values with its `$env` modules, and cb fits that split exactly. `$env/static/private` and `$env/dynamic/private` are server-only and can hold [stand-in values](/docs/overview/concepts#stand-in-values) for protected services; `$env/static/public` and `$env/dynamic/public` reach the browser and must be plain. This page shows the script change and which files can use which.
+
+## How cb hooks in
+
+SvelteKit runs on Vite, so its scripts start with `vite`. [`cb run`](/docs/guides/develop/cb-run) starts `vite dev` with your environment's [variables](/docs/overview/concepts#variable) merged into the process environment and the cb [preload](/docs/guides/develop/preload-and-api) added to `NODE_OPTIONS`. SvelteKit reads `$env/*` from that environment, and server code in the same process connects to protected services through cb.
+
+## Set it up
+
+<Steps>
+<Step>
+### Install `@cb/env`
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+<Tab value="npm">
+```bash
+npm install @cb/env
+```
+</Tab>
+<Tab value="pnpm">
+```bash
+pnpm add @cb/env
+```
+</Tab>
+<Tab value="yarn">
+```bash
+yarn add @cb/env
+```
+</Tab>
+</Tabs>
+</Step>
+<Step>
+### Link the project
+
+```bash
+npx cb init
+```
+
+`cb init` asks for your organization, project and environment, writes `.cb/project.json`, then lists the scripts it wants to change and asks `Update these scripts?`. If you haven't signed in on this machine yet, run `npx cb login` first.
+</Step>
+<Step>
+### Check the `package.json` change
+
+Scripts that start with `vite` are prefixed with `cb run --`. The `svelte-kit sync` and `svelte-check` scripts are left as they are.
+
+```diff title="package.json"
+ {
+   "scripts": {
+-    "dev": "vite dev",
+-    "build": "vite build",
+-    "preview": "vite preview",
++    "dev": "cb run -- vite dev",
++    "build": "cb run -- vite build",
++    "preview": "cb run -- vite preview",
+     "prepare": "svelte-kit sync || echo ''",
+     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+   }
+ }
+```
+
+`vite build` runs under cb because `$env/static/*` values are read at build time.
+</Step>
+<Step>
+### Start your app
+
+```bash
+npm run dev
+```
+</Step>
+</Steps>
+
+## Where your code reads values
+
+| Place | Runs on | Gets protected values? |
+| --- | --- | --- |
+| `+page.server.ts`, `+layout.server.ts` (`load`, form actions) | Node.js | Yes |
+| `+server.ts` endpoints and `hooks.server.ts` | Node.js | Yes |
+| `$lib/server/*` modules | Node.js | Yes |
+| `$env/static/private`, `$env/dynamic/private` | Node.js | Yes |
+| `$env/static/public`, `$env/dynamic/public` (`PUBLIC_*`) | The browser | No — plain values only |
+| `.svelte` components, `+page.ts` universal `load` | The browser (and the server for SSR) | No — plain values only |
+
+<Callout type="warning" title="PUBLIC_ values reach the browser">
+Every `PUBLIC_*` variable is exposed to the browser through `$env/*/public`. Make these plain variables. SvelteKit already refuses to import `$env/*/private` into browser code, which keeps protected values on the server.
+</Callout>
+
+## Example
+
+A server `load` function that reads from Redis, and an endpoint that calls OpenAI. `REDIS_URL` is a stand-in URL pointing at the local agent; `OPENAI_API_KEY` is a stand-in key, and cb routes the request through the gateway.
+
+```ts title="src/lib/server/clients.ts"
+import { OPENAI_API_KEY, REDIS_URL } from "$env/static/private";
+import { Redis } from "ioredis";
+import OpenAI from "openai";
+
+export const redis = new Redis(REDIS_URL);
+export const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+```
+
+```ts title="src/routes/+page.server.ts"
+import { redis } from "$lib/server/clients";
+
+export async function load() {
+  return { visits: await redis.incr("visits") };
+}
+```
+
+```ts title="src/routes/api/chat/+server.ts"
+import { json } from "@sveltejs/kit";
+import { openai } from "$lib/server/clients";
+
+export async function POST({ request }) {
+  const { message } = await request.json();
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", content: message }],
+  });
+  return json({ text: completion.choices[0]?.message.content });
+}
+```
+
+## Limits
+
+- **`$env/static/*` is fixed at build time.** If an admin changes a variable, rebuild — or use `$env/dynamic/private` for values you want read at runtime. The dev server restarts automatically when your cb configuration changes.
+- **Browser code gets plain values only**, including universal `load` functions in `+page.ts`, which also run in the browser.
+- **Running a build locally.** With `adapter-node`, start the built server through cb too, for example `"start": "node build"`, which `cb init` prefixes with `cb run --`.
+
+## Troubleshooting
+
+**`$env/static/private` has no export named …** — SvelteKit couldn't find the variable when it generated the module. Check that `npm run dev` starts with `cb run --` and that the key exists in your environment (`npx cb env print`).
+
+**A provider rejects the key from the browser.** The call runs in a component or a universal `load`. Move it into a `+page.server.ts` or `+server.ts` file.
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

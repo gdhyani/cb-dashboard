@@ -1,0 +1,133 @@
+---
+title: Redis
+description: Connect your app to a standalone Redis server with ioredis or node-redis, without the real password.
+status: beta
+---
+
+Store your real Redis URL in cb once, and every developer's app gets a stand-in `REDIS_URL` that points at the local
+cb agent. The cb gateway authenticates to Redis with the real ACL user or password, over TLS for `rediss://`, then
+passes your commands through. ioredis and node-redis work unchanged.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have the real URL, for example `rediss://default:password@db.example.com:6379`. Use `rediss://` when your
+  provider requires TLS.
+- The server is a standalone Redis (or a provider endpoint that behaves like one).
+- The cb server can reach it (check firewalls and IP allow lists).
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**Redis** in the **Quick add** row, or click **Add variable** and set **What is this?** to **Redis**.
+</Step>
+<Step>
+### Name the key and paste the URL
+
+The dialog is titled **Add Redis variable**. Type the **Key** your code reads, such as `REDIS_URL`, and paste the
+real URL into **Connection URL**.
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb connects with the real URL and sends `PING` before saving ("Connected and authenticated
+(PONG)"). If the test fails, nothing is saved and the dialog shows the error.
+</Step>
+</Steps>
+
+<Frame src="/docs/images/connectors/add-redis.png" alt="Add Redis variable dialog, Key REDIS_URL, Connection URL filled (masked)" caption="Add Redis variable dialog, Key REDIS_URL, Connection URL filled (masked)" />
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `REDIS_URL`.
+  </Field>
+  <Field name="What is this?" type="select" required default="Redis">
+    The variable type.
+  </Field>
+  <Field name="Connection URL" type="secret" required>
+    The real URL. With an ACL user: `rediss://user:password@host:6379`. Password only:
+    `redis://:password@host:6379`. Add `/2` at the end to use database 2. Write-only: nobody can view it after saving,
+    but you can replace it.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="CA certificate (PEM)" type="multiline">
+    Only for self-hosted servers or providers that give you a CA file. cb trusts it for this server only, on top of
+    the public certificate authorities.
+  </Field>
+</Fields>
+
+<Callout type="note">
+  Developers get a stand-in made by cb for each device; there is nothing to enter for it.
+</Callout>
+
+## What your app sees
+
+A local `redis://` URL with a stand-in user and password, even when the real one is `rediss://`. If the stored URL
+selects a database other than 0, the stand-in keeps it (`…:7404/2`).
+
+<EnvTable rows={[
+  { name: "REDIS_URL", example: "redis://cbu_ab12cd34:…@127.0.0.1:7404", kind: "stand-in" },
+]} />
+
+## Use it in code
+
+Pass the variable to your client as you do in production.
+
+<Tabs items={["ioredis", "node-redis"]}>
+<Tab value="ioredis">
+```ts title="src/redis.ts"
+import { Redis } from "ioredis";
+
+export const redis = new Redis(process.env.REDIS_URL as string);
+
+await redis.set("greeting", "hello");
+```
+</Tab>
+<Tab value="node-redis">
+```ts title="src/redis.ts"
+import { createClient } from "redis";
+
+export const redis = await createClient({ url: process.env.REDIS_URL }).connect();
+
+await redis.set("greeting", "hello");
+```
+</Tab>
+</Tabs>
+
+<Callout type="warning" title="Don't force TLS in code">
+  Remove `tls` options from your client for local runs. TLS to the real server comes from the stored `rediss://`
+  URL, not from your app.
+</Callout>
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+See [cb run](/docs/guides/develop/cb-run).
+
+## Limits
+
+- **Standalone only.** Redis Cluster and Sentinel are not supported.
+- **Logins:** an ACL user with a password, or a password only. Your app's `AUTH` and `HELLO … AUTH` are checked
+  against the stand-in and answered by cb.
+- **TLS** to the server when the stored URL uses `rediss://`, always with certificate checks.
+- If an admin revokes your access, the connection closes within seconds; your client sees a dropped connection.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| **Save & test** fails with `WRONGPASS` or `NOAUTH` | Check the user and password in the URL. For a password-only server, leave the user empty (`redis://:password@host`). |
+| **Save & test** times out or the connection drops against a hosted Redis | Most hosted providers require TLS. Use `rediss://` instead of `redis://`. |
+| `WRONGPASS invalid username-password pair` in your app | The stand-in belongs to another device or is stale. Run the app under `cb run` on this machine and don't copy the URL between machines. |
+| Cluster errors such as `MOVED` | Cluster mode is not supported. Point cb at a standalone endpoint. |
+| `cb: … upstream error — redis rejected the stored credentials` in the `cb run` output | The stored credentials stopped working. Replace the value; see [Rotate a secret](/docs/guides/admin/rotate-secret). |
+| `cb: … no access` in the `cb run` output | You don't have access to this service. Ask an admin; see [Access](/docs/guides/admin/access). |

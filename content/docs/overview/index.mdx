@@ -1,0 +1,80 @@
+---
+title: What is cb
+description: cb lets developers run their apps against real services without a single real secret on their laptops.
+---
+
+cb gives every developer on your team a fully working development environment (real databases, real payment
+APIs, real AI providers) without handing anyone a real credential. Your app keeps reading `process.env`, and
+the values it finds there only work through cb. This page explains the problem cb solves, what changes and what
+stays the same.
+
+## The problem
+
+Most teams share credentials through `.env` files. Database passwords, AI API keys, Stripe and Razorpay secrets,
+AWS keys, push-notification keys and OAuth client secrets get copied onto every developer laptop, pasted into
+chat, and left behind in old checkouts.
+
+Everything on that laptop can read them: every developer and intern, every npm dependency (including a malicious
+one), and every coding tool that can open files. When someone leaves the team, or a key leaks, the only fix is to
+rotate every key they ever saw.
+
+A secret manager does not change this. It still delivers the real value into your app's process, and anything in
+that process can read it with a `console.log`, a heap dump, or an edited file in `node_modules`.
+
+## What cb does
+
+With cb, the real secrets never reach the laptop at all: not the app, not the disk, not cb's own local process.
+
+- Your app's environment contains only **stand-in values**, personal values, and plain configuration.
+- Every connection that needs a real credential goes through a small local **agent**, which tunnels it to your
+  cb server.
+- The cb **gateway** on that server checks that this developer, on this device, still has access, swaps in the
+  real credential, and talks to the real service.
+
+<ArchitectureDiagram />
+
+Read [How it works](/docs/overview/how-it-works) for the full picture.
+
+## What stays the same
+
+- **Your code.** No wrappers, no new client libraries, no changes to how you connect.
+- **Official SDKs.** Prisma, `pg`, Mongoose, `ioredis`, the Stripe, OpenAI and Anthropic SDKs, Auth.js and others
+  run unchanged.
+- **`process.env`.** Your app reads the same variable names it reads today. cb fills them in when you start the
+  app with `cb run`, which `cb init` adds to your `package.json` scripts, so `npm run dev` keeps working.
+
+## What you get
+
+- **Revoke in seconds.** Every request passes through the gateway, so removing someone's access closes their open
+  connections within seconds. No key rotation needed.
+- **A full audit log.** Every connection and every API request through the gateway is recorded with the person,
+  device, service, environment and outcome.
+- **Per-device stand-ins.** Each device gets its own stand-in values. A value copied from one laptop does not work
+  on another, and it never works directly against the real service.
+- **One place to manage keys.** Admins add each key once in the dashboard and decide who can use it, per
+  environment.
+
+## Who it is for
+
+cb is for teams building JavaScript and TypeScript apps (Node.js backends and React or Next.js frontends) on
+macOS, Linux or Windows, who want developers to work against real services in development without holding the
+keys to them.
+
+- **Admins** add services and variables in the dashboard, grant access, and watch the audit log.
+- **Developers** install `@cb/env`, log in once, and keep running `npm run dev`.
+
+cb manages development environments only. It is not a production secret store and does not deploy anything.
+
+## Next steps
+
+<Cards>
+  <Card title="Quick Start" href="/docs/quick-start">
+    From sign-up to your app running under cb.
+  </Card>
+  <Card title="Platforms" href="/docs/platforms">
+    Next.js, Node.js, NestJS, Vite and more.
+  </Card>
+  <Card title="Connectors" href="/docs/connectors">
+    Databases, payments, AI, cloud, email, sign-in and push.
+  </Card>
+</Cards>

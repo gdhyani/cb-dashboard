@@ -1,0 +1,93 @@
+---
+title: Security
+description: Where real secrets live in cb, what developers can and cannot see, and how access is revoked and audited.
+---
+
+cb is built on one rule: a real secret never reaches a developer's machine. This page explains where secrets
+live, what each person can see, and the controls that hold when something goes wrong.
+
+## Where real secrets live
+
+Real credentials exist in one place only: the cb server.
+
+- **Encrypted at rest.** Each stored secret is encrypted with its own random 256-bit key using AES-256-GCM, and
+  that key is itself encrypted with the server's master key.
+- **Decrypted per use.** The gateway decrypts a credential only when it opens a connection that needs it, holds it
+  only as long as needed, and never logs it.
+- **Write-only in the dashboard.** You paste a secret once. No screen and no API ever returns it again, not even
+  to the admin who saved it. You can replace it, and cb tests the new value before storing it.
+
+Nothing on the laptop holds a real secret: not your app's `process.env`, not the cb agent, not the files cb
+writes under `~/.cb/`, and not the logs. The only exception is a variable an admin explicitly marks
+**Secret shown as-is** (see below).
+
+## What developers can and cannot see
+
+| Developers can see | Developers cannot see |
+|---|---|
+| Plain values the admin typed | Any protected real value: database passwords, API keys, client secrets |
+| Their own stand-in values (`npx cb env print`) | Another developer's stand-in values |
+| Their own personal random secrets | The organization's certificate authority private key |
+| Their own devices, sessions and access in **My access** | Other members' devices or the audit log (admins only) |
+
+Only owners and admins can add or change variables, grant access, manage members and use emergency stops.
+
+## Stand-ins are useless elsewhere
+
+Each stand-in value is derived from one device, one environment and one service, and the gateway checks it in
+constant time. As a result:
+
+- A stand-in copied from one laptop fails on any other device.
+- A stand-in sent straight to the real service (for example, a `sk-cb-…` key sent to OpenAI) is simply an invalid
+  key there.
+- A stand-in for `development` does not work for `staging`.
+
+Leaking a stand-in, through a log line, a screenshot, a malicious package or a coding tool, gives nobody access to
+anything.
+
+## Response redaction
+
+Some APIs echo credentials back in their responses. Before the gateway returns an API response to your app, it
+replaces any exact occurrence of the real secret, and of its base64 form, with `[cb-redacted]`. The real value
+cannot reach your app by being reflected in a response body.
+
+## Scoped certificate trust
+
+For APIs reached by host name (such as `api.stripe.com`), the gateway presents a certificate issued by your
+organization's own certificate authority. That authority is trusted only by processes started with `cb run`, and
+only for the connections cb redirects. cb never installs a certificate on your system, never changes your proxy
+settings, and never turns certificate verification off. The authority's private key never leaves the server.
+
+The agent's local ports listen on `127.0.0.1` only, so other machines on your network cannot reach them.
+
+## Revocation within seconds
+
+Because every connection goes through the gateway, access can be withdrawn instantly. When an admin removes
+access, revokes a device or session, or starts an [emergency stop](/docs/guides/admin/kill-switch), every affected
+connection closes within about five seconds, and `cb run` refuses to start again. No key needs to be rotated,
+because no developer ever held one. See [Revoke a device](/docs/guides/admin/revoke-device).
+
+## Audit log
+
+The gateway records every connection it opens and closes, with the person, device, service, environment, outcome,
+bytes and duration. For API calls it also records the method, host, path (without query values) and status code.
+Admins can filter it in **Activity**. See [Audit](/docs/guides/dashboard/audit).
+
+## Accounts and tokens
+
+- Passwords are hashed with argon2id, and login attempts are rate-limited.
+- The CLI never sees your password. It logs in with a short code you approve in the dashboard, then keeps its
+  token in the operating system keychain.
+- Access tokens last 15 minutes. Refresh tokens rotate on every use, and reusing an old one ends the whole session.
+
+## Secret shown as-is
+
+<Callout type="warning" title="The deliberate exception">
+  A variable of type **Secret shown as-is** puts the real value on every developer's machine that has access to
+  the environment. It is the one case where cb does not protect the secret, and the dashboard marks it with a
+  warning wherever it appears. Use it only when your app must compute with the secret itself. Payment webhook
+  secrets do not need it: use the [webhook](/docs/guides/webhooks/how-it-works) setup instead, which gives each
+  device its own stand-in signing secret.
+</Callout>
+
+To report a security issue in cb itself, see [Security policy](/docs/community/security).

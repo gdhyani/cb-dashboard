@@ -1,0 +1,88 @@
+---
+title: Switch environments
+description: Choose which environment your app runs against, for one run or as your default.
+---
+
+A project usually has several [environments](/docs/overview/concepts#environment), such as `development` and
+`staging`, each with its own variables and services. This page shows how cb picks the environment for a run and how
+to change it.
+
+## How cb picks the environment
+
+For every `cb run`, `cb shell`, `cb up`, `cb types` and `cb env print`, cb uses the first of these that is set:
+
+1. The `--env <name>` flag on the command.
+2. Your personal default, set with `cb env use <name>`.
+3. `defaultEnvironment` in the project's `.cb/project.json`.
+
+You need access to the environment you pick. If you don't have it, cb stops with
+`cb: you don't have access to "staging". Ask an admin to grant it in the dashboard (Access).`
+
+## Run one command against another environment
+
+```bash
+cb run --env staging -- next dev
+```
+
+To pass it through an npm script, add a second script rather than editing the first:
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "cb run -- next dev",
+    "dev:staging": "cb run --env staging -- next dev"
+  }
+}
+```
+
+## Change your default
+
+```bash
+cb env use staging
+```
+
+```text
+Default environment for shop-api is now "staging".
+```
+
+From now on, `npm run dev` runs against `staging` on your machine. The choice is personal: it is stored in your cb
+home folder (`~/.cb/state.json`), not in the repository, so it doesn't change anything for your teammates. Run
+`cb env use development` to switch back.
+
+<Callout type="tip" title="Check before you run">
+`cb env print` lists the variables your app will see in the current environment, with stand-in values only. Add
+`--env <name>` to look at another one.
+</Callout>
+
+## .cb/project.json
+
+`cb init` writes `.cb/project.json`, which links the folder to a project. Commit it, so everyone who clones the
+repository is linked to the same project.
+
+```json title=".cb/project.json"
+{
+  "server": "http://localhost:4200",
+  "orgId": "…",
+  "projectId": "…",
+  "projectSlug": "shop-api",
+  "defaultEnvironment": "development"
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `server` | The cb backend URL. |
+| `orgId`, `projectId` | The organization and project this folder belongs to. |
+| `projectSlug` | The project's slug, used in messages. Optional. |
+| `defaultEnvironment` | The environment used when nothing else is set. |
+| `webhookPort` | Optional. The port cb delivers webhooks to, when you don't want it detected. |
+
+The file holds no secrets and no tokens. Your login is stored per user, in your OS keychain where one is available. The full schema is in the
+[project.json reference](/docs/reference/project-json).
+
+To link the folder to a different project or change the committed default, run `npx cb init` again, or pass the
+values directly:
+
+```bash
+npx cb init --project shop-api --env development
+```

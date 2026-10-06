@@ -1,0 +1,72 @@
+---
+title: Receive events nobody caused
+description: Use cb webhooks listen and Send to me to receive test events from the provider's dashboard or CLI.
+---
+
+cb delivers each webhook to the device whose app created the payment object. Some events have no such device: test
+events sent from the Stripe or Razorpay dashboard, events from `stripe trigger`, and objects someone created by hand
+in the provider's dashboard. cb calls these **unmatched** events. This page shows the two ways to receive them.
+
+## What happens to an unmatched event
+
+When an event arrives, cb looks for the device that created its object. If it finds none, it looks again after 2, 5
+and 15 seconds, in case a related event arrives that links it to a device. After that, the event is:
+
+1. delivered to every device that turned on `cb webhooks listen` for that environment, and
+2. kept in the [delivery log](/docs/guides/webhooks/delivery-log) for 24 hours, marked "No one on the team caused
+   this".
+
+An unmatched event is never sent to the whole team.
+
+## cb webhooks listen
+
+Run this in your project folder (it must be linked with `cb init`, and you must be logged in):
+
+```bash
+npx cb webhooks listen
+```
+
+```bash
+cb: this device also receives unclaimed webhooks for development until 10/6/2026, 9:41:00 PM (stop: cb webhooks listen --off)
+```
+
+From now on, this device receives unmatched events for the environment for **12 hours**, in addition to the events
+its own app causes. Keep `cb run` running so they reach your app.
+
+To stop early:
+
+```bash
+npx cb webhooks listen --off
+```
+
+```bash
+cb: this device receives only webhooks for payments it made (development)
+```
+
+| Option | What it does |
+|---|---|
+| `--off` | Stop receiving unmatched events on this device. |
+| `--env <name>` | The environment. Default: the project's default, or the one chosen with `cb env use`. |
+| `--server <url>` | The cb backend URL. |
+
+<Callout type="tip" title="Testing with stripe trigger">
+  Run `cb webhooks listen` before `stripe trigger`. Objects that `stripe trigger` creates are not made through cb,
+  so the events are unmatched and only reach devices that listen.
+</Callout>
+
+## Send to me
+
+Admins can send one unmatched event to themselves from the dashboard, without running a command.
+
+1. Open the environment's **Webhooks** tab and click **Delivery log**.
+2. Find the event marked "No one on the team caused this (a test event from the dashboard, or stripe trigger), so it
+   was kept here."
+3. Click **Send to me**.
+
+The event goes only to your own signed-in devices, re-signed for each one. You must have access to the environment,
+and your app must be running under [`cb run`](/docs/guides/develop/cb-run) to receive it.
+
+| Message | Fix |
+|---|---|
+| Sign in on your machine with cb login and run your app with cb run, then send it again. | You have no signed-in device. Run `npx cb login`, start your app with `cb run`, and click **Send to me** again. |
+| This event is older than 24 hours and can no longer be sent. | Events are kept for 24 hours. Send a new test event from the provider. |

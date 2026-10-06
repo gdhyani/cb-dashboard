@@ -1,0 +1,149 @@
+---
+title: Groq
+description: Call the Groq API with the official SDK or any OpenAI-compatible client while the real key stays on the cb server.
+status: beta
+---
+
+Store your real Groq API key in cb once. Every developer's app gets a stand-in key that starts with `gsk_cb_`, and
+the cb gateway swaps in the real key on the way to `api.groq.com`. The `groq-sdk` package and OpenAI-compatible
+clients work unchanged, including streaming.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have a real Groq API key (`gsk_…`) from the Groq console.
+- Developers who will run the app have [access](/docs/guides/dashboard/access) to the environment.
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**Add variable**, set **What is this?** to **AI API key** and **Provider** to **Groq**. The dialog is titled
+**Add AI variable**.
+</Step>
+<Step>
+### Name the key and paste the real value
+
+Type the **Key** your code reads, usually `GROQ_API_KEY`, and paste the real key into **API key**.
+</Step>
+<Step>
+### Add the base URL key only for OpenAI-compatible clients
+
+**Suggested extra keys** offers `GROQ_BASE_URL`. Its value ends in `/openai/v1`, the base an OpenAI-compatible
+client expects. The Groq SDK needs no base URL: cb catches calls to `api.groq.com` from processes started with
+`cb run`.
+
+<Callout type="warning">
+  If any code in the app uses `groq-sdk`, rename this key before saving (for example `GROQ_OPENAI_BASE_URL`). The
+  SDK reads `GROQ_BASE_URL` on its own and adds `/openai/v1` itself, so the path would be doubled.
+</Callout>
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb calls `GET /openai/v1/models` with the real key from its server before saving. If Groq
+rejects the key, nothing is saved and the dialog shows the error.
+</Step>
+</Steps>
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `GROQ_API_KEY`. cb never names it for you.
+  </Field>
+  <Field name="What is this?" type="select" required default="AI API key">
+    The variable type.
+  </Field>
+  <Field name="Provider" type="select" required>
+    Choose **Groq**.
+  </Field>
+  <Field name="API key" type="secret" required>
+    The real key, such as `gsk_…`. Write-only: nobody can view it after saving, but you can replace it.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="Different endpoint" type="text">
+    A company proxy or another endpoint instead of `https://api.groq.com`. Must be `https://`. When you set it, have
+    your app use the base URL key so its calls reach cb.
+  </Field>
+  <Field name="Extra headers" type="multiline">
+    Non-secret headers sent on every call, one `Name: value` per line, at most 10. Not for keys.
+  </Field>
+</Fields>
+
+## What your app sees
+
+<EnvTable rows={[
+  { name: "GROQ_API_KEY", example: "gsk_cb_…", kind: "stand-in" },
+]} />
+
+If you ticked the base URL key, it holds a local address such as `http://127.0.0.1:7405/openai/v1`.
+
+## Use it in code
+
+<Tabs items={["groq-sdk", "OpenAI SDK"]}>
+<Tab value="groq-sdk">
+```ts title="lib/ai.ts"
+import Groq from "groq-sdk";
+
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+const stream = await groq.chat.completions.create({
+  model: "llama-3.3-70b-versatile",
+  messages: [{ role: "user", content: "Write a haiku" }],
+  stream: true,
+});
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
+}
+```
+</Tab>
+<Tab value="OpenAI SDK">
+```ts title="lib/ai.ts"
+import OpenAI from "openai";
+
+const groq = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: process.env.GROQ_OPENAI_BASE_URL ?? "https://api.groq.com/openai/v1",
+});
+
+const completion = await groq.chat.completions.create({
+  model: "llama-3.3-70b-versatile",
+  messages: [{ role: "user", content: "Say hello" }],
+});
+console.log(completion.choices[0]?.message.content);
+```
+</Tab>
+</Tabs>
+
+Streaming responses pass through as they arrive. cb scrubs every response: if the real key, or its base64 form,
+ever appears in a response body, it is replaced with `[cb-redacted]`.
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+If you ran `cb init`, your package scripts already run under cb. To see the stand-in values, run
+`npx cb env print`. See [cb run](/docs/guides/develop/cb-run).
+
+## Limits
+
+- The app must send the stand-in in the `Authorization: Bearer` header, as both SDKs do.
+- Host redirection of `api.groq.com` works in processes started by `cb run`. Other processes need the base URL key.
+- Revoking a developer's access stops their calls; requests then get `403` with `cb_access_revoked`.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| **Save & test** says "The API rejected the key (HTTP 401)" | The real key is wrong or deleted. Create a new key in the Groq console and paste it again. |
+| Your app gets `401` with `{"error":"cb_invalid_credential"}` | The app sent a key that isn't this device's stand-in, for example a real key from a `.env` file. Run `npx cb doctor`. |
+| `404` from Groq when using the base URL key | The path is doubled. Give the key to an OpenAI-compatible client only, and don't name it `GROQ_BASE_URL` when `groq-sdk` is in use. |
+| Your app gets `502` with `cb_upstream_unreachable` | The cb server couldn't reach Groq. |
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

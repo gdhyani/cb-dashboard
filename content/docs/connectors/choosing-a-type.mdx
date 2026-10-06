@@ -1,0 +1,69 @@
+---
+title: Choosing a type
+description: Decide whether a key should be a plain value, a random secret, a protected service or a secret shown as-is.
+---
+
+Every key your app reads from `process.env` lives in the **Variables** tab, and each one has a type chosen in the
+**What is this?** field of the **Add variable** dialog. The type decides what developers receive and whether the
+real value ever leaves the cb server. This page helps you pick the right one.
+
+## The four kinds of value
+
+| Kind | Types in **What is this?** | What the developer's app gets | Real value on laptops? |
+|---|---|---|---|
+| Plain | **Plain value** | The value you typed, unchanged | Yes, it is not a secret |
+| Random secret | **Random secret** | A value cb makes for each developer | There is no shared real value |
+| Protected service | Databases, Payments, AI, Sign-in & push, Cloud & email, Other | A [stand-in value](/docs/overview/concepts#stand-in-values) made by cb for each device | No, it stays encrypted on the cb server |
+| Shown as-is | **Secret shown as-is** | The real secret | Yes, this is the one exception |
+
+## When to use which
+
+### Plain value
+
+Use it for anything that is safe to read: a port, a feature flag, a public URL, a publishable or client ID. The
+value is visible in the dashboard and in every developer's environment. See [Plain value](/docs/connectors/basic/plain).
+
+### Random secret
+
+Use it for secrets your app invents for itself rather than receives from a provider, such as `AUTH_SECRET`,
+`JWT_SECRET` or `SESSION_SECRET`. Each developer gets their own value, so nobody shares one and nothing needs to be
+pasted. See [Random secret](/docs/connectors/basic/random-secret).
+
+### Protected service
+
+Use it for every credential that unlocks a real service: a database URL, a Stripe secret key, an AI API key, AWS
+keys, an SMTP password, a sign-in client secret or a push key. You paste the real value once; developers get a
+stand-in, and cb uses the real value only inside its gateway. Pick the connector that matches the service from
+[All connectors](/docs/connectors). If no connector matches an HTTP API, use [Other API key](/docs/connectors/other/api-key).
+
+### Secret shown as-is
+
+Use it only when your app must compute with the secret itself and no connector can stand in for it. The real value
+goes to every developer with access. See [Secret shown as-is](/docs/connectors/basic/shown-as-is).
+
+<Callout type="warning" title="Payment webhook secrets are not an exception">
+  Stripe and Razorpay webhook signing secrets look like something your app must compute with, but they don't need
+  **Secret shown as-is**. Use the **Webhook signing secret** type; see
+  [Stripe webhooks](/docs/guides/webhooks/stripe) and [Razorpay webhooks](/docs/guides/webhooks/razorpay).
+</Callout>
+
+## Quick decision table
+
+| Your key is… | Choose |
+|---|---|
+| Public or harmless (`PORT`, `NEXT_PUBLIC_…`, a client ID) | **Plain value** |
+| A secret your app makes up (`AUTH_SECRET`, `JWT_SECRET`) | **Random secret** |
+| A database connection URL | MongoDB, Postgres, MySQL or Redis |
+| A Stripe or Razorpay API key | Stripe or Razorpay |
+| A Stripe or Razorpay webhook signing secret | **Webhook signing secret** |
+| An AI provider key | **AI API key** |
+| AWS or S3-compatible keys, or an SMTP login | **AWS / S3-compatible** or **Email (SMTP)** |
+| A Google, GitHub or OAuth client secret | **Sign-in client secret** |
+| A Firebase service account or an APNs `.p8` key | **Google service account** or **Apple push key** |
+| Any other HTTP API key | **Other API key** |
+| A secret your code must read in full, with no connector for it | **Secret shown as-is** |
+
+<Callout type="tip">
+  Key names are always yours. Type the name your code already reads, such as `DATABASE_URL` or
+  `STRIPE_SECRET_KEY`; cb never renames it.
+</Callout>

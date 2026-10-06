@@ -1,0 +1,41 @@
+---
+title: Devices and sessions
+description: See every CLI device and dashboard sign-in, and revoke them when a laptop is lost or someone leaves.
+---
+
+The **Devices & sessions** page (under **Security** in the sidebar) shows every laptop logged in with the CLI and
+every browser signed in to the dashboard, across all members. Owners and admins see this page. Developers manage
+their own devices on [My access](/docs/guides/dashboard/my-access).
+
+<Frame src="/docs/images/guides/devices.png" alt="Devices & sessions page with CLI devices and Dashboard sessions" caption="Devices & sessions page with CLI devices and Dashboard sessions" />
+
+## Devices and sessions are different things
+
+A [device](/docs/overview/concepts#device-and-session) is a laptop that ran `npx cb login`. It is what runs your
+app: its agent opens connections through the cb gateway. A session is a browser signed in to the dashboard. It
+manages cb but never connects to your services.
+
+| | **CLI devices** | **Dashboard sessions** |
+|---|---|---|
+| Created by | `npx cb login`, approved in the dashboard | Signing in to the dashboard |
+| Shows | Device name, owner, OS, last seen, and **Agent online** (with open connections) or **Agent offline** | Browser and OS, email, last active; **This browser** marks your own |
+| Action | **Revoke device** | **Sign out** |
+
+## Revoke a device or sign out a session
+
+| | Revoke device | Sign out (session) |
+|---|---|---|
+| What stops | The device's token and every open connection from it, immediately | That browser's dashboard sign-in |
+| Running apps on that laptop | Lose their database and API connections; `cb run` reports the revocation | Not affected |
+| Other devices of the same person | Not affected | Not affected |
+| Getting back in | The person runs `npx cb login` again, which creates a new device | The person signs in again in that browser |
+| Recorded in Activity | Yes | No |
+
+Choose the action from the row's "…" menu and confirm. You can't sign out your own current browser from this page;
+use **Log out** at the bottom of the sidebar instead.
+
+<Callout type="tip" title="Lost or stolen laptop">
+Revoke the device first. If you can't tell which device it is, or you want to block a person everywhere until you
+know more, use an [emergency stop](/docs/guides/dashboard/emergency-stop) on **A person**. The step-by-step is in
+[Revoke a device](/docs/guides/admin/revoke-device).
+</Callout>

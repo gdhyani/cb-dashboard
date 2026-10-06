@@ -1,0 +1,73 @@
+---
+title: Use the kill switch
+description: Choose the right emergency stop for an incident, from one laptop to the whole organization.
+---
+
+The kill switch is the **Stop access** action on the [Emergency stop](/docs/guides/dashboard/emergency-stop) page.
+It closes live connections within seconds and refuses new ones until you restore access, without deleting
+anything. This guide helps you pick the narrowest scope that contains an incident. It is for owners and admins.
+
+## Pick the scope
+
+| Situation | Scope in **What to stop** |
+|---|---|
+| A laptop is lost or stolen and you know which one | **A device** |
+| A person's account may be compromised, or they shouldn't connect until you've talked to them | **A person** |
+| A database or API key may have leaked, or the service is misbehaving | **A resource** |
+| Something is wrong in one environment, such as `staging` | **An environment** |
+| You suspect a breach across the organization and can't narrow it down | **Everyone** |
+
+<Callout type="tip" title="Start narrow">
+Stop the smallest scope that contains the problem: a device before a person, a person before an environment. You
+can always add a wider stop, and each stop is restored on its own.
+</Callout>
+
+## Stop access
+
+<Steps>
+<Step>
+### Open Emergency stop
+
+In the sidebar, under **Security**, open **Emergency stop** and select **Stop access**.
+</Step>
+<Step>
+### Choose the scope and target
+
+Pick the scope under **What to stop**. For **A resource**, choose the environment first, then the service.
+</Step>
+<Step>
+### Type the reason
+
+Enter a **Reason**, for example `Suspected credential leak`. It is required and is recorded in
+[Activity](/docs/guides/dashboard/audit).
+</Step>
+<Step>
+### Confirm
+
+Select **Stop access**. Within seconds, live connections close and developers in scope see
+`cb: access revoked by admin`.
+</Step>
+</Steps>
+
+<Callout type="danger" title="Everyone includes you">
+**Everyone** stops the whole organization, admins and owners too. The dashboard keeps working, so you can restore
+access from the Emergency stop page.
+</Callout>
+
+## After the stop
+
+1. Find the cause in [Activity](/docs/guides/dashboard/audit): filter by **Usage** and **Devices**.
+2. Fix it. Typical fixes are [revoking a device](/docs/guides/admin/revoke-device),
+   [rotating a secret](/docs/guides/admin/rotate-secret) or
+   [revoking someone's access](/docs/guides/admin/access#revoke-access).
+3. Restore access: on the Emergency stop page, choose **Restore access** in the stop's "…" menu. Running apps
+   reconnect automatically.
+
+## Other ways to stop access
+
+| Tool | Scope | Use it when |
+|---|---|---|
+| **Suspend environment** (environment "…" menu) | One environment | You want the environment's own page to show it as **Suspended**, with a reason. Resume with **Resume environment**. |
+| **Revoke device** | One device, for good | The laptop won't be used again. |
+| **Remove access** | One person, one project or environment | Access should end, not pause. |
+| **Remove member** | One person, the whole organization | Someone leaves. |

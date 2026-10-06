@@ -1,0 +1,120 @@
+---
+title: Concepts
+description: The building blocks of cb, from organizations and projects to stand-in values and emergency stops.
+---
+
+This page defines the terms you meet in the dashboard, the CLI and the rest of these docs. Each section is short
+and links to the guide where you work with it.
+
+## Organization
+
+An organization is your team's account in cb. You create one when you sign up, and you become its **owner**. Each
+person belongs to exactly one organization.
+
+Members have one of three roles:
+
+| Role | Can do |
+|---|---|
+| `owner` | Everything an admin can, plus manage other owners |
+| `admin` | Manage projects, variables, access, members and emergency stops |
+| `developer` | Run apps under cb with the access they are given; see their own devices and access in **My access** |
+
+Owners and admins can use every project. Developers need [access](#access). Invite people from
+[Members](/docs/guides/dashboard/members).
+
+## Project
+
+A project is one app or codebase, such as "Shop API". It holds environments, and each environment holds the
+variables your app reads. A folder on your machine is linked to a project by `cb init`, which writes
+`.cb/project.json`. Commit that file so the whole team uses the same project.
+
+See [Projects](/docs/guides/dashboard/projects).
+
+## Environment
+
+An environment is a set of variables for one stage of work, such as `development` or `staging`. A new project
+starts with both. Each environment has its own variables, its own access list and its own real credentials, so
+`development` can point at a test database while `staging` points at another.
+
+`cb run` uses the project's default environment. Switch with `--env <name>` for one run, or `cb env use <name>`
+to change your default. See [Environments](/docs/guides/develop/environments).
+
+## Variable
+
+A variable is one key your app reads from `process.env`, such as `DATABASE_URL`. Admins add variables in the
+**Variables** tab of an environment. You always type the key name yourself, and you choose what it is under
+**What is this?**:
+
+| Type | What developers get | Use for |
+|---|---|---|
+| **Plain value** | The value exactly as typed | Non-secret settings: `PORT`, `NEXT_PUBLIC_APP_URL`, a publishable key |
+| **Random secret** | A personal value cb generates for each developer | Secrets your app invents itself: `AUTH_SECRET`, `JWT_SECRET`, `SESSION_SECRET` |
+| Protected (databases, payments, AI and the other connectors) | A [stand-in value](#stand-in-values) for their device; the real value stays on the server | Anything that logs in to a real service |
+| **Secret shown as-is** | The real value | A last resort, when your app must compute with the secret itself |
+
+Protected values are never readable again after you save them. You can rename the key, replace the value (cb
+tests the new one first) or change its settings. **Secret shown as-is** carries a warning everywhere it appears,
+because it is the one type that puts a real secret on developer laptops.
+
+See [Variables](/docs/guides/dashboard/variables) and [Choosing a type](/docs/connectors/choosing-a-type).
+
+## Service
+
+A service is the real thing a protected variable logs in to: a MongoDB cluster, a Stripe account, an OpenAI key.
+You do not create services separately. cb creates one behind the variable when you add it, along with any extra
+keys it needs (for example a base-URL key for an AI provider).
+
+A service holds the real credential (encrypted), the connection details, and a **Test connection** action that
+runs from the gateway. Removing the main variable removes its service and extra keys. Browse every supported
+service in [Connectors](/docs/connectors).
+
+## Stand-in values
+
+A stand-in value is what your app sees instead of a real secret. It has the right shape for the SDK, contains a
+`cb` marker so you can recognize it, and is bound to one device, one environment and one service. The gateway
+accepts it only from that device, and the real service never sees it.
+
+| Service | Stand-in format | Example |
+|---|---|---|
+| Database user / password | `cbu_` + 8 characters / 32 letters and digits | `cbu_ab12cd34` / `…` |
+| OpenAI | `sk-cb-` + 48 characters | `sk-cb-…` |
+| Anthropic | `sk-ant-cb-` + 48 characters | `sk-ant-cb-…` |
+| Stripe | `sk_test_cb` + 40 characters | `sk_test_cb…` |
+| Razorpay key secret | `cb` + 30 characters | `cb…` |
+| AWS | Access key `AKIACB` + 14 characters; 40-character secret | `AKIACB…` |
+| SMTP | User `cbu_` + 8 characters; 32-character password | `cbu_ab12cd34` |
+| OAuth client secret | `cb-` + 40 characters | `cb-…` |
+
+**Random secrets** are not stand-ins: they are real, usable values, but personal. cb generates one per developer
+and environment, in the format the admin picks: `hex:32`, `base64:32`, `base64url:32`, `alnum:48` or `uuid`.
+
+Run `npx cb env print` to see exactly what your app will get.
+
+## Device and session
+
+A device is one machine where someone ran `npx cb login`. Logging in shows a code, which you approve in the
+dashboard and can give the device a name. The CLI then stores its token in the operating system keychain (or, if
+none is available, in a file only you can read).
+
+Each login creates a session for that device. Admins can see every device and session in
+**Devices & sessions** and revoke either one; revoking a device ends its access at once, without affecting the
+same person's other machines. See [Devices](/docs/guides/dashboard/devices).
+
+## Access
+
+Access decides which developers can use which services. It is granted per environment in the **Access** tab, for
+a person, optionally until an expiry time (for example, an intern's access for one week). Where a service has
+several credential profiles (such as read-write and read-only), access also picks which one the person uses.
+
+Owners and admins already have access to every project. Changes take effect immediately: new access appears in
+running apps, and removed access closes open connections within seconds. See
+[Access](/docs/guides/dashboard/access).
+
+## Emergency stop
+
+An emergency stop cuts access at once during an incident. Admins start one from **Emergency stop** with
+**Stop access**, choose who or what it covers (everyone, an environment, a service, a person or a device), and
+type a reason. Every matching connection closes within seconds, and `cb run` refuses to start until the stop is
+cleared. Each stop and its reason stay in the history and in **Activity**.
+
+See [Emergency stop](/docs/guides/dashboard/emergency-stop).

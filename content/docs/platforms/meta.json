@@ -1,0 +1,27 @@
+{
+  "title": "Platforms",
+  "root": true,
+  "icon": "Layers",
+  "pages": [
+    "index",
+    "---Frameworks---",
+    "nextjs",
+    "node-express",
+    "nestjs",
+    "vite",
+    "react-spa",
+    "react-router",
+    "sveltekit",
+    "nuxt",
+    "astro",
+    "node-frameworks",
+    "---Tools---",
+    "test-runners",
+    "node-tooling",
+    "---Coming soon---",
+    "bun",
+    "deno",
+    "python",
+    "docker"
+  ]
+}

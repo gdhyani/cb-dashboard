@@ -1,0 +1,65 @@
+---
+title: Delivery log
+description: See every webhook of the last 24 hours, where it went and whether the app accepted it, and replay it.
+---
+
+The delivery log lists the Stripe and Razorpay events an environment received in the last 24 hours, and for each one
+which developer's device it went to and what happened. Use it to check that a webhook arrived, to see why it did
+not, and to send it again.
+
+## Open the log
+
+Only organization owners and admins see the **Webhooks** tab. Open your project, pick the environment, go to
+**Webhooks**, and click **Delivery log**. The log loads only when you open it.
+
+<Frame src="/docs/images/guides/delivery-log.png" alt="The Webhooks tab with the Delivery log open (empty until the first event arrives)" caption="The Webhooks tab with the Delivery log open (empty until the first event arrives)" />
+
+Each event shows its type (for example `payment_intent.succeeded`), the provider and when it arrived. Under it is
+one line per device it was routed to: a status, the developer's email and the device name. The log never shows the
+event body or any secret.
+
+## Statuses
+
+| Status | Meaning |
+|---|---|
+| **Delivered · 200** | The developer's app accepted the event. The number is the status code it answered with. |
+| **Waiting** | Not sent yet, for example because the app is not running under `cb run` or the developer's access is paused. It is sent when that changes. |
+| **Retrying · 3 tries** | The app refused it, answered with an error or did not answer within 10 seconds. cb keeps retrying (5 s, 15 s, 1 min, 5 min, 15 min, then every 30 minutes). |
+| **Not sent** | The device was revoked, the environment was deleted, or the webhook variable was removed or disabled. |
+| **Expired** | Not delivered within 24 hours. |
+
+Next to a status that is not **Delivered**, the log shows the last reason, for example:
+
+| Reason | What to do |
+|---|---|
+| app not running under cb run on this machine; sent when it starts | Start the app with `cb run`. |
+| nothing is listening on 127.0.0.1:3000 | The app is not listening on that port. Check the `cb: webhooks → …` line in the terminal, or pass `--webhook-port`. |
+| app answered 500 | Your webhook handler returned an error. Check the app's logs; if its signature check failed, see [Troubleshooting](/docs/guides/troubleshooting#webhook-not-arriving). |
+| app did not answer within 10 s | Your handler is slow. Answer quickly and do slow work afterwards. |
+| webhook path … is not a path in your app | Fix **Path in your app** on the webhook variable. |
+| waiting: … | The developer's access is paused or missing. See [Access](/docs/guides/dashboard/access). |
+
+Two messages appear instead of device lines:
+
+- **Finding the developer who caused it…** — the event is less than 20 seconds old and cb is still routing it.
+- **No one on the team caused this (a test event from the dashboard, or stripe trigger), so it was kept here.** — an
+  unmatched event. Click **Send to me** to receive it yourself. See
+  [Receive events nobody caused](/docs/guides/webhooks/listen).
+
+## Replay an event
+
+Click **Replay** on an event to send it again to the same devices. cb signs it again with each device's stand-in and
+a fresh timestamp, so the app's signature check passes. An app that already received it gets it once more, so make
+sure your handler can take the same event twice.
+
+Events older than 24 hours can no longer be replayed ("This event is older than 24 hours and can no longer be
+replayed.").
+
+<Callout type="tip">
+  Replay is the quickest way to test a fix to your webhook handler: fix the code, wait for your dev server to reload,
+  and replay the event that failed.
+</Callout>
+
+## How long events are kept
+
+The log shows the last 24 hours, 20 events per page. Event bodies are encrypted at rest and removed after 24 hours.

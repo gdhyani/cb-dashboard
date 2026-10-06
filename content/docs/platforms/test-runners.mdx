@@ -1,0 +1,133 @@
+---
+title: Vitest, Jest, Playwright
+description: Run Vitest, Jest and Playwright under cb so tests reach real services through cb without real secrets on your machine.
+status: beta
+---
+
+Test runners are Node.js processes, so they run under cb like your app does. Integration tests that open a database connection or call a provider get [stand-in values](/docs/overview/concepts#stand-in-values) and reach the real service through cb, and end-to-end tests drive an app that was started under cb. This page shows how to wire Vitest, Jest and Playwright.
+
+## How cb hooks in
+
+[`cb run`](/docs/guides/develop/cb-run) starts the test runner with your environment's [variables](/docs/overview/concepts#variable) merged into the process environment and the cb [preload](/docs/guides/develop/preload-and-api) added to `NODE_OPTIONS`. Vitest and Jest run test files in worker processes, and those inherit both, so code under test connects to protected services through cb.
+
+Playwright is different: the browser tests talk to your app over HTTP. What needs cb is the app, which Playwright starts through its `webServer` command.
+
+## Set it up
+
+<Steps>
+<Step>
+### Install `@cb/env`
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+<Tab value="npm">
+```bash
+npm install @cb/env
+```
+</Tab>
+<Tab value="pnpm">
+```bash
+pnpm add @cb/env
+```
+</Tab>
+<Tab value="yarn">
+```bash
+yarn add @cb/env
+```
+</Tab>
+</Tabs>
+</Step>
+<Step>
+### Link the project
+
+```bash
+npx cb init
+```
+
+`cb init` asks for your organization, project and environment, writes `.cb/project.json`, then lists the scripts it wants to change and asks `Update these scripts?`. If you haven't signed in on this machine yet, run `npx cb login` first.
+</Step>
+<Step>
+### Check the `package.json` change
+
+Scripts that start with `vitest`, `jest` or `mocha` are prefixed with `cb run --`. A script that starts with `playwright` is left alone — Playwright gets cb through the app it starts.
+
+```diff title="package.json"
+ {
+   "scripts": {
+-    "dev": "next dev",
+-    "test": "vitest",
+-    "test:unit": "jest",
++    "dev": "cb run -- next dev",
++    "test": "cb run -- vitest",
++    "test:unit": "cb run -- jest",
+     "test:e2e": "playwright test"
+   }
+ }
+```
+</Step>
+<Step>
+### Point Playwright at the wrapped script
+
+Set `webServer.command` to the script that starts your app. Because `dev` now starts with `cb run --`, the app Playwright launches runs under cb.
+
+```ts title="playwright.config.ts"
+import { defineConfig } from "@playwright/test";
+
+export default defineConfig({
+  webServer: {
+    command: "npm run dev",
+    url: "http://localhost:3000",
+    reuseExistingServer: true,
+  },
+  use: { baseURL: "http://localhost:3000" },
+});
+```
+</Step>
+</Steps>
+
+## Where your code reads values
+
+| Place | Runs on | Gets protected values? |
+| --- | --- | --- |
+| Vitest and Jest test files, setup files, global setup | Node.js | Yes |
+| The app Playwright starts with `webServer.command` | Node.js | Yes |
+| Playwright test files (`playwright test` not under `cb run`) | Node.js | No — they don't need them |
+| Pages under test in the Playwright browser | The browser | No — plain values only |
+
+<Callout type="tip" title="Use a separate environment for tests">
+Tests that write data are better pointed at their own environment. If your admin has created one, add `--env <name>` to the script: `"test": "cb run --env test -- vitest"`. See [Environments](/docs/guides/develop/environments).
+</Callout>
+
+## Example
+
+An integration test that talks to Postgres through the official `pg` driver. `DATABASE_URL` is a stand-in URL pointing at the local agent; the gateway connects to the real database.
+
+```ts title="test/orders.test.ts"
+import pg from "pg";
+import { afterAll, expect, it } from "vitest";
+
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+afterAll(() => pool.end());
+
+it("stores an order", async () => {
+  const { rows } = await pool.query("insert into orders (sku) values ($1) returning id", ["A1"]);
+  expect(rows[0].id).toBeTypeOf("number");
+});
+```
+
+If your Playwright tests also seed the database directly, run Playwright itself under cb — `"test:e2e": "cb run -- playwright test"` — and set `webServer.command` to start the app without its own `cb run` (for example `next dev`). The app inherits cb's environment from Playwright.
+
+## Limits
+
+- **Tests run on a signed-in machine.** `cb run` needs a linked project and a signed-in device, so these scripts are for running tests locally. Running them in CI isn't available yet.
+- **Watch mode restarts on configuration changes.** When an admin changes your environment, `cb run` restarts the runner. Use `cb run --no-restart -- vitest` if you'd rather it kept running.
+- **Browser code gets plain values only.** Component tests that run in a real browser (Vitest browser mode, Playwright component testing) see the same plain values as your app's browser code.
+
+## Troubleshooting
+
+**`cb: you're not logged in`** — run `npx cb login`, then run the tests again.
+
+**A test sees `undefined` for a key.** Check that the script starts with `cb run --` and that the key exists in the environment you're running against. `npx cb env print` shows what the runner will see.
+
+**Playwright starts the app without cb values.** `webServer.command` is calling the framework directly (for example `next dev`) while Playwright itself isn't under cb. Point it at the wrapped `npm run dev` script.
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

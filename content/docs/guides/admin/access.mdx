@@ -1,0 +1,136 @@
+---
+title: Grant and revoke access
+description: Give developers access to a project or some environments, limit it in time, choose their logins and take it back.
+---
+
+Members can't run anything until you grant them [access](/docs/overview/concepts#access). Access says who can run
+which environments locally, for how long, and with which login for each service. Real credentials never reach their
+machine either way. This guide is for owners and admins.
+
+Owners and admins always have access to everything, so you only grant access to developers.
+
+## Grant access
+
+You can grant from two places:
+
+- **Project page → Access → Add people**: for all environments of the project, or several at once.
+- **Environment → Access tab → Add people**: for that one environment.
+
+<Frame src="/docs/images/guides/admin-grant.png" alt="'Add people to <project>' dialog with Who, Where and How long" caption="'Add people to <project>' dialog with Who, Where and How long" />
+
+<Steps>
+<Step>
+### Pick who
+
+Under **Who**, search and tick one or more developers. You can grant several people the same access at once.
+Developers who already have access aren't listed; edit their access instead.
+</Step>
+<Step>
+### Pick where
+
+Under **Where**, choose **All environments** (including environments added later) or **Specific environments**
+and tick the ones you want.
+</Step>
+<Step>
+### Pick how long
+
+Under **How long**, choose **No expiry**, **1 hour**, **8 hours**, **1 day**, **1 week** or **Until a date…**.
+Access ends on its own at that time.
+</Step>
+<Step>
+### Choose logins (optional)
+
+Open **Credential profiles** to pick which real login each service uses for these people, for example a
+read-only database user. Services you don't change use `default`.
+</Step>
+<Step>
+### Grant
+
+Check the summary line, for example "Ada → development, staging, 1 week", and select **Grant access**.
+</Step>
+</Steps>
+
+The developer can now run `npx cb init` and `npm run dev`. If `cb run` was already refused for them, it works on the
+next start.
+
+<Fields title="Required">
+<Field name="Who" type="people" required>
+One or more developers. Only shown when adding people.
+</Field>
+<Field name="Where" type="choice" required default="All environments">
+**All environments** or **Specific environments** (at least one).
+</Field>
+<Field name="How long" type="select" required default="No expiry">
+How long the access lasts. **Until a date…** needs a time in the future.
+</Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+<Field name="Credential profiles" type="select per service" default="default">
+The login each service uses for these people. Only services with more than one login can be changed.
+</Field>
+</Fields>
+
+<Callout type="tip" title="Grant the least you need">
+Start with **Specific environments**, usually `development`, and add more when someone needs it. Give a read-only
+login wherever a person only needs to look at data.
+</Callout>
+
+<Callout type="tip" title="Expiring access for contractors and interns">
+For contractors, interns or a one-day pairing session, pick a duration such as **1 week** or **Until a date…**.
+Access ends on its own and shows as expired in [Activity](/docs/guides/dashboard/audit), so there is nothing to
+remember to clean up.
+</Callout>
+
+## Choose a login per key
+
+A service can have a second, read-only login next to its default one. Set it up once, then choose who uses it.
+
+<Steps>
+<Step>
+### Add the second login
+
+On the Variables tab, open the service's main key and choose **Edit**. Under **Read-only login** (databases) or
+**Restricted key** (Stripe), select **Add**, paste the credential and select **Save login**. cb tests it like any
+other value.
+</Step>
+<Step>
+### Open Who can use it
+
+In the main key's "…" menu, choose **Who can use it**.
+</Step>
+<Step>
+### Pick a login per person
+
+Each developer with access to the environment has a login list: pick `default` or `readonly`. Owners and admins
+always use the default login.
+</Step>
+</Steps>
+
+<Frame src="/docs/images/guides/who-can-use-it.png" alt="'Who can use DATABASE_URL' dialog with a login per person" caption="'Who can use DATABASE_URL' dialog with a login per person" />
+
+The change applies within seconds: the person's open connections to that service are closed, and new ones use the
+new login. **Who can use it** only chooses
+logins. Add or remove people on the Access tab.
+
+## Edit access
+
+Choose **Edit access** in a person's "…" menu, on the project page or the environment's Access tab. The same
+**Where**, **How long** and **Credential profiles** sections open with the current values. Select **Save access**.
+
+## Revoke access
+
+| Where | Action | Effect |
+|---|---|---|
+| Project page → Access | **Remove access** | Removes the person's access to the whole project. |
+| Environment → Access tab | **Revoke access to `<environment>`** | Removes access granted for that environment only; other environments are unchanged. |
+| Members → person → access panel | **Remove access to `<project>`** | Same as removing from the project page. |
+
+Revoking takes effect within seconds: active database and API connections are terminated and new sessions are
+refused. The developer's `cb run` prints a banner, and their next `cb run` is refused.
+
+<Callout type="note" title="Revoking is not removing">
+Revoking access keeps the person in the organization, so you can grant access again later. To remove them
+entirely, use **Remove member** on the [Members](/docs/guides/dashboard/members) page. To stop someone instantly
+across every project, use an [emergency stop](/docs/guides/dashboard/emergency-stop).
+</Callout>
