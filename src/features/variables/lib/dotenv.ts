@@ -31,9 +31,20 @@ export function parseDotenv(raw: string): { entries: DotenvEntry[]; skipped: { l
 const INVENTED = /^(AUTH|NEXTAUTH|SESSION|JWT|COOKIE|APP|ENCRYPTION|CSRF)_SECRET$|^SECRET_KEY_BASE$/;
 
 /** Key names that announce a secret, and values that look like one (long, random, no spaces, not a URL). */
-const SECRET_NAME = /(SECRET|TOKEN|PASSWORD|PASSWD|PRIVATE|CREDENTIAL|API_?KEY|_KEY$)/;
-const looksRandom = (v: string) =>
-  v.length >= 16 && !/\s/.test(v) && !/^https?:\/\//.test(v) && /[A-Za-z]/.test(v) && /\d/.test(v);
+const SECRET_NAME =
+  /(SECRET|TOKEN|PASSWORD|PASSWD|PRIVATE|CREDENTIAL|SERVICE_ROLE|API_?KEY|_KEY$|WEBHOOK|SIGNING|HMAC|SALT)|(^|_)(PASS|PWD|DSN)(_|$)|_AUTH$/;
+const SECRET_VALUE = /^((sk|rk)_(test|live)_|sk-|gsk_|AIza)/;
+const BROWSER_PREFIX = /^(NEXT_PUBLIC_|PUBLIC_|VITE_|EXPO_PUBLIC_)/;
+const randomPart = (v: string) => v.length >= 16 && /[A-Za-z]/.test(v) && /\d/.test(v);
+const looksRandom = (v: string) => !/\s/.test(v) && !/^https?:\/\//.test(v) && randomPart(v);
+/** A URL that carries a password (user:pass@) or a long token in its path or query, like a Slack webhook. */
+const secretUrl = (v: string) =>
+  /^https?:\/\//.test(v) &&
+  (/^https?:\/\/[^/@\s]+:[^/@\s]*@/.test(v) ||
+    v
+      .split(/[/?&=#]/)
+      .slice(3)
+      .some((part) => part.length >= 20 && randomPart(part)));
 
 /**
  * A first guess at "What is this?" for one pasted line; the admin confirms or changes it. Something that looks secret
@@ -44,7 +55,13 @@ export function guessType(key: string, value: string): { type: TypeId | "unsure"
   if (/^postgres(ql)?:\/\//.test(value)) return { type: "postgres" };
   if (/^mysql:\/\//.test(value)) return { type: "mysql" };
   if (/^rediss?:\/\//.test(value)) return { type: "redis" };
-  if (/^(NEXT_PUBLIC_|PUBLIC_|VITE_|EXPO_PUBLIC_)/.test(key)) return { type: "plain" };
+  if (secretUrl(value)) return { type: "unsure" };
+  // A browser prefix means "public" only when nothing else says secret (a publishable pk_ key is public by design).
+  if (BROWSER_PREFIX.test(key)) {
+    if (value.startsWith("pk_")) return { type: "plain" };
+    const secret = SECRET_NAME.test(key) || SECRET_VALUE.test(value) || looksRandom(value);
+    return { type: secret ? "unsure" : "plain" };
+  }
   if (/^(sk|rk)_(test|live)_/.test(value)) return { type: "stripe" };
   if (value.startsWith("sk-ant-")) return { type: "ai", provider: "anthropic" };
   if (value.startsWith("sk-")) return { type: "ai", provider: "openai" };
