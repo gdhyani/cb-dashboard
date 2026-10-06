@@ -1,5 +1,6 @@
 "use client";
 
+import { ScrollRow } from "@/shared/components/scroll-row";
 import { QUICK_ADD, type TypeId } from "../lib/catalog";
 import { logoColor, ServiceLogo } from "./service-logo";
 
@@ -8,7 +9,8 @@ export function QuickAdd({ onPick }: { onPick: (type: TypeId, provider?: string)
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
       <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">Quick add</span>
-      <div className="flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto pb-1 [scrollbar-width:thin]">
+      {/* No visible scrollbar: the edge with more shortcuts fades; wheel, trackpad and touch scroll it. */}
+      <ScrollRow className="gap-1.5">
         {QUICK_ADD.map((q) => {
           const color = logoColor(q.icon);
           return (
@@ -32,7 +34,7 @@ export function QuickAdd({ onPick }: { onPick: (type: TypeId, provider?: string)
             </button>
           );
         })}
-      </div>
+      </ScrollRow>
     </div>
   );
 }

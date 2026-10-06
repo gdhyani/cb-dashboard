@@ -8,12 +8,16 @@ const useRefreshEnv = (envId: string) => {
   return () => qc.invalidateQueries({ queryKey: ["environments", envId] });
 };
 
-export function useConnectStripe(envId: string) {
+export function useConnectWebhook(envId: string) {
   const refresh = useRefreshEnv(envId);
   return useMutation({
-    mutationFn: (resourceId: string) => api.connectStripeWebhook(resourceId),
-    onSuccess: () => {
-      notifySuccess("Connected — Stripe now sends every event to cb");
+    mutationFn: ({ id, payloads }: { id: string; payloads?: api.StripePayload[] }) => api.connectWebhook(id, payloads),
+    onSuccess: (r) => {
+      notifySuccess(
+        r.config.provider === "razorpay"
+          ? "Connected — Razorpay now sends its events to cb"
+          : "Connected — Stripe now sends its events to cb",
+      );
       return refresh();
     },
     onError: (e) => notifyError(e),
