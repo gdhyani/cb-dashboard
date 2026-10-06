@@ -1,9 +1,9 @@
 "use client";
 
-import { Copy, FolderKanban, Layers, LogOut, Search, User } from "lucide-react";
+import { BookOpen, Copy, FolderKanban, Layers, LogOut, Search, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { CLI_COMMANDS } from "@/constants";
+import { CLI_COMMANDS, DOCS_PATH } from "@/constants";
 import { useLogout } from "@/features/auth/hooks/use-auth";
 import { useMembers } from "@/features/members/hooks/use-members";
 import { orgNav } from "@/features/orgs/components/org-sidebar";
@@ -140,6 +140,11 @@ export function CommandMenu({
           >
             <Copy />
             Copy CLI login command
+          </CommandItem>
+          {/* FR-DOC-003 */}
+          <CommandItem value="documentation docs help guides" onSelect={() => go(DOCS_PATH)}>
+            <BookOpen />
+            Documentation
           </CommandItem>
           <CommandItem
             value="log out sign out"

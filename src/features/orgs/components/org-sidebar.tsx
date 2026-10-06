@@ -2,6 +2,7 @@
 
 import {
   Activity,
+  BookOpen,
   FolderKanban,
   KeyRound,
   Laptop,
@@ -14,7 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { PRODUCT_NAME } from "@/constants";
+import { DOCS_PATH, PRODUCT_NAME } from "@/constants";
 import { useLogout, useMe } from "@/features/auth/hooks/use-auth";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { cn } from "@/shared/lib/utils";
@@ -111,6 +112,12 @@ export function OrgSidebar({ orgId, onClose }: { orgId: string; onClose?: () => 
         <DropdownMenuContent align="start" className="w-60">
           <DropdownMenuLabel>{me.data?.user.email}</DropdownMenuLabel>
           <DropdownMenuSeparator />
+          {/* FR-DOC-002: Docs sits directly above Log out. */}
+          <DropdownMenuItem asChild>
+            <Link href={DOCS_PATH}>
+              <BookOpen className="size-4" /> Docs
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => logout.mutate(undefined, { onSettled: () => router.replace("/login") })}>
             <LogOut className="size-4" /> Log out
           </DropdownMenuItem>

@@ -4,6 +4,7 @@ import { Copy, FileUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { KeyAccessDialog } from "@/features/access";
 import { useResources } from "@/features/resources";
+import { DocsLink } from "@/shared/components/docs-link";
 import { EmptyState } from "@/shared/components/empty-state";
 import { QueryState } from "@/shared/components/query-state";
 import type { RowAction } from "@/shared/components/row-actions";
@@ -97,7 +98,11 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
         skeleton={<SkeletonRows rows={4} />}
       >
         {empty ? (
-          <EmptyState title="No variables yet" description="Every key your app reads from process.env lives here." />
+          <EmptyState
+            title="No variables yet"
+            description="Every key your app reads from process.env lives here."
+            action={<DocsLink href="/docs/guides/dashboard/variables">How variables work</DocsLink>}
+          />
         ) : (
           <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
             {grouped.items.map((item) => {

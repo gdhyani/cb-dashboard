@@ -2,8 +2,8 @@
 
 import type { Resource } from "@/features/resources";
 import { type RowAction, RowActions } from "@/shared/components/row-actions";
-import { StaggerItem } from "@/shared/components/stagger";
 import { ServiceLogo } from "@/shared/components/service-logo";
+import { StaggerItem } from "@/shared/components/stagger";
 
 /** Legacy data: a service no variable uses. Still testable and removable. */
 export function OrphanRow({
