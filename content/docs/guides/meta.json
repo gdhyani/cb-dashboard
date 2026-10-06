@@ -1,0 +1,11 @@
+{
+  "title": "Guides",
+  "pages": [
+    "dashboard",
+    "develop",
+    "admin",
+    "webhooks",
+    "self-host",
+    "troubleshooting"
+  ]
+}

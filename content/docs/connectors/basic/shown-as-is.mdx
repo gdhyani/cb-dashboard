@@ -1,0 +1,112 @@
+---
+title: Secret shown as-is
+description: The one exception to cb's rule, a real secret delivered unchanged to every developer with access.
+---
+
+A secret shown as-is is stored encrypted like any protected value, but cb delivers the **real** value to every
+developer's app. It exists for the rare secret your code must compute with directly and that no connector can stand
+in for. Treat it as a last resort.
+
+<Callout type="danger" title="The real value reaches developers">
+  This is the one type where the real secret leaves the cb server and lands on laptops, in `process.env` and in
+  `cb env print`. Revoking someone's access stops future runs from receiving it, but you can't take back a copy they
+  already have. If the secret leaks, rotate it at the provider.
+</Callout>
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- Check [Choosing a type](/docs/connectors/choosing-a-type) first. Database URLs, payment and AI keys, cloud keys,
+  sign-in secrets and push keys all have connectors that keep the real value off laptops.
+- If the key is a Stripe or Razorpay webhook signing secret, don't use this type. Use the **Webhook signing secret**
+  type instead; see [Stripe webhooks](/docs/guides/webhooks/stripe) or [Razorpay webhooks](/docs/guides/webhooks/razorpay).
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables).
+</Step>
+<Step>
+### Choose the type
+
+Click **Add variable**, type the **Key**, and set **What is this?** to **Secret shown as-is** (under Basic, marked
+"last resort"). The dialog title changes to **Add secret shown as-is** and shows a warning: "The real value goes to
+every developer with access."
+</Step>
+<Step>
+### Paste the value and save
+
+Paste the real secret into **Value** and click **Save**.
+</Step>
+</Steps>
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads.
+  </Field>
+  <Field name="What is this?" type="select" required default="Secret shown as-is">
+    The variable type.
+  </Field>
+  <Field name="Value" type="secret" required>
+    The real secret. The input is write-only: after saving, the dashboard shows only that a value is set.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="None">
+    This type has no extra settings.
+  </Field>
+</Fields>
+
+<Callout type="warning" title="It stays flagged">
+  In the Variables table the row reads "•••• set · shown to developers" and carries a red warning icon. Hover it to see
+  "Real value delivered to developers". The flag stays as long as the variable exists, so nobody mistakes it for a
+  protected value.
+</Callout>
+
+## What your app sees
+
+The real value, unchanged. The example below is a placeholder.
+
+<EnvTable rows={[
+  { name: "LEGACY_SIGNING_KEY", example: "the real value you pasted", kind: "plain" },
+]} />
+
+## Use it in code
+
+Read it like any environment variable.
+
+```ts title="src/sign.ts"
+import { createHmac } from "node:crypto";
+
+export const sign = (payload: string) =>
+  createHmac("sha256", process.env.LEGACY_SIGNING_KEY as string).update(payload).digest("hex");
+```
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+`cb env print` marks these keys so developers know which values are real:
+
+```bash
+npx cb env print
+# LEGACY_SIGNING_KEY=…   # visible: real value
+```
+
+## Limits
+
+- The real value is on every machine that runs the environment. cb can't redact or swap it.
+- Removing a developer's access stops new runs from receiving it; it does not erase copies already delivered.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| You need the value to stay off laptops | Use the matching [connector](/docs/connectors) or [Other API key](/docs/connectors/other/api-key) instead, then remove this variable. |
+| The value may have leaked | Rotate it at the provider, then use **Replace value** on the row. See [Rotate a secret](/docs/guides/admin/rotate-secret). |

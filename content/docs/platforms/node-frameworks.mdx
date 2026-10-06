@@ -1,0 +1,161 @@
+---
+title: Fastify, Koa, Hono
+description: Run Fastify, Koa or Hono on Node.js under cb, the same way as an Express server.
+status: beta
+---
+
+Fastify, Koa and Hono (on its Node.js adapter) are Node.js servers, so cb treats them exactly like [Express](/docs/platforms/node-express): start the server through `cb run`, and your handlers and official SDKs read [stand-in values](/docs/overview/concepts#stand-in-values) from `process.env` without code changes. This page covers what differs — mostly which start commands `cb init` recognises.
+
+## How cb hooks in
+
+[`cb run`](/docs/guides/develop/cb-run) starts your server with your environment's [variables](/docs/overview/concepts#variable) merged into the process environment and the cb [preload](/docs/guides/develop/preload-and-api) added to `NODE_OPTIONS`. The preload runs before your first `import`, so database clients and SDKs created at startup already get the stand-ins and connect to protected services through cb. Watchers such as `tsx watch` and `nodemon` restart the server as a child process, which inherits both.
+
+## Set it up
+
+<Steps>
+<Step>
+### Install `@cb/env`
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+<Tab value="npm">
+```bash
+npm install @cb/env
+```
+</Tab>
+<Tab value="pnpm">
+```bash
+pnpm add @cb/env
+```
+</Tab>
+<Tab value="yarn">
+```bash
+yarn add @cb/env
+```
+</Tab>
+</Tabs>
+</Step>
+<Step>
+### Link the project
+
+```bash
+npx cb init
+```
+
+`cb init` asks for your organization, project and environment, writes `.cb/project.json`, then lists the scripts it wants to change and asks `Update these scripts?`. If you haven't signed in on this machine yet, run `npx cb login` first.
+</Step>
+<Step>
+### Check the `package.json` change
+
+Scripts that start with `node`, `tsx`, `ts-node`, `ts-node-dev` or `nodemon` are prefixed with `cb run --`. For a Hono app on Node.js:
+
+```diff title="package.json"
+ {
+   "scripts": {
+-    "dev": "tsx watch src/index.ts",
++    "dev": "cb run -- tsx watch src/index.ts",
+     "build": "tsc",
+-    "start": "node dist/index.js"
++    "start": "cb run -- node dist/index.js"
+   }
+ }
+```
+
+`fastify-cli` scripts start with `fastify`, which `cb init` doesn't recognise. Prefix them yourself:
+
+```diff title="package.json"
+ {
+   "scripts": {
+-    "dev": "fastify start -w -l info -P app.js"
++    "dev": "cb run -- fastify start -w -l info -P app.js"
+   }
+ }
+```
+</Step>
+<Step>
+### Start your server
+
+```bash
+npm run dev
+```
+</Step>
+</Steps>
+
+## Where your code reads values
+
+| Place | Runs on | Gets protected values? |
+| --- | --- | --- |
+| Route handlers, hooks, middleware, plugins | Node.js | Yes |
+| `process.env`, Hono's `env(c)` on the Node.js adapter, `@fastify/env` | Node.js | Yes |
+| `import { env } from "@cb/env"` | Node.js | Yes |
+| HTML or JavaScript you send to the browser | The browser | No — plain values only |
+
+See [Preload and explicit API](/docs/guides/develop/preload-and-api) for the difference between `process.env` and `@cb/env`.
+
+## Example
+
+<Tabs items={["Fastify", "Koa", "Hono"]}>
+<Tab value="Fastify">
+```ts title="src/server.ts"
+import Fastify from "fastify";
+import pg from "pg";
+
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const app = Fastify();
+
+app.get("/orders", async () => (await pool.query("select * from orders limit 10")).rows);
+
+await app.listen({ port: Number(process.env.PORT ?? 3000) });
+```
+</Tab>
+<Tab value="Koa">
+```ts title="src/server.ts"
+import Koa from "koa";
+import { Redis } from "ioredis";
+
+const redis = new Redis(process.env.REDIS_URL!);
+const app = new Koa();
+
+app.use(async (ctx) => {
+  ctx.body = { visits: await redis.incr("visits") };
+});
+
+app.listen(Number(process.env.PORT ?? 3000));
+```
+</Tab>
+<Tab value="Hono">
+```ts title="src/index.ts"
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
+import OpenAI from "openai";
+
+const openai = new OpenAI(); // reads OPENAI_API_KEY from the environment
+const app = new Hono();
+
+app.post("/chat", async (c) => {
+  const { message } = await c.req.json<{ message: string }>();
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", content: message }],
+  });
+  return c.json({ text: completion.choices[0]?.message.content });
+});
+
+serve({ fetch: app.fetch, port: Number(process.env.PORT ?? 3000) });
+```
+</Tab>
+</Tabs>
+
+`DATABASE_URL` and `REDIS_URL` are stand-in URLs that point at the local agent; `OPENAI_API_KEY` is a stand-in key, and cb routes the request to `api.openai.com` through the gateway.
+
+## Limits
+
+- **Node.js only.** Hono apps running on Bun, Deno or an edge runtime aren't covered; see [Bun](/docs/platforms/bun) and [Deno](/docs/platforms/deno).
+- **Only processes started through `cb run` get values.** Starting the server directly gives it none of the cb-managed variables.
+
+## Troubleshooting
+
+**A variable is `undefined`.** Check that the script starts with `cb run --` — especially `fastify start`, which `cb init` doesn't change. `npx cb env print` shows what your app will see.
+
+**`cb: this process wasn't started with "cb run"`** — the cb preload was loaded without `cb run`, for example from a debugger configuration. Start the server through your `package.json` script.
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AccessPreviewSheet, type PreviewPerson } from "@/features/variables";
 import { AvatarInitials } from "@/shared/components/avatar-initials";
 import { BadgeLabel } from "@/shared/components/badge-label";
+import { DocsLink } from "@/shared/components/docs-link";
 import { EmptyState } from "@/shared/components/empty-state";
 import { QueryState } from "@/shared/components/query-state";
 import { RowActions } from "@/shared/components/row-actions";
@@ -59,7 +60,11 @@ export function EnvironmentAccess({
       </div>
       <QueryState isPending={matrix.isPending} error={matrix.error} skeleton={<SkeletonRows rows={2} />}>
         {people.length === 0 ? (
-          <EmptyState title="No developers have access" description={`Add people to give them access to ${envName}.`} />
+          <EmptyState
+            title="No developers have access"
+            description={`Add people to give them access to ${envName}.`}
+            action={<DocsLink href="/docs/guides/admin/access">How access works</DocsLink>}
+          />
         ) : (
           <ul className="divide-y divide-border rounded-lg border border-border">
             {people.map((p, i) => (

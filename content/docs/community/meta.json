@@ -1,0 +1,14 @@
+{
+  "title": "Community",
+  "pages": [
+    "index",
+    "local-development",
+    "code-standards",
+    "adding-a-connector",
+    "updating-docs",
+    "security",
+    "code-of-conduct",
+    "license",
+    "changelog"
+  ]
+}

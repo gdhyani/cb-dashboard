@@ -1,0 +1,22 @@
+{
+  "title": "Platforms",
+  "pages": [
+    "index",
+    "nextjs",
+    "node-express",
+    "nestjs",
+    "vite",
+    "react-spa",
+    "react-router",
+    "sveltekit",
+    "nuxt",
+    "astro",
+    "node-frameworks",
+    "test-runners",
+    "node-tooling",
+    "bun",
+    "deno",
+    "python",
+    "docker"
+  ]
+}

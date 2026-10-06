@@ -2,11 +2,11 @@
 
 import { AlertTriangle } from "lucide-react";
 import { type RowAction, RowActions } from "@/shared/components/row-actions";
+import { ServiceLogo } from "@/shared/components/service-logo";
 import { StaggerItem } from "@/shared/components/stagger";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { describeValue } from "../lib/display";
 import type { Variable } from "../types";
-import { ServiceLogo } from "./service-logo";
 
 /** One key in the table: key · value · type chip (or "with MAIN_KEY") · "…" menu (admins). */
 export function VariableRow({

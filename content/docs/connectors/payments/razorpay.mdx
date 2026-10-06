@@ -1,0 +1,127 @@
+---
+title: Razorpay
+description: Call the Razorpay API with the official razorpay SDK while the real key secret stays on the cb server.
+---
+
+Razorpay authenticates with Basic auth: a public key ID and a private key secret. cb keeps the key secret on its
+server and gives each developer's app a stand-in, while the key ID stays a plain value. Under `cb run`, calls the
+official `razorpay` SDK makes to `api.razorpay.com` go through cb, which checks the stand-in and swaps in the real
+secret.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have a Razorpay key ID (`rzp_test_…` or `rzp_live_…`) and its key secret, from the API keys page of the Razorpay
+  Dashboard.
+
+<Callout type="tip" title="Use test-mode keys for development">
+  Give development environments a `rzp_test_…` key pair so developers create test orders and payments only.
+</Callout>
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**Add variable** and set **What is this?** to **Razorpay** (under Payments).
+</Step>
+<Step>
+### Name the key and paste the key secret
+
+The dialog is titled **Add Razorpay variable**. Type the **Key** your code reads for the secret, usually
+`RAZORPAY_KEY_SECRET`, and paste the real secret into **Key secret**.
+</Step>
+<Step>
+### Enter the key ID
+
+Type the public key into **Key ID**. Under **Suggested extra keys**, `RAZORPAY_KEY_ID` is already ticked: it gives
+your app the same key ID as a plain value. Rename it if your code reads another name, or type a different value.
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb calls Razorpay with the key ID and the real secret before saving. If Razorpay rejects them
+("The API rejected the key (HTTP 401)"), nothing is saved.
+</Step>
+</Steps>
+
+<Frame src="/docs/images/connectors/add-razorpay.png" alt="Add Razorpay variable dialog, Key RAZORPAY_KEY_SECRET, Key secret filled (masked), Key ID rzp_test_…, RAZORPAY_KEY_ID ticked" caption="Add Razorpay variable dialog, Key RAZORPAY_KEY_SECRET, Key secret filled (masked), Key ID rzp_test_…, RAZORPAY_KEY_ID ticked" />
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads for the secret, usually `RAZORPAY_KEY_SECRET`.
+  </Field>
+  <Field name="What is this?" type="select" required default="Razorpay">
+    The variable type.
+  </Field>
+  <Field name="Key secret" type="secret" required>
+    The real key secret. Write-only: nobody can view it after saving, but you can replace it.
+  </Field>
+  <Field name="Key ID" type="text" required>
+    The public key ID, such as `rzp_live_…`. Razorpay checks it together with the key secret.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="RAZORPAY_KEY_ID" type="text" default="the Key ID above">
+    Under **Suggested extra keys**, ticked by default: the key ID as a plain value for your app. Untick it if your code
+    doesn't read the key ID from the environment.
+  </Field>
+</Fields>
+
+## What your app sees
+
+The key secret is a stand-in made by cb for each device. The key ID is the real, public value.
+
+<EnvTable rows={[
+  { name: "RAZORPAY_KEY_ID", example: "rzp_test_…", kind: "plain" },
+  { name: "RAZORPAY_KEY_SECRET", example: "cb_…", kind: "stand-in" },
+]} />
+
+## Use it in code
+
+Use the official SDK exactly as in production.
+
+```ts title="src/payments.ts"
+import Razorpay from "razorpay";
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID as string,
+  key_secret: process.env.RAZORPAY_KEY_SECRET as string,
+});
+
+export const createOrder = () => razorpay.orders.create({ amount: 500, currency: "INR" });
+```
+
+<Callout type="note" title="Webhooks">
+  To receive Razorpay webhooks on each developer's machine, add a **Webhook signing secret** variable with the
+  Razorpay provider. cb sends each event to the developer whose app caused it. See
+  [Razorpay webhooks](/docs/guides/webhooks/razorpay).
+</Callout>
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+`cb run` redirects connections to `api.razorpay.com` from your app to the local agent, which tunnels them to the cb
+gateway. See [How it works](/docs/overview/how-it-works).
+
+## Limits
+
+- Only `api.razorpay.com` is redirected. Checkout in the browser uses the key ID directly with Razorpay, as usual.
+- The redirect applies to Node.js processes started by `cb run`.
+- If a Razorpay response contains the real secret, cb replaces it with `[cb-redacted]`.
+- If an admin revokes your access, API calls return `403` with `{"error":"cb_access_revoked"}`.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `401` "Authentication failed" from Razorpay | The app isn't running under `cb run`, so the stand-in went straight to Razorpay. Start it with `npx cb run -- …`. |
+| `401` with `{"error":"cb_invalid_credential"}` | The stand-in belongs to another device or is stale. Run the app under `cb run` on this machine and don't copy the secret between machines. |
+| **Save & test** fails with "The API rejected the key" | The key ID and secret don't belong together, or the key was regenerated. Check both and save again. |
+| `403` with `{"error":"cb_access_revoked"}` | You don't have access to this service, or it was revoked. Ask an admin; see [Access](/docs/guides/admin/access). |

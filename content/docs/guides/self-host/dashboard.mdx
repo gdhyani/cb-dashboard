@@ -1,0 +1,95 @@
+---
+title: Run the dashboard
+description: Clone cb-dashboard, point it at your backend, start it on port 4201 and create your organization.
+---
+
+The dashboard is where admins manage projects, variables, access and devices, and where developers approve
+`cb login`. It talks to the backend through its own `/api` path, so the browser never calls the backend directly.
+This page starts the dashboard and creates the first organization.
+
+## Set up and start
+
+<Steps>
+<Step>
+### Clone and install
+
+```bash
+git clone https://github.com/gdhyani/cb-dashboard.git
+cd cb-dashboard
+npm install
+```
+</Step>
+<Step>
+### Create `.env.local`
+
+```bash
+cp .env.example .env.local
+```
+
+```bash title=".env.local"
+CB_API_URL=http://localhost:4200
+CB_DEV_ORIGINS=
+```
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="CB_API_URL" type="URL" default="http://localhost:4200">
+    The backend the dashboard forwards `/api/*` requests to. Change it only if the backend runs elsewhere or on
+    another port.
+  </Field>
+  <Field name="CB_DEV_ORIGINS" type="comma-separated host names">
+    Extra host names allowed to open the development server, for example your LAN IP address to open the dashboard
+    from a phone.
+  </Field>
+</Fields>
+</Step>
+<Step>
+### Start the dashboard
+
+Make sure the backend is running, then:
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:4201](http://localhost:4201).
+
+<Callout type="note">
+  The backend's `DASHBOARD_URL` must match the address you open the dashboard at (by default
+  `http://localhost:4201`). cb uses it for the device login page that `cb login` opens and for invite links.
+</Callout>
+</Step>
+<Step>
+### Create your organization
+
+On the login page, click **Create one** (or open `/signup`). The page is titled **Create your organization**: enter **Your name**, **Email**, **Password** (at
+least 8 characters) and **Organization**, then click **Create organization**. You become the organization's
+**owner**.
+
+Every sign-up creates a new organization. To bring teammates into yours, invite them from the dashboard instead of
+asking them to sign up. See [Members](/docs/guides/dashboard/members).
+</Step>
+</Steps>
+
+## Point the CLI at your backend
+
+The `cb` CLI talks to `http://localhost:4200` by default, so on the same machine nothing needs changing. For a
+backend at another address, pass `--server` once when logging in and linking the project; `cb init` saves it in
+`.cb/project.json` for everyone who clones the project.
+
+```bash
+npx cb login --server https://cb.example.com
+npx cb init --server https://cb.example.com
+```
+
+You can also set `CB_SERVER_URL`. See [Environment variables](/docs/reference/environment-variables).
+
+## Next steps
+
+<Cards>
+  <Card title="Quick start" href="/docs/quick-start">
+    Create a project, add variables and run your app under cb.
+  </Card>
+  <Card title="Expose the backend with a tunnel" href="/docs/guides/self-host/public-url-tunnel">
+    Needed only for Stripe and Razorpay webhooks.
+  </Card>
+</Cards>

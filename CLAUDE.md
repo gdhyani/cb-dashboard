@@ -13,7 +13,14 @@ members, sessions/devices, audit and kill switches; developer `/me` page; CLI de
 - Every change goes on a new branch → pull request → merge into `main`. Never commit to `main` directly.
 - **Keep `../product.md` current:** any change to structure, tooling, contracts, defaults or behaviour is
   written into the PRD and logged in PRD §20 with a version bump, in the same change.
-- **Docs stay local:** everything under `docs/` (plans, notes) is gitignored and never pushed.
+- **Docs stay local:** everything under the root `docs/` (plans, notes) is gitignored and never pushed.
+- **Keep the public docs current (FR-DOC-008):** every change merged into `main` that a user or contributor can
+  see (pages, flows, labels, connectors, config, errors) updates the matching page in `content/docs/` and
+  recaptures affected screenshots in `public/docs/images/`, together with `../product.md`. Changes in `cb-env` or
+  `cb-backend` that are user-visible get their docs PR here, merged no later than the code PR. Otherwise the PR
+  description says `Docs: not needed — <reason>`.
+- **Docs paths:** only the root `docs/` is local; `content/docs/`, `public/docs/` and `src/app/docs/` are the
+  public documentation site and are committed.
 
 ## Hard rules for this repo
 
@@ -71,7 +78,12 @@ cb-dashboard/
 │  │  └─ providers/                # QueryClientProvider, theme
 │  ├─ styles/globals.css           # design tokens
 │  ├─ constants.ts                 # product names, CLI command strings — rename here
-│  └─ proxy.ts                     # Next 16 name for middleware: redirect unauthenticated users to /login
+│  ├─ proxy.ts                     # Next 16 name for middleware: redirect unauthenticated users to /login
+│  ├─ app/docs/  app/docs-search/  # public documentation (Fumadocs): layout, [[...slug]] page, search index
+│  └─ features/docs/               # docs components (Frame, Callout, Fields, EnvTable, StatusBadge, diagrams), catalogs
+├─ content/docs/                   # MDX documentation pages + meta.json (committed)
+├─ public/docs/images/             # documentation screenshots, already framed on the gradient (committed)
+├─ scripts/frame-images.mjs        # raw capture → framed PNG (npm run docs:images)
 ├─ test/                           # unit (Vitest + Testing Library), e2e (Playwright)
 ├─ docs/                           # LOCAL ONLY (gitignored)
 ├─ next.config.ts                  # rewrites /api/* → CB_API_URL
@@ -142,6 +154,8 @@ type ApiErrorBody = { success: false; error: { code: string; message: string; st
   Badges and chips are boxy (`rounded-md`), not pills.
 - **Black background**, white/grey text, no accent colour on layout or text. Only basic action colours on buttons
   (primary = white on black / inverted, destructive = red). No gradients, no decorative colour.
+  **Exception (PRD v1.36):** docs screenshots are framed on one gradient (baked in by `scripts/frame-images.mjs`)
+  and docs diagrams use the `--docs-frame-gradient` token. Nowhere else.
 - Modern data visuals where they help: activity/audit timelines, **git-graph style** history views,
   sparklines — monochrome.
 - Subtle, purposeful animation (enter/exit, layout transitions); respect `prefers-reduced-motion`.

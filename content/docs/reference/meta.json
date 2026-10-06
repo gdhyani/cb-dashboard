@@ -1,0 +1,12 @@
+{
+  "title": "Reference",
+  "pages": [
+    "cli",
+    "api",
+    "project-json",
+    "environment-variables",
+    "rest-api",
+    "paths",
+    "glossary"
+  ]
+}

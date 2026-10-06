@@ -1,0 +1,60 @@
+---
+title: Supported platforms
+description: Which frameworks and tools run under cb, how cb hooks into them, and what each support status means.
+---
+
+cb works with any JavaScript app that runs on Node.js. You don't add a plugin per framework or wrap your SDKs: you start your usual command through `cb run`, and every Node.js process it starts gets cb's values and connection routing. This page explains how that works, which platforms are covered, and the one rule that applies to all of them — browser code only ever gets plain values.
+
+## How cb hooks in
+
+[`cb run`](/docs/guides/develop/cb-run) does three things before it starts your command:
+
+1. It makes sure the local agent is running and your session is valid, and stops with a clear message if it isn't.
+2. It merges your environment's [variables](/docs/overview/concepts#variable) into the process environment. For keys cb manages, cb's value wins over anything already set in your shell.
+3. It adds `--require <path to the cb preload>` to `NODE_OPTIONS`.
+
+Node.js loads the [preload](/docs/guides/develop/preload-and-api) before any of your code runs. The preload routes connections to the hosts your environment protects through the local agent, so official SDKs work unchanged with [stand-in values](/docs/overview/concepts#stand-in-values). Because child processes and worker processes inherit `NODE_OPTIONS`, a dev server's workers, a test runner's workers and a migration CLI all get the same treatment.
+
+That is all there is to install: the `@cb/env` package, plus `cb run` in front of the scripts that start Node.js. [`cb init`](/docs/reference/cli) adds that prefix for you.
+
+<Callout type="note" title="Which scripts cb init changes">
+`cb init` prefixes a script with `cb run --` when its command starts with one of these tools: `node`, `nodemon`, `tsx`, `ts-node`, `ts-node-dev`, `next`, `nest`, `vite`, `remix`, `nuxt`, `astro`, `react-router`, `tsup`, `jest`, `vitest` or `mocha`. It shows you every change and asks before writing `package.json`. Scripts that start with anything else (for example `prisma`, `playwright` or `tsc && …`) are left alone — see [Custom scripts](/docs/guides/develop/custom-scripts) to wire those yourself.
+</Callout>
+
+## Platforms
+
+<PlatformCards />
+
+## Server code vs browser code
+
+cb protects a value by never letting the real one onto your machine. Your app gets a stand-in, and the connection that uses it is routed through cb, which swaps in the real credential at the [gateway](/docs/overview/how-it-works). That routing happens inside Node.js processes started by `cb run`. A browser tab is not one of them.
+
+<Callout type="warning" title="Browser code only gets plain values">
+Code that runs in the browser — React components, client components, `import.meta.env.VITE_*`, `NEXT_PUBLIC_*`, `PUBLIC_*` and Nuxt `runtimeConfig.public` — only ever gets plain values. A protected value's stand-in is useless there: requests from the browser don't pass through cb, so the provider rejects it. Keep protected values in server code, and make any value the browser needs a plain variable.
+</Callout>
+
+In practice, every framework splits the same way:
+
+| Code | Runs on | Gets protected values? |
+| --- | --- | --- |
+| API routes, route handlers, server actions, loaders, SSR | Node.js under `cb run` | Yes |
+| Build and dev tooling (`next build`, `vite`, migrations, tests) | Node.js under `cb run` | Yes |
+| Components and modules bundled for the browser | The browser | No — plain values only |
+
+Each platform page has a table like this one for its own file names and APIs.
+
+## What the badges mean
+
+| Badge | Meaning |
+| --- | --- |
+| <StatusBadge status="supported" /> | Covered by our end-to-end test suite. |
+| <StatusBadge status="beta" /> | Runs on Node.js under `cb run`, and is being added to our test suite. |
+| <StatusBadge status="coming-soon" /> | Not available yet. The page says what to do meanwhile. |
+
+## Next steps
+
+<Cards>
+  <Card title="Quick start" href="/docs/quick-start">Link a project and run your app under cb.</Card>
+  <Card title="Preload and explicit API" href="/docs/guides/develop/preload-and-api">Read values through `process.env` or `@cb/env`.</Card>
+  <Card title="Connectors" href="/docs/connectors">The services you can protect.</Card>
+</Cards>

@@ -1,4 +1,4 @@
-import { ServiceLogo } from "./service-logo";
+import { ServiceLogo } from "@/shared/components/service-logo";
 
 export interface MapService {
   id: string;

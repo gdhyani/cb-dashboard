@@ -5,6 +5,7 @@ import { CLI_COMMANDS } from "@/constants";
 import { useOrgStats } from "@/features/stats";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { SegmentMeter } from "@/shared/components/charts/segment-meter";
+import { DocsLink } from "@/shared/components/docs-link";
 import { EmptyState } from "@/shared/components/empty-state";
 import { QueryState } from "@/shared/components/query-state";
 import { SkeletonCards } from "@/shared/components/skeletons";
@@ -25,6 +26,7 @@ export function ProjectList({ orgId, isAdmin }: { orgId: string; isAdmin: boolea
               ? "Create a project, add its variables, then invite developers."
               : "An admin hasn't created any projects yet."
           }
+          action={<DocsLink href="/docs/quick-start">Quick start guide</DocsLink>}
         />
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">

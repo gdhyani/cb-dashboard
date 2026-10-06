@@ -1,0 +1,88 @@
+---
+title: VS Code debugging
+description: Debug an app that runs under cb run from VS Code, with breakpoints and brokered connections.
+---
+
+You can debug a cb app in VS Code like any Node.js app. The only rule is that the app must start through `cb run`,
+so it gets its variables and brokered connections. This page shows two ways to do that.
+
+## Option 1: the JavaScript Debug Terminal
+
+The quickest way needs no configuration.
+
+<Steps>
+<Step>
+### Open a debug terminal
+
+Open the Command Palette and run **Debug: JavaScript Debug Terminal**.
+</Step>
+<Step>
+### Start your app as usual
+
+```bash
+npm run dev
+```
+
+VS Code attaches to every Node process the script starts, including your app under `cb run`. Breakpoints work
+right away.
+</Step>
+</Steps>
+
+## Option 2: a launch configuration
+
+To start debugging with <kbd>F5</kbd>, add a configuration that runs your npm script. Because the script already
+calls `cb run`, the debugger gets the same environment as your terminal.
+
+```json title=".vscode/launch.json"
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "dev (cb run)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "console": "integratedTerminal"
+    }
+  ]
+}
+```
+
+To debug a single file without a script, call `cb run` directly:
+
+```json title=".vscode/launch.json"
+{
+  "type": "node",
+  "request": "launch",
+  "name": "server (cb run)",
+  "runtimeExecutable": "npx",
+  "runtimeArgs": ["cb", "run", "--", "node", "src/server.js"],
+  "console": "integratedTerminal"
+}
+```
+
+Add `"--env", "staging"` after `"run"` to debug against another environment. See
+[Switch environments](/docs/guides/develop/environments).
+
+<Callout type="note" title="Why this works">
+`cb run` adds its preload to `NODE_OPTIONS` without removing what is already there, and the VS Code debugger
+uses `NODE_OPTIONS` to attach. Both apply to your app and to any child processes it starts.
+</Callout>
+
+<Callout type="warning" title="Don't launch the program directly">
+A configuration that runs `node src/server.js` or `next dev` without `cb run` starts the app with no variables and
+no brokered connections. If the preload is loaded without `cb run`, the app stops with
+`cb: this process wasn't started with "cb run"`.
+</Callout>
+
+## Restarts while debugging
+
+When an admin changes a variable, `cb run` restarts your app, which replaces the process you are debugging. Add
+`--no-restart` if you'd rather keep it running:
+
+```json
+"runtimeArgs": ["cb", "run", "--no-restart", "--", "node", "src/server.js"]
+```
+
+See [cb run](/docs/guides/develop/cb-run#restarts-on-change).

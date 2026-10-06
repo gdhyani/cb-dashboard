@@ -1,0 +1,143 @@
+---
+title: React Router / Remix
+description: Run a React Router framework-mode or Remix app under cb, where loaders and actions use protected values and components get plain values only.
+status: beta
+---
+
+React Router in framework mode (and Remix, its predecessor) splits each route into server code and browser code. Loaders and actions run on Node.js, so under cb they get [stand-in values](/docs/overview/concepts#stand-in-values) and connect to protected services through cb. Components run in the browser and only get plain values. This page shows the script change and where that line falls.
+
+## How cb hooks in
+
+[`cb run`](/docs/guides/develop/cb-run) starts `react-router dev` (or `remix vite:dev`) with your environment's [variables](/docs/overview/concepts#variable) merged into the process environment and the cb [preload](/docs/guides/develop/preload-and-api) added to `NODE_OPTIONS`. The dev server runs your loaders and actions in that same Node.js process, so they read cb values from `process.env`. The production server, `react-router-serve` (or `remix-serve`), works the same way.
+
+## Set it up
+
+<Steps>
+<Step>
+### Install `@cb/env`
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+<Tab value="npm">
+```bash
+npm install @cb/env
+```
+</Tab>
+<Tab value="pnpm">
+```bash
+pnpm add @cb/env
+```
+</Tab>
+<Tab value="yarn">
+```bash
+yarn add @cb/env
+```
+</Tab>
+</Tabs>
+</Step>
+<Step>
+### Link the project
+
+```bash
+npx cb init
+```
+
+`cb init` asks for your organization, project and environment, writes `.cb/project.json`, then lists the scripts it wants to change and asks `Update these scripts?`. If you haven't signed in on this machine yet, run `npx cb login` first.
+</Step>
+<Step>
+### Check the `package.json` change
+
+Scripts that start with `react-router` (including `react-router-serve`) or `remix` are prefixed with `cb run --`. For a React Router app:
+
+```diff title="package.json"
+ {
+   "scripts": {
+-    "build": "react-router build",
+-    "dev": "react-router dev",
+-    "start": "react-router-serve ./build/server/index.js",
+-    "typecheck": "react-router typegen && tsc"
++    "build": "cb run -- react-router build",
++    "dev": "cb run -- react-router dev",
++    "start": "cb run -- react-router-serve ./build/server/index.js",
++    "typecheck": "cb run -- react-router typegen && tsc"
+   }
+ }
+```
+
+`typecheck` doesn't need cb; you can change it back by hand. For a Remix app, `remix vite:dev`, `remix vite:build` and `remix-serve` are wrapped the same way.
+</Step>
+<Step>
+### Start your app
+
+```bash
+npm run dev
+```
+</Step>
+</Steps>
+
+## Where your code reads values
+
+| Place | Runs on | Gets protected values? |
+| --- | --- | --- |
+| `loader` and `action` functions | Node.js | Yes |
+| Resource routes (routes with no component) | Node.js | Yes |
+| `*.server.ts` modules and `entry.server.tsx` | Node.js | Yes |
+| Route components, `clientLoader`, `clientAction` | The browser | No — plain values only |
+| `import.meta.env.VITE_*` | The browser | No — plain `VITE_*` values only |
+
+<Callout type="tip" title="Keep server clients in .server modules">
+Create database and provider clients in a `*.server.ts` file. The bundler refuses to include those modules in the browser build, so a server-only client can't leak into a component by accident.
+</Callout>
+
+## Example
+
+A route whose loader reads orders through Prisma and whose action creates a Stripe checkout session. Both use stand-in values; the component only renders what the loader returned.
+
+```ts title="app/lib/clients.server.ts"
+import { PrismaClient } from "@prisma/client";
+import Stripe from "stripe";
+
+export const prisma = new PrismaClient();
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+```
+
+```tsx title="app/routes/orders.tsx"
+import { Form, redirect, useLoaderData } from "react-router";
+import { prisma, stripe } from "~/lib/clients.server";
+
+export async function loader() {
+  return { orders: await prisma.order.findMany({ take: 10 }) };
+}
+
+export async function action() {
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
+    success_url: "http://localhost:5173/orders",
+  });
+  return redirect(session.url!);
+}
+
+export default function Orders() {
+  const { orders } = useLoaderData<typeof loader>();
+  return (
+    <Form method="post">
+      <p>{orders.length} orders</p>
+      <button type="submit">Buy</button>
+    </Form>
+  );
+}
+```
+
+## Limits
+
+- **Components and client loaders get plain values only.** Return what the browser needs from a `loader`, and keep the protected call on the server.
+- **`@cb/env` can't be imported from client code.** Its browser entry throws `@cb/env is server-only`; import it from `.server` modules, loaders or actions.
+- **Prisma and other migration CLIs** don't start with `react-router`, so `cb init` leaves them alone. See [Node tooling](/docs/platforms/node-tooling).
+
+## Troubleshooting
+
+**A loader gets `undefined` for a key.** Check that the `dev` script starts with `cb run --` and that the key exists in your environment. `npx cb env print` shows what your app will see.
+
+**A provider rejects the key from the browser.** The call runs in a component or `clientLoader`. Move it into a `loader` or `action`.
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

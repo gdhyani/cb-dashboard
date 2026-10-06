@@ -1,0 +1,74 @@
+---
+title: Emergency stop
+description: Cut access at once for a person, a device, a service, an environment or everyone, and restore it later.
+---
+
+The **Emergency stop** page (under **Security** in the sidebar) cuts access immediately during an incident: a lost
+laptop, a leaked key or someone who should no longer connect. Live database and API connections close within
+seconds and new ones are refused until you restore access. Owners and admins see this page.
+
+An [emergency stop](/docs/overview/concepts#emergency-stop) doesn't delete anything. Grants, variables and devices
+stay as they are, so restoring access puts everything back.
+
+<Frame src="/docs/images/guides/emergency-stop.png" alt="Stop access dialog with the five scopes and the Reason field" caption="Stop access dialog with the five scopes and the Reason field" />
+
+## Scopes
+
+| Option in **What to stop** | Stops | Pick the target |
+|---|---|---|
+| **A person** | Every device of one member | **Person** |
+| **A device** | One laptop, for example lost or stolen | **Device** |
+| **A resource** | One database or API | **In environment**, then **Service** |
+| **An environment** | Everything in one environment | **Environment** |
+| **Everyone** | The whole organization, admins too | Nothing to pick |
+
+For help choosing, see [Use the kill switch](/docs/guides/admin/kill-switch).
+
+## Stop access
+
+<Steps>
+<Step>
+### Open the dialog
+
+Select **Stop access** at the top of the page.
+</Step>
+<Step>
+### Choose what to stop
+
+Pick a scope under **What to stop**, then choose the target.
+</Step>
+<Step>
+### Type a reason
+
+Enter a **Reason** of at least three characters, for example `laptop reported stolen`. It is shown to admins and
+recorded in [Activity](/docs/guides/dashboard/audit).
+</Step>
+<Step>
+### Confirm
+
+Select **Stop access** (or **Stop access for everyone** for the whole organization).
+</Step>
+</Steps>
+
+<Callout type="danger" title="Everyone means everyone">
+**Everyone** stops every app in the organization, including those of owners and admins. Use it only when you
+suspect a breach you can't contain with a narrower scope.
+</Callout>
+
+## What developers see
+
+Within seconds of a stop:
+
+- Database clients get a protocol-native error that reads `cb: access revoked by admin`.
+- HTTP calls through the gateway get `403` with `{ "error": "cb_access_revoked" }`.
+- A running `cb run` prints a banner starting with `cb: access revoked by admin` and leaves the app running, so it
+  surfaces its own errors.
+- A new `cb run` refuses to start, and the app is never given any real credentials.
+
+## Restore access
+
+Active stops are listed under **Active**, with the target, a scope badge (**Person**, **Device**, **Service**,
+**Environment** or **Everyone**), the reason and how long ago it started. Choose **Restore access** in the row's
+"…" menu and confirm. People with access can connect again, and running apps reconnect automatically.
+
+Restored stops move to **History**, which keeps the most recent ones with their reason and when access was restored.

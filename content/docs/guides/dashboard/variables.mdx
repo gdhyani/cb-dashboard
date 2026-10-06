@@ -1,0 +1,251 @@
+---
+title: Variables
+description: Add, edit and remove every key your app reads, and the services behind them, from one Variables tab.
+---
+
+The **Variables** tab of an environment is the one place where you add and manage keys. Every key your app reads
+from `process.env` lives here, from a plain `PORT` to a database connection URL. For keys that hold real
+credentials, cb creates the [service](/docs/overview/concepts#service) behind the key, so you never manage services
+on their own.
+
+Only owners and admins can change variables. Developers see the tab read-only.
+
+<Frame src="/docs/images/guides/variables-table.png" alt="Variables tab with Quick add row, grouped extra keys and the Connection map" caption="Variables tab with Quick add row, grouped extra keys and the Connection map" />
+
+## The four kinds of variable
+
+Each [variable](/docs/overview/concepts#variable) is one of four kinds. The kind decides what a developer's app
+receives.
+
+| Kind | Shown as | What the app gets | Use it for |
+|---|---|---|---|
+| Plain | **Plain value** | The value exactly as you typed it | Non-secret settings: `PORT`, `LOG_LEVEL`, feature flags |
+| Random secret | **Random secret** | A value cb generates, different for each developer | Secrets your app invents: `AUTH_SECRET`, `JWT_SECRET`, `SESSION_SECRET` |
+| Protected | The service type, such as **MongoDB** or **AI · OpenAI** | A [stand-in value](/docs/overview/concepts#stand-in-values); the real value stays on cb's server | Database URLs, API keys, client secrets |
+| Secret shown as-is | **Secret shown as-is** | The real value | Last resort, when your app must compute with the secret itself |
+
+Protected values are tested, encrypted on cb's server and never shown again, to anyone. Developers get a stand-in
+value that cb makes for each device, and the cb gateway swaps in the real credential on the way to the service.
+
+<Callout type="warning" title="Secret shown as-is sends the real value">
+A **Secret shown as-is** value goes to every developer with access, and the row carries a warning icon. Use it only
+when your app must compute with the secret itself. Payment webhook secrets don't need it: use the
+**Webhook signing secret** type instead.
+</Callout>
+
+To pick the right type for a key, see [Choosing a type](/docs/connectors/choosing-a-type).
+
+## Quick add
+
+Above the table, the **Quick add** row holds shortcuts for common services: MongoDB, Postgres, Redis, Stripe,
+OpenAI, Anthropic, Firebase, Google sign-in, AWS S3, SMTP, Random secret and Other API. The row scrolls sideways;
+use the trackpad, mouse wheel or a swipe to see the rest.
+
+A shortcut only sets the type (and provider) of the **Add variable** dialog. You still type the key name yourself.
+
+## Add a variable
+
+Select **Add variable** (or a Quick add shortcut). The dialog title follows the type you pick, for example
+**Add MongoDB variable**, **Add AI variable** or **Add random secret**.
+
+<Frame src="/docs/images/guides/add-dialog-type.png" alt="Add variable dialog with the 'What is this?' list open" caption="Add variable dialog with the 'What is this?' list open" />
+
+<Steps>
+<Step>
+### Type the key
+
+Enter the **Key**: the exact name your code reads, such as `DATABASE_URL`. Use upper snake case: letters, digits
+and `_`, not starting with a digit. cb never names or renames the key for you.
+</Step>
+<Step>
+### Choose what it is
+
+Open **What is this?** and pick a type. The list is grouped: **Basic** (Plain value, Random secret, Secret shown
+as-is), **Databases**, **Payments**, **AI**, **Sign-in & push**, **Cloud & email** and **Other**.
+</Step>
+<Step>
+### Pick the provider
+
+AI keys and sign-in client secrets are one type each, with a **Provider** field. AI offers OpenAI, Anthropic,
+Google Gemini, Groq, Mistral, OpenRouter and **Custom / self-hosted**. Sign-in offers Google, GitHub and
+**Other (any OAuth provider)**.
+</Step>
+<Step>
+### Paste the real value
+
+Paste the real value once, for example a **Connection URL**, a **Secret key** or an **API key**. The field is
+write-only. For a **Random secret** there is nothing to paste; choose a **Format** instead.
+</Step>
+<Step>
+### Fill in the required details
+
+Some types need more than the value, such as the **API base URL** for **Other API key**, or the **Key ID** and
+**Team ID** for an Apple push key. Required fields appear right under the value.
+</Step>
+<Step>
+### Add suggested extra keys (optional)
+
+Open **Suggested extra keys** to add keys that belong to the same service, such as a Stripe publishable key or an
+API base URL. Tick only the ones your code reads, and rename them to match your code now or later.
+</Step>
+<Step>
+### Set connection details (optional)
+
+Open **Advanced** for connection details only, such as a CA certificate, a custom endpoint or extra headers. Most
+setups leave it closed.
+</Step>
+<Step>
+### Save & test
+
+Select **Save & test**. cb tests the value from its gateway before storing anything. If the test fails, nothing is
+saved and the dialog shows the error so you can fix it. Plain values, random secrets and secrets shown as-is use
+**Save**, as there is nothing to test.
+</Step>
+</Steps>
+
+<Fields title="Required">
+<Field name="Key" type="text" required>
+The name your code reads, for example `DATABASE_URL`. Upper snake case only.
+</Field>
+<Field name="What is this?" type="select" required default="Plain value">
+The type of the key. It decides which fields follow and what developers' apps receive.
+</Field>
+<Field name="Provider" type="select">
+Shown for **AI API key**, **Sign-in client secret** and webhook signing secrets.
+</Field>
+<Field name="Value" type="secret">
+The real value: connection URL, secret key, API key or file content, depending on the type. Write-only. Not asked
+for a Random secret.
+</Field>
+<Field name="Format" type="select" default="base64:32">
+Random secret only: `hex:32`, `base64:32`, `base64url:32`, `alnum:48` or `uuid`.
+</Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+<Field name="Suggested extra keys" type="checkbox + text">
+Extra keys the service can provide. Tick a key to add it and edit its name to match your code.
+</Field>
+<Field name="CA certificate (PEM)" type="text">
+Databases, SMTP and Other API key. Only for self-hosted servers or providers that give you a CA file.
+</Field>
+<Field name="Different endpoint" type="url">
+AI keys. Azure OpenAI, a company proxy, or a regional endpoint instead of the default.
+</Field>
+<Field name="Extra headers" type="text">
+AI keys and Other API key. Sent on every call, one `Name: value` per line. Not for keys.
+</Field>
+<Field name="Custom endpoint" type="url">
+AWS / S3-compatible. Cloudflare R2, MinIO, Backblaze or any S3-compatible storage.
+</Field>
+<Field name="More hosts to catch" type="text">
+Other API key. Comma-separated `host:port`, if the SDK also calls other hosts. Google service accounts have the
+same field as **Extra Google hosts**.
+</Field>
+</Fields>
+
+<Frame src="/docs/images/guides/add-dialog-advanced.png" alt="Add dialog with Suggested extra keys and Advanced expanded" caption="Add dialog with Suggested extra keys and Advanced expanded" />
+
+<Callout type="note" title="Stand-in values are always generated">
+You never type a stand-in (fake) value or prefix. cb generates one for each developer's device, in the format the
+SDK expects, for example `sk-cb-…` for OpenAI or `postgresql://cbu_ab12cd34:…@127.0.0.1:7401/app` for Postgres.
+</Callout>
+
+## The table
+
+Each row shows the key, what its value is and the type. Protected values never appear: the value column reads
+**●●●●●●●● · real value hidden** for a main key, **stand-in, made by cb** or **local URL, set by cb** for the
+values cb generates, and **generated for each developer** for a random secret. Plain values are shown as typed.
+
+Extra keys are grouped under their main key, indented with **↳** and labelled **with `MAIN_KEY`**, so you can see
+which keys belong to one service.
+
+## Edit a variable
+
+Select a key to open it read-only. Choose **Edit** to change it. You can:
+
+- **Rename the key.** Apps under `cb run` restart with the new name, so make sure your code reads it.
+- **Replace value.** Paste the new real value; it is tested before it is stored. See
+  [Rotate a secret](/docs/guides/admin/rotate-secret).
+- **Change settings**, such as the API base URL or a CA certificate. A new address needs the key again, so the old
+  key is never sent anywhere new.
+- **Rename extra keys** under **Extra keys of this service**.
+- For databases, add a **Read-only login**; for Stripe, a **Restricted key**. People get it from
+  **Who can use it**.
+
+<Frame src="/docs/images/guides/edit-dialog.png" alt="Edit dialog with the hidden value and the Replace value button" caption="Edit dialog with the hidden value and the Replace value button" />
+
+<Callout type="note" title="Stored values can't be viewed">
+Nobody can read a protected value back, not even an owner. The dialog shows only that it is set and when it was
+last changed. To change it, replace it.
+</Callout>
+
+You can't change the type of a variable. Add a new variable with the right type and remove the old one.
+
+## The row menu
+
+Each main key has a "…" menu:
+
+| Item | What it does |
+|---|---|
+| **Edit** | Opens the Edit dialog. |
+| **Replace value** | Opens the Edit dialog ready to paste a new value. |
+| **Who can use it** | Choose which login each person's app uses for this key. See [Access](/docs/guides/admin/access#choose-a-login-per-key). |
+| **Copy key** | Copies the key name. |
+| **Copy webhook URL** | Webhook services only: copies the URL to paste into the provider. |
+| **Test connection** | Runs the connection test again from the gateway. |
+| **Remove** | Removes the service and all its keys. |
+
+Extra keys have a shorter menu: **Edit**, **Copy key** and **Remove**, which removes only that key.
+
+<Frame src="/docs/images/guides/row-menu.png" alt="'…' menu of a main key" caption="'…' menu of a main key" />
+
+<Callout type="danger" title="Removing a main key removes its service">
+**Remove** on a main key deletes the service, its stored credentials and every extra key grouped under it. Running
+apps lose access within seconds. For a connected Stripe webhook, its webhook in Stripe is deleted too.
+</Callout>
+
+## Import a .env file
+
+Select **Import .env** to move an existing `.env` file into cb in one go.
+
+<Steps>
+<Step>
+### Paste the file
+
+Paste the contents under **Your .env**, one `KEY=value` per line. Comments and `export` are fine. Select **Review**.
+</Step>
+<Step>
+### Pick what each key is
+
+cb guesses a type for each key. Change any guess in its **What is …?** list. Keys that already exist are left as
+they are, and lines that aren't `KEY=value` are skipped.
+</Step>
+<Step>
+### Import
+
+Select **Import N variables**. Protected values go through the normal test, one by one. A key that fails shows
+why; add it again with **Add variable** once you've fixed it.
+</Step>
+</Steps>
+
+<Callout type="tip" title="Delete the local file afterwards">
+After importing, delete the real values from your local `.env` files so no real secrets stay on disk. `cb init`
+warns about any cb-managed keys still defined in `.env*` files.
+</Callout>
+
+<Frame src="/docs/images/guides/import-env.png" alt="Import .env dialog after Review, with a type per key" caption="Import .env dialog after Review, with a type per key" />
+
+## Connection map
+
+Below the table, the **Connection map** shows how an app in this environment reaches each service: your app sees
+fake values only, the cb agent on `127.0.0.1` pipes the bytes, and the gateway verifies access and injects the real
+credentials. Dashed lines carry fake values; solid lines carry real credentials, and only on the server side.
+
+<Frame src="/docs/images/guides/connection-map.png" alt="Connection map below the Variables table" caption="Connection map below the Variables table" />
+
+## Who sees what
+
+Before granting someone access, you can check exactly what their app receives: on the **Access** tab, open a
+person's "…" menu and choose **Preview access**. Secret values are never displayed there either. See
+[Access](/docs/guides/dashboard/access).

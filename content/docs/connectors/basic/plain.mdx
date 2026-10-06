@@ -1,0 +1,106 @@
+---
+title: Plain value
+description: A visible, non-secret value that every developer's app receives exactly as you typed it.
+---
+
+A plain value is the simplest variable: cb puts the value you type straight into `process.env`. Use it for
+settings that are safe to read, such as a port, a feature flag, a public URL or a publishable key. It is visible in
+the dashboard and on every developer's machine, so it must never hold a secret.
+
+## Before you start
+
+- You are an owner or admin of the organization (developers can't add variables).
+- You have a [project](/docs/guides/dashboard/projects) and an [environment](/docs/guides/develop/environments) to add
+  the value to.
+- The value is not a secret. If it is, see [Choosing a type](/docs/connectors/choosing-a-type).
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables).
+</Step>
+<Step>
+### Add the variable
+
+Click **Add variable**. Type the **Key**, leave **What is this?** on **Plain value**, and type the **Value**.
+</Step>
+<Step>
+### Save
+
+Click **Save**. The value appears in the table as you typed it.
+</Step>
+</Steps>
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `PORT` or `NEXT_PUBLIC_APP_URL`. Use UPPER_SNAKE_CASE: letters, digits and
+    `_`, not starting with a digit.
+  </Field>
+  <Field name="What is this?" type="select" required default="Plain value">
+    The variable type.
+  </Field>
+  <Field name="Value" type="text" required>
+    The value itself. It is stored and shown as-is.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="None">
+    A plain value has no extra settings.
+  </Field>
+</Fields>
+
+<Callout type="warning" title="Not for secrets">
+  Anyone with access to the environment can read a plain value, and it lands in every developer's `process.env`.
+  For keys that unlock a service, use the matching [connector](/docs/connectors); for secrets your app makes up,
+  use a [Random secret](/docs/connectors/basic/random-secret).
+</Callout>
+
+## What your app sees
+
+<EnvTable rows={[
+  { name: "PORT", example: "3000", kind: "plain" },
+  { name: "NEXT_PUBLIC_APP_URL", example: "http://localhost:3000", kind: "plain" },
+]} />
+
+## Use it in code
+
+Read it like any other environment variable. Nothing changes in your code.
+
+```ts title="src/config.ts"
+export const port = Number(process.env.PORT ?? 3000);
+export const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+```
+
+## Run it
+
+Start your app through cb so the value is loaded:
+
+```bash
+npx cb run -- npm run dev
+```
+
+If you ran `cb init`, your `package.json` scripts already call `cb run`. To check what your app will receive,
+print the environment:
+
+```bash
+npx cb env print
+```
+
+See [cb run](/docs/guides/develop/cb-run) for options.
+
+## Limits
+
+- The value is visible to everyone with access to the environment, in the dashboard and on their machines.
+- One value per environment: every developer gets the same value.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| **Key** shows "Use UPPER_SNAKE_CASE…" | Use only capital letters, digits and `_`, and don't start with a digit. |
+| The app still sees an old value | `cb run` restarts your app when the configuration changes ("cb: configuration changed — restarting your app"). If you started it with `--no-restart`, restart it yourself. |
+| The key already exists | Each key name is unique within an environment. Edit the existing row instead. |

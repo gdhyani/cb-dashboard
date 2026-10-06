@@ -1,0 +1,244 @@
+---
+title: Quick Start
+description: Create an account, add your first variable and run your app under cb with no real secret on your machine.
+---
+
+This guide takes you from a new account to your app running against a real MongoDB database, with only a
+stand-in value on your laptop. You need Node.js 22 or newer, a cb server you can reach (by default
+`http://localhost:4200`, see [Self-host](/docs/guides/self-host/prerequisites)), and an app with a `package.json`.
+
+<Steps>
+<Step>
+### Create your account
+
+Open your cb dashboard, choose **Create one** on the login page, and fill in **Your name**, **Email**,
+**Password** (at least 8 characters) and **Organization**. Click **Create organization**.
+
+You become the owner of the new [organization](/docs/overview/concepts#organization). Owners and admins can use
+every project, so you can run your app as soon as it has a variable.
+
+<Frame src="/docs/images/quick-start/signup.png" alt="Create your organization form on the sign-up page" caption="Create your organization form on the sign-up page" />
+</Step>
+
+<Step>
+### Create a project
+
+Go to **Projects** and click **New project** (or use **Create project** in the project switcher at the top).
+Give it a **Name**, such as `Shop API`, and click **Create**.
+
+Every new [project](/docs/overview/concepts#project) starts with two
+[environments](/docs/overview/concepts#environment): `development` and `staging`. Open **development**. This is
+where your app's variables live.
+
+<Frame src="/docs/images/quick-start/create-project.png" alt="New project dialog with a name and description" caption="New project dialog with a name and description" />
+</Step>
+
+<Step>
+### Add your first variable
+
+In the **Variables** tab, click **MongoDB** in the **Quick add** row (or click **Add variable** and pick
+**MongoDB** under **What is this?**). The **Add MongoDB variable** dialog opens.
+
+<Frame src="/docs/images/quick-start/variables-empty.png" alt="An empty Variables tab with the Quick add row and Add variable" caption="An empty Variables tab with the Quick add row and Add variable" />
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `MONGODB_URI`. You always type it yourself.
+  </Field>
+  <Field name="What is this?" type="select" required default="MongoDB">
+    Already set when you start from **Quick add**.
+  </Field>
+  <Field name="Connection URL" type="secret" required>
+    Your real connection string, for example `mongodb+srv://…@cluster0.….mongodb.net/app`. It is encrypted on
+    the cb server and can never be viewed again.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="CA certificate (PEM)" type="text">
+    Only for self-hosted servers or providers that give you a CA file.
+  </Field>
+</Fields>
+
+Click **Save & test**. cb tests the connection from its server before saving. You never enter a stand-in value:
+cb generates one for each device.
+
+<Frame src="/docs/images/quick-start/add-mongodb-variable.png" alt="Add MongoDB variable dialog with Key and Connection URL filled in" caption="Add MongoDB variable dialog with Key and Connection URL filled in" />
+
+<Callout type="tip" title="Already have a .env file?">
+  Click **Import .env**, paste the file, pick what each key is, and click **Review**, then **Import** (the button shows how many variables it will add). Protected
+  values are tested and encrypted, just like adding them one by one.
+</Callout>
+</Step>
+
+<Step>
+### Install `@cb/env`
+
+In your app's folder, install the package as a dev dependency:
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+<Tab value="npm">
+
+```bash
+npm i -D @cb/env
+```
+
+</Tab>
+<Tab value="pnpm">
+
+```bash
+pnpm add -D @cb/env
+```
+
+</Tab>
+<Tab value="yarn">
+
+```bash
+yarn add -D @cb/env
+```
+
+</Tab>
+</Tabs>
+
+This adds the `cb` command, the local agent and the preload. Your app's code does not import anything.
+</Step>
+
+<Step>
+### Log in this device
+
+```bash
+npx cb login
+```
+
+The CLI prints a link and a code, and opens your browser at **Approve CLI login**. Check that the
+**Code from your terminal** matches, optionally set a **Device name (optional)**, and click **Approve**. The
+terminal confirms:
+
+```text
+Logged in as ada@acme.example on http://localhost:4200 (device "ada-laptop").
+```
+
+If your cb server is not on `http://localhost:4200`, pass it once with `npx cb login --server <url>` or set
+`CB_SERVER_URL`.
+</Step>
+
+<Step>
+### Link your project
+
+```bash
+npx cb init
+```
+
+`cb init` asks you to choose the organization, project and environment (it skips any question with only one
+answer), then writes `.cb/project.json`. Commit this file so your team links to the same project.
+
+Next it shows which `package.json` scripts start a Node tool and asks **Update these scripts?**:
+
+```text
+package.json scripts:
+  - dev: next dev
+  + dev: cb run -- next dev
+```
+
+Answer yes. Scripts that already use `cb run` are left alone.
+
+<Callout type="warning" title="Remove real values from your .env files">
+  `cb init` warns when a `.env` file still defines keys that cb now provides. Delete those lines: a real secret
+  left on disk is still readable by anything on your machine, and a stale value can shadow cb's. Run
+  `npx cb doctor` at any time to find real-looking secrets and cb-managed keys in your `.env` files.
+</Callout>
+</Step>
+
+<Step>
+### Run your app
+
+Start your app the way you always do:
+
+```bash
+npm run dev
+```
+
+The script now runs through [`cb run`](/docs/guides/develop/cb-run), which starts the agent and launches your app
+with stand-in values. Here is what `cb init` writes for common setups:
+
+<Tabs items={["Next.js", "Node.js", "Vite"]}>
+<Tab value="Next.js">
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "cb run -- next dev",
+    "build": "cb run -- next build",
+    "start": "cb run -- next start"
+  }
+}
+```
+
+</Tab>
+<Tab value="Node.js">
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "cb run -- node src/server.js"
+  }
+}
+```
+
+</Tab>
+<Tab value="Vite">
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "cb run -- vite"
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+Using something else? See [Platforms](/docs/platforms).
+</Step>
+
+<Step>
+### Check that it works
+
+```bash
+npx cb status
+```
+
+`cb status` shows the server and its health, who you are logged in as on this device, and which project and
+default environment this folder is linked to.
+
+```bash
+npx cb env print
+```
+
+`cb env print` prints the environment your app sees. Your MongoDB key holds a
+[stand-in value](/docs/overview/concepts#stand-in-values) that points at the local agent, not your real cluster:
+
+<EnvTable
+  rows={[
+    { name: "MONGODB_URI", example: "mongodb://cbu_ab12cd34:…@127.0.0.1:7400/app?directConnection=true&authSource=admin&authMechanism=SCRAM-SHA-256", kind: "stand-in" },
+  ]}
+/>
+
+Your app connects through cb to the real database, and the connection appears in **Activity** in the dashboard.
+</Step>
+</Steps>
+
+## Next steps
+
+<Cards>
+  <Card title="Add more connectors" href="/docs/connectors">
+    Postgres, Redis, Stripe, OpenAI, AWS, sign-in and more.
+  </Card>
+  <Card title="Invite your team" href="/docs/guides/dashboard/members">
+    Create invite links and give developers access.
+  </Card>
+  <Card title="Webhooks" href="/docs/guides/webhooks/how-it-works">
+    Receive Stripe and Razorpay events in your local app.
+  </Card>
+</Cards>

@@ -1,0 +1,19 @@
+---
+title: Bun
+description: Running apps on the Bun runtime under cb is not available yet.
+status: coming-soon
+---
+
+cb works with apps that run on Node.js today. Support for running your app on the Bun runtime is planned, but not available yet.
+
+## Status
+
+Bun isn't supported yet. cb's [preload](/docs/guides/develop/preload-and-api) — the part that routes your app's connections to protected services — is loaded by Node.js, and Bun doesn't load it. An app started with `bun` gets none of your cb values.
+
+## What to do meanwhile
+
+Run the app with Node.js. Most apps written for Bun also run on Node.js, and you can keep Bun as your package manager: installing packages with `bun install` is unaffected. Start the app with a Node.js command such as `node`, `tsx` or your framework's CLI, as shown on [Node.js (Express)](/docs/platforms/node-express) or your framework's page in [Supported platforms](/docs/platforms).
+
+## Follow along
+
+Track progress, or tell us what you need, on [GitHub issues](https://github.com/gdhyani/cb-env/issues).

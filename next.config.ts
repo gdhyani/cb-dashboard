@@ -1,3 +1,4 @@
+import { createMDX } from "fumadocs-mdx/next";
 import type { NextConfig } from "next";
 
 const apiUrl = process.env.CB_API_URL ?? "http://localhost:4200";
@@ -18,4 +19,6 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const withMDX = createMDX();
+
+export default withMDX(nextConfig);

@@ -95,3 +95,10 @@ describe("FR-UI-006 LoginForm", () => {
     expect(screen.getByLabelText("Password")).toHaveAttribute("type", "text");
   });
 });
+
+describe("FR-DOC-003 login links to the docs", () => {
+  it("has a Read the docs link to /docs", () => {
+    renderLogin();
+    expect(screen.getByRole("link", { name: "Read the docs" })).toHaveAttribute("href", "/docs");
+  });
+});

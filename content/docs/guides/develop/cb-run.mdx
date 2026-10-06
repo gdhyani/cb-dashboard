@@ -1,0 +1,116 @@
+---
+title: cb run
+description: Run your app with cb-managed variables and brokered connections, and control the background agent.
+---
+
+`cb run` starts your app the way cb needs it: with the environment's variables in `process.env` and its
+connections routed through the local agent to the cb gateway. After `cb init`, your `package.json` scripts already
+call it, so `npm run dev` is all you type. This page explains what `cb run` does and the commands around it.
+
+## What cb run does
+
+```bash
+cb run -- next dev
+```
+
+When you run a command under `cb run`, it:
+
+1. Checks that you are logged in and that the folder is linked to a project (`.cb/project.json`). If not, it stops
+   with a message that tells you what to run.
+2. Starts the background agent if it isn't running, and attaches this project's environment. The agent opens local
+   listeners on `127.0.0.1` and writes a snapshot of the variables your app may see.
+3. Prints a one-line summary, for example
+   `cb: shop-api / development — 2 brokered connection(s), 1 redirected host(s)`.
+4. Starts your command with the snapshot's variables merged into the environment (cb's values win for keys it
+   manages) and the cb preload added to `NODE_OPTIONS`.
+5. Forwards input, output, signals and the exit code. <kbd>Ctrl</kbd>+<kbd>C</kbd> stops your app, not the agent.
+
+Your app never receives a real secret. Protected keys hold [stand-in values](/docs/overview/concepts#stand-in-values)
+and local addresses; the [gateway](/docs/overview/how-it-works) uses the real credential on the server.
+
+<EnvTable rows={[
+  { name: "PORT", example: "3000", kind: "plain" },
+  { name: "DATABASE_URL", example: "postgresql://cbu_ab12cd34:…@127.0.0.1:7401/app", kind: "stand-in" },
+  { name: "OPENAI_API_KEY", example: "sk-cb-…", kind: "stand-in" },
+  { name: "AUTH_SECRET", example: "…", kind: "generated" }
+]} />
+
+To see this list for your environment without starting the app, run `cb env print`.
+
+## Options
+
+| Option | What it does |
+|---|---|
+| `--env <name>` | Use this environment instead of your default. See [Environments](/docs/guides/develop/environments). |
+| `--no-restart` | Don't restart the app when the configuration changes. |
+| `--webhook-port <port>` | Deliver webhooks to this port instead of the port your app is detected listening on. |
+| `--server <url>` | Use a different cb backend URL. |
+
+Put your command after `--` so its own flags aren't read by `cb`.
+
+## Restarts on change
+
+When an admin adds, removes or renames a variable, the agent learns about it within seconds and `cb run` restarts
+your app with the new values:
+
+```text
+cb: configuration changed — restarting your app
+```
+
+Pass `--no-restart` to keep the app running instead; `cb run` still prints the message, and the new values apply the
+next time you start the app.
+
+<Callout type="tip" title="Hot reload and restarts">
+Most dev servers start in a second or two, so automatic restarts are the easiest way to pick up new keys. Use
+`--no-restart` if a restart is expensive, such as a long build, and restart yourself when you are ready.
+</Callout>
+
+## When access is revoked
+
+If an admin revokes your access or uses an [emergency stop](/docs/guides/dashboard/emergency-stop) while your app
+runs, `cb run` prints a banner:
+
+```text
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+cb: access revoked by admin (reason: "laptop reported stolen"). Your app was not given any real credentials.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+```
+
+Your app keeps running so it can surface its own errors: database clients get `cb: access revoked by admin`, and
+HTTP calls get `403`. While access is revoked, a new `cb run` refuses to start. When an admin restores access,
+`cb run` prints `cb: access restored — reconnecting your app` and restarts it.
+
+## cb shell
+
+```bash
+cb shell
+```
+
+`cb shell` opens your usual shell with the same variables and preload as `cb run`. Anything you start from it,
+such as a database migration, a REPL or a one-off script, gets brokered connections too. The prompt starts with
+`(cb:<env>)`, for example `(cb:development)`, so you can tell it apart. It takes `--env <name>` like `cb run`, and
+never restarts. Type `exit` to leave it.
+
+## The background agent
+
+The agent is a small background process, one per user on your machine. `cb run` starts it when needed and checks it
+every few seconds; if it disappears, `cb run` starts it again on the same ports. It stops on its own after 8 hours
+with no apps and no open connections.
+
+| Command | What it does |
+|---|---|
+| `cb up` | Start the agent and open this project's connections ahead of `cb run`. Takes `--env <name>`. |
+| `cb down` | Stop the agent. Running apps lose their connections. |
+| `cb agent status` | Show the agent's version, PID, uptime and log file, and each attached environment with its connections, apps and open tunnels. |
+
+## cb status
+
+```bash
+cb status
+```
+
+`cb status` checks the whole chain at a glance: whether the cb server is reachable and healthy, who you are logged in
+as and on which device, and which project and default environment this folder is linked to. Add `--json` for
+machine-readable output. For a deeper check of your setup, run `cb doctor`.
+
+The full list of commands and flags is in the [CLI reference](/docs/reference/cli).

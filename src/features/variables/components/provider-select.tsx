@@ -1,8 +1,8 @@
 "use client";
 
+import { ServiceLogo } from "@/shared/components/service-logo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import type { ProviderDef } from "../lib/catalog";
-import { ServiceLogo } from "./service-logo";
 
 /** D6: the provider inside one type (AI: OpenAI … Custom; sign-in: Google, GitHub, Other). */
 export function ProviderSelect({

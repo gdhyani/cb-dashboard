@@ -1,0 +1,86 @@
+---
+title: Contributing
+description: How cb is organised across three repositories and how to get a change from idea to merged pull request.
+---
+
+cb is open source under the Apache License 2.0, and contributions of every size are welcome: a typo fix in these
+docs, a clearer error message, a new connector or a gateway adapter. This page explains where the code lives,
+how to pick something to work on, and what a pull request needs before it is merged.
+
+## The three repositories
+
+cb is split into three independent repositories. Most changes touch one of them; a few touch two.
+
+| Repository | What it holds |
+|---|---|
+| [cb-env](https://github.com/gdhyani/cb-env) | The `@cb/env` npm package: the `cb` command-line tool, the local agent that tunnels your app's connections, the preload that fills `process.env` with stand-in values, and the explicit `env` API. It never holds a real secret. |
+| [cb-backend](https://github.com/gdhyani/cb-backend) | The REST API and the credential gateway. It stores real credentials encrypted, checks every connection, and contains all the protocol logic (PostgreSQL, MySQL, MongoDB, Redis, SMTP, HTTP providers). It also owns the API contract in `contracts/`. |
+| [cb-dashboard](https://github.com/gdhyani/cb-dashboard) | The admin and developer web app, and this documentation site (`content/docs/`). |
+
+See [How it works](/docs/overview/how-it-works) for how the pieces talk to each other.
+
+## Pick something to work on
+
+1. Browse the issues in the repository you are interested in. Issues labelled `good first issue` are small and
+   self-contained; `help wanted` marks work the maintainers would welcome help with.
+2. Comment on the issue to say you are taking it, so nobody duplicates the work.
+3. For anything larger than a bug fix — a new command, a new connector, a change to the API — open an issue first
+   and agree on the approach before you write code.
+
+To ask for a service cb should support, use the **Connector request** issue form. Security problems never go in
+a public issue; see [Security](/docs/community/security).
+
+## From fork to pull request
+
+<Steps>
+<Step>
+### Fork and clone
+
+Fork the repository on GitHub and clone your fork. To run the whole stack, clone all three repositories side by
+side; [Local development](/docs/community/local-development) walks through it.
+</Step>
+<Step>
+### Create a branch
+
+Branch from `main` and name it `<type>/<short-slug>`, for example `feat/redis-tls` or `fix/login-redirect`.
+Keep one change per branch.
+</Step>
+<Step>
+### Write the test, then the code
+
+Every new behaviour starts with a failing test. Follow the [code standards](/docs/community/code-standards).
+</Step>
+<Step>
+### Commit with Conventional Commits
+
+Write each commit as `type(scope): summary`, for example `fix(agent): reconnect after the laptop wakes`.
+Types are `feat`, `fix`, `docs`, `refactor`, `test`, `ci` and `chore`. The summary says what changes for the user.
+</Step>
+<Step>
+### Open the pull request
+
+Open it against `main` and fill in the template: what and why, how you tested it, docs, and the safety checklist.
+</Step>
+</Steps>
+
+## Review
+
+A maintainer reviews every pull request. Expect questions and requested changes; push new commits to the same
+branch rather than opening a new pull request. Pull requests are squash-merged, so the pull request title becomes
+the commit on `main` — keep it in Conventional Commits form.
+
+## When a pull request is ready
+
+A pull request is ready for review when:
+
+- `npm test`, `npm run lint` and `npm run typecheck` pass locally and in CI.
+- New behaviour has tests, and connector or gateway changes include an integration test and a leak check.
+- Dashboard changes have been checked in a browser at desktop width and at 375px.
+- The docs are updated in `cb-dashboard/content/docs/` in the same change, or the description says
+  `Docs: not needed — <reason>`. See [Updating the docs](/docs/community/updating-docs).
+- Nothing in the code, tests, screenshots or logs is a real secret, token or personal data.
+
+<Callout type="note" title="By contributing">
+  You agree that your contribution is licensed under the Apache License 2.0 and that you follow the
+  [code of conduct](/docs/community/code-of-conduct).
+</Callout>

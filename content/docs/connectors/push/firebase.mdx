@@ -1,0 +1,170 @@
+---
+title: Firebase (Google service account)
+description: Send FCM push messages with firebase-admin using a stand-in service-account key instead of the real one.
+status: beta
+---
+
+Store your Firebase service-account JSON in cb once. Every developer's app gets a stand-in private key made for
+that device, as a PEM, a whole JSON key, or a key file on disk. `firebase-admin` signs its token request with the
+stand-in key; the cb gateway checks it, gets a real access token from Google with the real key, and hands the app a
+stand-in token that only works through cb.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have a service-account key file (JSON) from **Firebase console → Project settings → Service accounts →
+  Generate new private key**, or from Google Cloud IAM.
+- Developers who will run the app have [access](/docs/guides/dashboard/access) to the environment.
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**Firebase** in the **Quick add** row, or click **Add variable** and set **What is this?** to **Google service
+account**. The dialog is titled **Add Google service account variable**.
+</Step>
+<Step>
+### Paste the JSON and choose how your app reads it
+
+Paste the whole key file into **Service account JSON**. Then set **Your app reads it as** to match your code, and
+type the **Key** your code reads:
+
+| Your app reads it as | Typical key | The app gets |
+|---|---|---|
+| **The whole JSON, in this variable** | `FIREBASE_SERVICE_ACCOUNT` | A complete stand-in key file as a JSON string |
+| **Only the private key (PEM)** | `FIREBASE_PRIVATE_KEY` | A stand-in PEM private key |
+| **A file path (GOOGLE_APPLICATION_CREDENTIALS)** | `GOOGLE_APPLICATION_CREDENTIALS` | The path of a stand-in key file that the agent writes |
+</Step>
+<Step>
+### Add the project ID and client email
+
+With **Only the private key (PEM)**, open **Suggested extra keys** and tick `FIREBASE_PROJECT_ID` and
+`FIREBASE_CLIENT_EMAIL`. cb reads both from the JSON; they are not secret.
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb signs a token request with the real key and asks Google for an access token before
+saving. If Google refuses, nothing is saved and the dialog shows the error.
+</Step>
+</Steps>
+
+<Frame src="/docs/images/connectors/add-firebase.png" alt="Add Google service account variable dialog, Your app reads it as set to 'Only the private key (PEM)', Suggested extra keys open with FIREBASE_PROJECT_ID and FIREBASE_CLIENT_EMAIL ticked" caption="Add Google service account variable dialog, Your app reads it as set to 'Only the private key (PEM)', Suggested extra keys open with FIREBASE_PROJECT_ID and FIREBASE_CLIENT_EMAIL ticked" />
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `FIREBASE_PRIVATE_KEY`. cb never names it for you.
+  </Field>
+  <Field name="What is this?" type="select" required default="Google service account">
+    The variable type.
+  </Field>
+  <Field name="Service account JSON" type="secret, multiline" required>
+    The whole key file. It must contain `project_id`, `client_email` and `private_key`. Write-only: nobody can view
+    it after saving, but you can replace it.
+  </Field>
+  <Field name="Your app reads it as" type="select" required default="The whole JSON, in this variable">
+    **The whole JSON, in this variable**, **Only the private key (PEM)** or **A file path
+    (GOOGLE_APPLICATION_CREDENTIALS)**.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="Extra Google hosts" type="text">
+    Comma-separated `host:port`, for example `firestore.googleapis.com:443`, only if the app calls more Google APIs
+    with this account than FCM. cb always covers the token host (`oauth2.googleapis.com`) and
+    `fcm.googleapis.com`.
+  </Field>
+</Fields>
+
+## What your app sees
+
+<EnvTable rows={[
+  { name: "FIREBASE_PRIVATE_KEY", example: "-----BEGIN PRIVATE KEY----- … (stand-in key for this device)", kind: "stand-in" },
+  { name: "FIREBASE_PROJECT_ID", example: "acme-shop", kind: "plain" },
+  { name: "FIREBASE_CLIENT_EMAIL", example: "firebase-adminsdk@acme-shop.iam.gserviceaccount.com", kind: "plain" },
+  { name: "FIREBASE_SERVICE_ACCOUNT", example: "{\"type\":\"service_account\",\"project_id\":\"acme-shop\",\"private_key_id\":\"cb…\",…}", kind: "stand-in" },
+  { name: "GOOGLE_APPLICATION_CREDENTIALS", example: "~/.cb/fake/…/GOOGLE_APPLICATION_CREDENTIALS.json", kind: "stand-in" },
+]} />
+
+You get the rows that match your choice in **Your app reads it as**. The key file is written by the local agent,
+readable only by you (`0600`), and holds the same stand-in JSON. The real private key never leaves the cb server.
+
+## Use it in code
+
+Initialise `firebase-admin` exactly as in production.
+
+<Tabs items={["cert() with PEM", "cert() with JSON", "applicationDefault()"]}>
+<Tab value="cert() with PEM">
+```ts title="lib/firebase.ts"
+import { cert, initializeApp } from "firebase-admin/app";
+import { getMessaging } from "firebase-admin/messaging";
+
+const app = initializeApp({
+  credential: cert({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+  }),
+});
+
+await getMessaging(app).send({ token: deviceToken, notification: { title: "Order shipped" } });
+```
+</Tab>
+<Tab value="cert() with JSON">
+```ts title="lib/firebase.ts"
+import { cert, initializeApp } from "firebase-admin/app";
+import { getMessaging } from "firebase-admin/messaging";
+
+const app = initializeApp({
+  credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT!)),
+});
+
+await getMessaging(app).send({ token: deviceToken, notification: { title: "Order shipped" } });
+```
+</Tab>
+<Tab value="applicationDefault()">
+```ts title="lib/firebase.ts"
+import { applicationDefault, initializeApp } from "firebase-admin/app";
+import { getMessaging } from "firebase-admin/messaging";
+
+// Reads the key file at GOOGLE_APPLICATION_CREDENTIALS.
+const app = initializeApp({ credential: applicationDefault() });
+
+await getMessaging(app).send({ token: deviceToken, notification: { title: "Order shipped" } });
+```
+</Tab>
+</Tabs>
+
+The common `.replace(/\\n/g, "\n")` is harmless: the stand-in PEM already has real line breaks.
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+If you ran `cb init`, your package scripts already run under cb. To see the stand-in values, run
+`npx cb env print`. See [cb run](/docs/guides/develop/cb-run).
+
+## Limits
+
+- Calls must come from a process started by `cb run`; cb catches them by host.
+- Only the token host, `fcm.googleapis.com` and the hosts in **Extra Google hosts** go through cb.
+- The access token your app receives is a stand-in (`ya29.cb_…`). It works only through cb, from this device, and
+  expires with the real token behind it.
+- One service-account variable holds one key. If both this and [Google sign-in](/docs/connectors/sign-in/google)
+  are in the same environment, cb tells their requests apart on `oauth2.googleapis.com`.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| **Save & test** says "Token exchange failed (HTTP 400 invalid_grant)" | The key was deleted or disabled in Google Cloud. Generate a new key and paste it with **Replace value**. |
+| `invalid_grant` with "cb: assertion is not signed by this device's key" | The app signed with a key that isn't this device's stand-in, for example a real key file on disk. Run `npx cb doctor` and check `GOOGLE_APPLICATION_CREDENTIALS`. |
+| `401 UNAUTHENTICATED` with "cb: requests to Google APIs need an access token issued through cb" | The app called a Google API with a token that didn't come from cb. Let `firebase-admin` fetch its token under `cb run`. |
+| A Google API other than FCM fails | Add its host to **Extra Google hosts**. |
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

@@ -1,0 +1,170 @@
+---
+title: Adding a connector
+description: Add support for a new service, from a data-only HTTP preset to a full protocol adapter in the gateway.
+---
+
+A connector is everything that lets cb broker one kind of service: how the gateway uses the real credential, how
+the dashboard asks for it, and the docs page that explains it. This page shows the two ways to add one, the tests
+each needs, and how a new connector becomes generally available.
+
+Before you start, open a **Connector request** issue (or comment on an existing one) so the approach is agreed
+before you write code.
+
+## Choose the kind of change
+
+| | HTTP preset | Protocol adapter |
+|---|---|---|
+| When | The service is an HTTPS API that takes a key in a header, as a bearer token or as Basic auth | The service speaks its own wire protocol (a database, a mail server), or signs requests in a way the HTTP gateway cannot already do |
+| What you add | One JSON entry in `cb-backend/src/presets/presets.json` | A folder `cb-backend/src/gateway/<name>/` with the adapter, plus a new service kind |
+| New code paths | None — presets are data | Yes |
+| Examples | OpenAI, Anthropic, Groq, Mistral, OpenRouter, Stripe | PostgreSQL, MySQL, MongoDB, Redis, SMTP |
+
+Prefer a preset whenever it can work. Most new API providers need nothing more.
+
+## Add an HTTP preset
+
+A preset describes a provider as data: where it lives, how the key is sent, what a stand-in key looks like, and
+which environment variables the app reads. It is validated when the backend starts, so a broken entry stops the
+server with a clear message.
+
+```json title="cb-backend/src/presets/presets.json"
+{
+  "id": "openai",
+  "name": "OpenAI",
+  "category": "AI",
+  "group": "ai",
+  "kind": "http",
+  "description": "OpenAI SDKs read OPENAI_BASE_URL, so traffic goes through a local listener.",
+  "defaults": {
+    "upstreamUrl": "https://api.openai.com",
+    "authScheme": "bearer",
+    "fakePrefix": "sk-cb-",
+    "testPath": "/v1/models",
+    "basePath": "/v1",
+    "redirectHosts": ["api.openai.com:443"]
+  },
+  "secretPlaceholder": "sk-proj-…",
+  "variables": [
+    { "key": "OPENAI_API_KEY", "field": "key" },
+    { "key": "OPENAI_BASE_URL", "field": "baseUrl" }
+  ]
+}
+```
+
+- `testPath` is an authenticated path the backend calls when an admin saves the key, so a wrong key is rejected
+  before anything is stored. Pick one that is cheap and read-only.
+- `fakePrefix` must contain a `cb` marker, so a stand-in can never be mistaken for a real key.
+- `redirectHosts` lists the provider hosts the app's SDK connects to directly.
+- `group` puts the provider inside an existing dashboard type (`ai` or `oauth`) instead of creating a new one.
+
+## Add a protocol adapter
+
+<Steps>
+<Step>
+### Add the service kind
+
+Add the new kind to `RESOURCE_KINDS` in `cb-backend/src/models/resource.model.ts`, with any fields it needs.
+Secret fields stay excluded from queries by default. Update `cb-backend/contracts/openapi.yaml` and bump its
+contract version.
+</Step>
+<Step>
+### Write the adapter
+
+Create `cb-backend/src/gateway/<name>/` with `<name>-adapter.ts` and any wire-protocol helpers. Register it with
+the gateway in `cb-backend/src/gateway/tunnel.ts` (`STREAM_ADAPTERS` for byte-stream protocols, `HTTP_HANDLERS`
+for HTTP-family services). The adapter checks the stand-in credential the app sends, connects upstream with the
+real one over verified TLS, and answers a revoked session with the protocol's own error.
+
+All protocol logic lives here. The cb-env agent stays a byte pipe and needs no change.
+</Step>
+<Step>
+### Add the connection test
+
+Saving a service runs a connection test with the real credential before anything is stored. Add a tester for
+the new kind to `testers` in `cb-backend/src/services/resource-test.service.ts`, so a wrong password or address is
+rejected at save time.
+</Step>
+<Step>
+### Sync the contract
+
+Run `npm run sync:contract` in cb-env and cb-dashboard, in their own commits, so both pick up the new kind.
+</Step>
+</Steps>
+
+## Tests you must add
+
+| Test | What it proves |
+|---|---|
+| Integration test against the real service in Docker | Add the service to `cb-backend/docker-compose.test.yml` with its password taken from the shell, and drive it through a tunnel with the official client library. |
+| Leak canary | The real credential never appears in anything the app or developer receives — the bootstrap response, service listings, error messages or logs — and the upstream never receives a stand-in. |
+| Revocation | Revoking access closes the open connection within five seconds with a protocol-native error. |
+| Preset validity | For a preset, the existing test checks that every preset's defaults create a valid service; run it after editing the file. |
+
+Gate Docker-backed tests on the test password so `npm test` still passes without Docker.
+See [Local development](/docs/community/local-development#test-services-in-docker).
+
+## Add the dashboard type
+
+Admins add every key in the **Variables** tab, so the new connector needs an entry in the type catalog:
+`cb-dashboard/src/features/variables/lib/catalog.ts`.
+
+- **A preset in an existing group** (an AI provider, a sign-in provider): add a provider to `AI_PROVIDERS` or
+  `OAUTH_PROVIDERS` with its `presetId`.
+- **A new type**: add an entry to `TYPES` with its name, group, icon, the fields it asks for (`required`,
+  `advanced`) and the extra keys it suggests (`extras`).
+
+Follow the [Variables](/docs/guides/dashboard/variables) rules: the admin always types the key name, cb always
+generates the stand-in value, and no form ever asks for a fake value.
+
+## Write the docs page
+
+Every connector has a page at `content/docs/connectors/<group>/<slug>.mdx`, listed in
+`src/features/docs/lib/connectors.ts` and in its folder's `meta.json`. `npm test` fails if a connector in the
+catalog has no page. Use this template, and see [Updating the docs](/docs/community/updating-docs) for the
+components.
+
+````mdx title="content/docs/connectors/databases/example.mdx"
+---
+title: Example DB
+description: Connect your app to Example DB without a real password on your laptop.
+status: beta
+---
+
+One paragraph: what the connector brokers and what the reader will do.
+
+## Before you start
+
+What the admin needs from the provider, and where to find it.
+
+## Add the variable
+
+<Steps>
+<Step>
+### Open the Variables tab
+…
+</Step>
+</Steps>
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>The name your app reads, for example `EXAMPLE_URL`.</Field>
+</Fields>
+
+## What your app sees
+
+<EnvTable rows={[{ name: "EXAMPLE_URL", example: "exampledb://cbu_ab12cd34:…@127.0.0.1:7401/app", kind: "stand-in" }]} />
+
+## Use it in your app
+
+A short example with the official client library, unchanged.
+
+## Limits
+
+What does not work yet, if anything.
+````
+
+## Beta until verified
+
+A new connector ships with `status: beta` on its docs page and `beta: true` in
+`src/features/docs/lib/connectors.ts`. It stays Beta until it has been verified against the real provider, not
+only against Docker or mock services. The badge is then removed in both places in the same pull request, and
+`npm test` checks that they agree.

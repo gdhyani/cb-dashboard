@@ -6,6 +6,7 @@ import { WebhookSetup } from "@/features/webhooks";
 import { ApiError } from "@/shared/api/api-error";
 import { FormError } from "@/shared/components/form-error";
 import { FormField } from "@/shared/components/form-field";
+import { ServiceLogo } from "@/shared/components/service-logo";
 import { timeAgo } from "@/shared/lib/format-time";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -26,7 +27,6 @@ import type { ServiceGroup } from "../lib/group";
 import { GENERATED_FORMATS, type Variable } from "../types";
 import { FieldInput } from "./field-input";
 import { ReadonlyLogin } from "./readonly-login";
-import { ServiceLogo } from "./service-logo";
 
 const READONLY_TYPES: Partial<Record<TypeId, string>> = {
   mongodb: "Read-only login",

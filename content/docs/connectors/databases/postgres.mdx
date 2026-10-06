@@ -1,0 +1,180 @@
+---
+title: PostgreSQL
+description: Connect your app to PostgreSQL with pg, postgres.js, Prisma, Drizzle or Knex, without the real database password.
+---
+
+Store your real PostgreSQL connection URL in cb once, and every developer's app gets a stand-in `DATABASE_URL`
+that points at the local cb agent. The cb gateway logs in to your database with the real user, over verified TLS
+when the URL asks for it, and passes the traffic through. Your driver or ORM works unchanged.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have the real connection URL, for example `postgresql://user:password@db.example.com:5432/app?sslmode=require`.
+  Both `postgres://` and `postgresql://` work.
+- The cb server can reach the database (check firewalls and IP allow lists on managed providers).
+
+<Callout type="tip" title="Keep the provider's sslmode">
+  Most hosted providers give you a URL ending in `?sslmode=require`. Keep it: it tells cb to use TLS to the database.
+  cb always verifies the server's certificate and host name, whatever `sslmode` says.
+</Callout>
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**Postgres** in the **Quick add** row, or click **Add variable** and set **What is this?** to **Postgres**.
+</Step>
+<Step>
+### Name the key and paste the URL
+
+The dialog is titled **Add Postgres variable**. Type the **Key** your code reads, usually `DATABASE_URL`, and paste
+the real URL into **Connection URL**.
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb connects with the real URL and runs a test query before saving, for example "Connected as
+app_user (PostgreSQL 16.4)". If the test fails, nothing is saved and the dialog shows the error.
+</Step>
+</Steps>
+
+<Frame src="/docs/images/connectors/add-postgres.png" alt="Add Postgres variable dialog, Key DATABASE_URL, Connection URL filled (masked)" caption="Add Postgres variable dialog, Key DATABASE_URL, Connection URL filled (masked)" />
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, usually `DATABASE_URL`.
+  </Field>
+  <Field name="What is this?" type="select" required default="Postgres">
+    The variable type.
+  </Field>
+  <Field name="Connection URL" type="secret" required>
+    The real URL, such as `postgresql://user:password@host:5432/db`. Include the database name; without one, cb uses
+    the user name, like `psql` does. Write-only: nobody can view it after saving, but you can replace it.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="CA certificate (PEM)" type="multiline">
+    Only for self-hosted servers or providers that give you a CA file (Aiven, DigitalOcean). cb trusts it for this
+    database only, on top of the public certificate authorities.
+  </Field>
+</Fields>
+
+<Callout type="note">
+  Developers get a stand-in made by cb for each device; there is nothing to enter for it. To give some people a
+  different database user, use **Who can use it** from the row's "…" menu; see [Access](/docs/guides/dashboard/access).
+</Callout>
+
+## What your app sees
+
+A local URL with a stand-in user and password. It ends in `sslmode=disable` because the hop from your app to the
+local agent never leaves your machine; the encrypted part runs from the gateway to your database.
+
+<EnvTable rows={[
+  {
+    name: "DATABASE_URL",
+    example: "postgresql://cbu_ab12cd34:…@127.0.0.1:7402/app?sslmode=disable",
+    kind: "stand-in",
+  },
+]} />
+
+## Use it in code
+
+Pass the variable to your library as you do in production.
+
+<Tabs items={["pg", "postgres.js", "Prisma", "Drizzle", "Knex"]}>
+<Tab value="pg">
+```ts title="src/db.ts"
+import pg from "pg";
+
+export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+
+const { rows } = await pool.query("select now()");
+```
+</Tab>
+<Tab value="postgres.js">
+```ts title="src/db.ts"
+import postgres from "postgres";
+
+export const sql = postgres(process.env.DATABASE_URL as string);
+
+const rows = await sql`select now()`;
+```
+</Tab>
+<Tab value="Prisma">
+```ts title="prisma.config.ts"
+import { defineConfig } from "prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  datasource: { url: process.env.DATABASE_URL ?? "" },
+});
+```
+
+```ts title="src/lib/db.ts"
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@/generated/prisma/client";
+
+export const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
+```
+</Tab>
+<Tab value="Drizzle">
+```ts title="src/db.ts"
+import { drizzle } from "drizzle-orm/node-postgres";
+
+export const db = drizzle(process.env.DATABASE_URL as string);
+```
+</Tab>
+<Tab value="Knex">
+```ts title="src/db.ts"
+import knex from "knex";
+
+export const db = knex({ client: "pg", connection: process.env.DATABASE_URL });
+```
+</Tab>
+</Tabs>
+
+<Callout type="warning" title="Don't force TLS in code">
+  Remove `ssl: true` (or an `ssl` object) from your client options for local runs. The local agent doesn't speak TLS,
+  and the stand-in URL already says `sslmode=disable`.
+</Callout>
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+Tools that open their own connection, such as migrations, need cb too:
+
+```bash
+npx cb run -- npx prisma migrate deploy
+npx cb run -- npx drizzle-kit push
+```
+
+See [cb run](/docs/guides/develop/cb-run) and [Custom scripts](/docs/guides/develop/custom-scripts).
+
+## Limits
+
+- **Logins:** the real user can authenticate with SCRAM-SHA-256, MD5 or a cleartext password.
+- **TLS:** `sslmode=require`, `verify-ca` and `verify-full` in the stored URL all mean verified TLS (certificate and
+  host name). `prefer` and `allow` use TLS when the server offers it. Without `sslmode`, the connection is plain.
+- The app connects to the agent without TLS; client-side certificates (`sslcert`, `sslkey`) are not used.
+- If an admin revokes your access, the session ends with "cb: access revoked by admin" within seconds.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| "postgres server does not offer TLS" | The stored URL asks for TLS but the server doesn't support it. Fix the server, or remove `sslmode` from the URL for a server on a private network. |
+| **Save & test** fails with a certificate error | The server uses a private certificate authority. Paste its CA into **CA certificate (PEM)** under Advanced. |
+| "The server does not support SSL connections" in your app | Your code forces TLS. Remove the `ssl` option for local runs. |
+| `password authentication failed for user "cbu_…"` | The stand-in belongs to another device or is stale. Run the app under `cb run` on this machine and don't copy the URL between machines. |
+| "cb: the gateway could not authenticate to the database" | The stored credentials stopped working. Replace the value with a working URL; see [Rotate a secret](/docs/guides/admin/rotate-secret). |
+| `cb: … no access` in the `cb run` output | You don't have access to this service. Ask an admin; see [Access](/docs/guides/admin/access). |

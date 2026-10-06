@@ -1,0 +1,115 @@
+---
+title: Projects and environments
+description: Switch between projects, create new ones, add environments and understand what each role can do.
+---
+
+A [project](/docs/overview/concepts#project) is one app or service your team runs locally. Each project holds
+[environments](/docs/overview/concepts#environment), and each environment has its own variables, services and
+access. This page covers the project switcher, creating projects and environments, and the three roles.
+
+## Switch projects
+
+Your organization is shown as a label in the sidebar. You belong to exactly one organization, so there is nothing to
+switch there. Projects are the main context, and you switch them from the **project switcher** at the left of the
+top navbar.
+
+- On desktop it opens as a dropdown; on phones it opens as a panel from the top.
+- Type in **Find project…** to filter by name or slug.
+- The current project has a check mark. A small dot next to a project means it has a suspended environment.
+- Press <kbd>Esc</kbd> to close it.
+
+The **Projects** page in the sidebar lists every project too.
+
+## Create a project
+
+Owners and admins can create projects.
+
+<Steps>
+<Step>
+### Open the dialog
+
+Open the project switcher and choose **Create project**, or select **New project** on the **Projects** page.
+</Step>
+<Step>
+### Name the project
+
+Enter a **Name** (for example `Shop API`) and, if you like, a **Description (optional)**.
+</Step>
+<Step>
+### Create it
+
+Select **Create**. The new project starts with two environments, `development` and `staging`, and the dashboard
+opens it.
+</Step>
+</Steps>
+
+The project page shows its slug under the title. You need the slug when you link a folder with `cb init`; use
+**Copy project slug** in the project's "…" menu to copy it.
+
+## Environments
+
+The **Environments** section of a project lists each environment with its state:
+
+| Badge | Meaning |
+|---|---|
+| **Access granted** | You can run this environment locally. |
+| **No access** | You can't run it yet. Ask an admin to grant access. |
+| **Suspended** | An admin suspended the environment; nobody can connect until it is resumed. |
+
+### Create an environment
+
+Owners and admins see a field under the list. Type a name in lower case, such as `preview`, and select
+**Create environment**. The new environment starts empty: add its variables on the
+[Variables tab](/docs/guides/dashboard/variables).
+
+### Open an environment
+
+Select an environment to open it. The page has three tabs for owners and admins: **Variables**, **Access** and
+**Webhooks**. Developers see only **Variables**, read-only.
+
+If you have access, the page also shows a **Local development** command you can copy, for example:
+
+```bash
+npx cb init --project shop-api --env development
+```
+
+### Suspend an environment
+
+The environment's "…" menu has **Suspend environment**. Suspending terminates all active connections to that
+environment within seconds and refuses new sessions until you select **Resume environment**. You must type a
+reason, which developers see and the activity log records.
+
+<Callout type="warning" title="Suspending stops everyone">
+Suspending an environment cuts off every developer who uses it, not one person. To stop a single person or laptop,
+use the [Emergency stop](/docs/guides/dashboard/emergency-stop) page with a narrower scope.
+</Callout>
+
+## Delete a project
+
+The project's "…" menu (top right of the project page) has **Delete project**. You must type a reason to confirm.
+
+<Callout type="danger" title="Deleting a project can't be undone">
+All environments, variables, services and grants of the project are deleted, and running apps lose access at once.
+The stored real credentials are deleted with it.
+</Callout>
+
+## Roles
+
+Every member has one role in the organization: **owner**, **admin** or **developer**. Owners and admins manage
+everything; developers use the environments they are granted.
+
+| What | Owner | Admin | Developer |
+|---|---|---|---|
+| See projects, environments and the Variables tab | Yes | Yes | Yes (read-only) |
+| Run any environment locally | Yes | Yes | Only environments they are granted |
+| Create projects and environments, delete projects | Yes | Yes | No |
+| Add, edit and remove variables and services | Yes | Yes | No |
+| Grant and remove access (Access tab) | Yes | Yes | No |
+| Set up webhooks (Webhooks tab) | Yes | Yes | No |
+| Invite members and change roles | Yes | Yes, except owners | No |
+| Invite or promote someone to owner | Yes | No | No |
+| Devices & sessions, Activity, Emergency stop pages | Yes | Yes | No |
+| My access page | Yes | Yes | Yes |
+
+Developers revoke their own devices from [My access](/docs/guides/dashboard/my-access). Manage roles on the
+[Members](/docs/guides/dashboard/members) page.

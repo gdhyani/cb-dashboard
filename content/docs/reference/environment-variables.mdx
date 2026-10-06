@@ -1,0 +1,77 @@
+---
+title: Environment variables
+description: Configuration variables for the cb backend, the dashboard and the cb CLI.
+---
+
+This page lists every environment variable that configures cb itself: the backend, the dashboard and the
+`cb` CLI. These are not the variables your app reads; those are managed in the dashboard as
+[variables](/docs/overview/concepts#variable).
+
+## Backend
+
+The backend reads these at startup and refuses to start, listing each problem, if a required variable is
+missing or invalid. For local development, copy `.env.example` to `.env`. See
+[Self-host the backend](/docs/guides/self-host/backend).
+
+| Name | Required | Default | Purpose |
+|---|---|---|---|
+| `MONGODB_URI` | Yes | — | The backend's own MongoDB database. Must start with `mongodb://` or `mongodb+srv://`. |
+| `MASTER_KEY` | Yes | — | Key that encrypts stored secrets. 32 random bytes, base64-encoded (`openssl rand -base64 32`). |
+| `SERVER_SECRET` | Yes | — | Key used to derive stand-in and generated values. 32 random bytes, base64-encoded, different from `MASTER_KEY`. |
+| `PORT` | No | `4200` | HTTP port for the API and the gateway. |
+| `NODE_ENV` | No | `development` | `development`, `test` or `production`. |
+| `LOG_LEVEL` | No | `info` | `error`, `warn`, `info`, `http` or `debug`. |
+| `DASHBOARD_URL` | No | `http://localhost:4201` | The dashboard's address, used in device login and invite links. |
+| `PUBLIC_URL` | No | — | The address payment providers reach for [webhooks](/docs/guides/webhooks/public-url). In development this is a tunnel URL. Without it, webhook setup with Stripe or Razorpay fails. |
+| `COOKIE_SECURE` | No | `false` | `true` marks the dashboard session cookie `Secure`. Set it to `true` when the dashboard is served over HTTPS. |
+| `ALLOW_PRIVATE_HTTP_UPSTREAMS` | No | `true` | Allows plain `http://` service URLs on private and loopback addresses (`localhost`, `10.x`, `192.168.x`…). Set `false` on shared, hosted servers. `https://` is always allowed. |
+| `UPSTREAM_EXTRA_CA_FILE` | No | — | Test only: an extra CA file trusted for upstream services. The backend refuses to start with it when `NODE_ENV=production`. |
+
+```bash title=".env"
+NODE_ENV=development
+PORT=4200
+MONGODB_URI=mongodb://127.0.0.1:27017/cb
+MASTER_KEY=<output of: openssl rand -base64 32>
+SERVER_SECRET=<a second, different key>
+DASHBOARD_URL=http://localhost:4201
+```
+
+<Callout type="danger" title="Keep MASTER_KEY safe">
+  Every stored secret is encrypted with `MASTER_KEY`. If you lose or change it, stored secrets can't be
+  decrypted. Never commit it, and back it up outside the server.
+</Callout>
+
+## Dashboard
+
+The dashboard forwards every `/api/*` request to the backend, so the browser only ever talks to the
+dashboard's own origin. For local development, copy `.env.example` to `.env.local`. See
+[Self-host the dashboard](/docs/guides/self-host/dashboard).
+
+| Name | Required | Default | Purpose |
+|---|---|---|---|
+| `CB_API_URL` | No | `http://localhost:4200` | The backend that `/api/*` requests are forwarded to. |
+| `CB_DEV_ORIGINS` | No | — | Development only: extra hostnames, comma-separated, allowed to open the dev server (for example your LAN IP). |
+
+The dashboard runs on port `4201` (`npm run dev` and `npm start`).
+
+## CLI
+
+The `cb` CLI and the background agent read these. You rarely need any of them.
+
+| Name | Required | Default | Purpose |
+|---|---|---|---|
+| `CB_SERVER_URL` | No | `http://localhost:4200` | The backend to use when no `--server` flag is given. Takes precedence over `server` in `.cb/project.json`. See [server resolution](/docs/reference/cli#server-resolution). |
+| `CB_HOME` | No | `~/.cb` (`%USERPROFILE%\.cb` on Windows) | Folder for cb's local files: credentials, snapshots, state, logs. Each `CB_HOME` gets its own background agent and its own keychain entry. See [Paths](/docs/reference/paths). |
+| `CB_CREDENTIAL_STORE` | No | OS keychain | `file` stores the device token in `credentials.json` instead of the OS keychain, for CI or machines without a keychain. |
+
+### Set by cb run
+
+`cb run` and `cb shell` set these for the command they start. Don't set them yourself.
+
+| Name | Purpose |
+|---|---|
+| `NODE_OPTIONS` | Extended with `--require` for the [preload](/docs/reference/api#preload-cbenvregister). Any options you already set are kept. |
+| `CB_SNAPSHOT_PATH` | Path of the snapshot the preload reads. Its presence tells `env.NAME` that it runs under `cb run`. |
+| `CB_LISTEN_FILE` | File where the preload records the port your app listens on, for webhook delivery. Set only while the port is being detected. |
+
+Your app also receives every variable of the environment, with stand-in values for protected keys.

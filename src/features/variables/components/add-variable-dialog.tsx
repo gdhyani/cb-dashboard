@@ -7,6 +7,7 @@ import { WebhookSetup } from "@/features/webhooks";
 import { ApiError } from "@/shared/api/api-error";
 import { FormError } from "@/shared/components/form-error";
 import { FormField } from "@/shared/components/form-field";
+import { ServiceLogo } from "@/shared/components/service-logo";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
@@ -29,7 +30,6 @@ import { AdvancedSection } from "./advanced-section";
 import { ExtrasSection } from "./extras-section";
 import { FieldInput } from "./field-input";
 import { ProviderSelect } from "./provider-select";
-import { ServiceLogo } from "./service-logo";
 import { TypeSelect } from "./type-select";
 
 const BASIC: TypeId[] = ["plain", "gen", "visible"];

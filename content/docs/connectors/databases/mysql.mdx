@@ -1,0 +1,187 @@
+---
+title: MySQL
+description: Connect your app to MySQL with mysql2, Prisma, Drizzle or Knex, without the real database password.
+status: beta
+---
+
+Store your real MySQL connection URL in cb once, and every developer's app gets a stand-in `DATABASE_URL` that
+points at the local cb agent. The cb gateway logs in to your database with the real user, including
+`caching_sha2_password` accounts and verified TLS, and passes the traffic through. Your driver or ORM works
+unchanged.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have the real connection URL, for example `mysql://user:password@db.example.com:3306/app`.
+- The cb server can reach the database (check firewalls and IP allow lists on managed providers).
+
+<Callout type="tip" title="Add ?ssl=true for hosted databases">
+  If your provider requires encrypted connections, add `?ssl=true` to the URL (`ssl-mode=REQUIRED` and
+  `sslmode=require` also work). cb then uses TLS to the database and always verifies its certificate and host name.
+</Callout>
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**Add variable** and set **What is this?** to **MySQL** (under Databases).
+</Step>
+<Step>
+### Name the key and paste the URL
+
+The dialog is titled **Add MySQL variable**. Type the **Key** your code reads, usually `DATABASE_URL`, and paste the
+real URL into **Connection URL**.
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb connects with the real URL and runs a test query before saving, for example "Connected as
+app@% (MySQL 8.4.0)". If the test fails, nothing is saved and the dialog shows the error.
+</Step>
+</Steps>
+
+<Frame src="/docs/images/connectors/add-mysql.png" alt="Add MySQL variable dialog, Key DATABASE_URL, Connection URL filled (masked)" caption="Add MySQL variable dialog, Key DATABASE_URL, Connection URL filled (masked)" />
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, usually `DATABASE_URL`.
+  </Field>
+  <Field name="What is this?" type="select" required default="MySQL">
+    The variable type.
+  </Field>
+  <Field name="Connection URL" type="secret" required>
+    The real URL, such as `mysql://user:password@host:3306/db`. Write-only: nobody can view it after saving, but you
+    can replace it.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="CA certificate (PEM)" type="multiline">
+    Only for self-hosted servers or providers that give you a CA file (Aiven, DigitalOcean). cb trusts it for this
+    database only, on top of the public certificate authorities.
+  </Field>
+</Fields>
+
+<Callout type="note">
+  Developers get a stand-in made by cb for each device; there is nothing to enter for it. To give some people a
+  different database user, use **Who can use it** from the row's "…" menu; see [Access](/docs/guides/dashboard/access).
+</Callout>
+
+## What your app sees
+
+A local URL with a stand-in user and password. The hop from your app to the local agent never leaves your machine,
+so it has no TLS options; the encrypted part runs from the gateway to your database.
+
+<EnvTable rows={[
+  {
+    name: "DATABASE_URL",
+    example: "mysql://cbu_ab12cd34:…@127.0.0.1:7403/app",
+    kind: "stand-in",
+  },
+]} />
+
+## Use it in code
+
+Pass the variable to your library as you do in production.
+
+<Tabs items={["mysql2", "Prisma", "Drizzle", "Knex"]}>
+<Tab value="mysql2">
+```ts title="src/db.ts"
+import mysql from "mysql2/promise";
+
+export const pool = mysql.createPool(process.env.DATABASE_URL as string);
+
+const [rows] = await pool.query("SELECT 1 + 1 AS two");
+```
+</Tab>
+<Tab value="Prisma">
+```prisma title="prisma/schema.prisma"
+datasource db {
+  provider = "mysql"
+}
+```
+
+```ts title="prisma.config.ts"
+import { defineConfig } from "prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  datasource: { url: process.env.DATABASE_URL ?? "" },
+});
+```
+
+```ts title="src/lib/db.ts"
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { PrismaClient } from "@/generated/prisma/client";
+
+const url = new URL(process.env.DATABASE_URL as string);
+
+export const prisma = new PrismaClient({
+  adapter: new PrismaMariaDb({
+    host: url.hostname,
+    port: Number(url.port),
+    user: decodeURIComponent(url.username),
+    password: decodeURIComponent(url.password),
+    database: url.pathname.slice(1),
+  }),
+});
+```
+</Tab>
+<Tab value="Drizzle">
+```ts title="src/db.ts"
+import { drizzle } from "drizzle-orm/mysql2";
+
+export const db = drizzle(process.env.DATABASE_URL as string);
+```
+</Tab>
+<Tab value="Knex">
+```ts title="src/db.ts"
+import knex from "knex";
+
+export const db = knex({ client: "mysql2", connection: process.env.DATABASE_URL });
+```
+</Tab>
+</Tabs>
+
+<Callout type="warning" title="Don't force TLS in code">
+  Remove `ssl` options from your client for local runs. TLS to the real database is set by the stored URL, not by
+  your app.
+</Callout>
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+Migrations and other tools that open their own connection need cb too:
+
+```bash
+npx cb run -- npx prisma migrate deploy
+npx cb run -- npx knex migrate:latest
+```
+
+See [cb run](/docs/guides/develop/cb-run) and [Custom scripts](/docs/guides/develop/custom-scripts).
+
+## Limits
+
+- **Logins:** the real user can use `caching_sha2_password` (the MySQL 8 default) or `mysql_native_password`.
+  Towards your app, cb uses `mysql_native_password`, which mysql2 and the other clients above support.
+- **TLS:** used when the stored URL asks for it (`ssl=true`, `ssl-mode=REQUIRED`, `VERIFY_CA`, `VERIFY_IDENTITY`,
+  `sslmode=require`…), always with certificate and host name checks.
+- The app connects to the agent without TLS.
+- If an admin revokes your access, the connection ends with "cb: access revoked by admin" within seconds.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| **Save & test** says "the server requires TLS: add ?ssl=true to the connection URI" | The server refuses plain connections. Add `?ssl=true` to the URL and save again. |
+| "cb: the database does not offer TLS" | The stored URL asks for TLS but the server doesn't support it. Fix the server, or remove the TLS option for a server on a private network. |
+| "cb: the gateway could not verify the database's TLS certificate" | The server uses a private certificate authority. Paste its CA into **CA certificate (PEM)** under Advanced. |
+| `Access denied for user 'cbu_…'` | The stand-in belongs to another device or is stale. Run the app under `cb run` on this machine and don't copy the URL between machines. |
+| "cb: the gateway could not authenticate to the database" | The stored credentials stopped working. Replace the value with a working URL; see [Rotate a secret](/docs/guides/admin/rotate-secret). |
+| `cb: … no access` in the `cb run` output | You don't have access to this service. Ask an admin; see [Access](/docs/guides/admin/access). |

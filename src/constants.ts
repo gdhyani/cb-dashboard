@@ -11,3 +11,14 @@ export const CLI_COMMANDS = {
   init: "npx cb init",
   run: "npm run dev",
 } as const;
+export const DOCS_PATH = "/docs";
+/** Prebuilt local search index (outside /api/*, which is rewritten to the backend). */
+export const DOCS_SEARCH_PATH = "/docs-search";
+export const GITHUB_URLS = {
+  env: "https://github.com/gdhyani/cb-env",
+  backend: "https://github.com/gdhyani/cb-backend",
+  dashboard: "https://github.com/gdhyani/cb-dashboard",
+} as const;
+/** Plain Markdown of a docs page ("Copy page", "View as Markdown"); outside the /api rewrite. */
+export const DOCS_MARKDOWN_PATH = "/docs-md";
+export const GITHUB_REPO = { owner: "gdhyani", repo: "cb-env" } as const;

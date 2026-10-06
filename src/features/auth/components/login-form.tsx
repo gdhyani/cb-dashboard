@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
+import { DOCS_PATH } from "@/constants";
+import { DocsLink } from "@/shared/components/docs-link";
 import { FormError } from "@/shared/components/form-error";
 import { FormField } from "@/shared/components/form-field";
 import { PasswordInput } from "@/shared/components/password-input";
@@ -66,6 +68,9 @@ export function LoginForm() {
           >
             Create one
           </Link>
+          <span className="mt-3 flex justify-center">
+            <DocsLink href={DOCS_PATH}>Read the docs</DocsLink>
+          </span>
         </>
       }
     >

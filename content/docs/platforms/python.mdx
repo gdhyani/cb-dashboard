@@ -1,0 +1,22 @@
+---
+title: Python
+description: Running Python apps under cb is not available yet.
+status: coming-soon
+---
+
+cb works with JavaScript apps that run on Node.js today. Support for Python and other languages is planned, but not available yet.
+
+## Status
+
+Python isn't supported yet. cb's [preload](/docs/guides/develop/preload-and-api) — the part that routes your app's connections to protected services — is a Node.js module, so a Python process gets none of your cb values and its connections aren't routed through cb.
+
+## What to do meanwhile
+
+You have two options:
+
+- **Call services from a Node.js service.** Put the calls that need protected values — a database, Stripe, an AI provider — in a small Node.js service that runs under cb, and have your Python code call that service over HTTP. The Node.js side works as described on [Node.js (Express)](/docs/platforms/node-express) or [Fastify, Koa, Hono](/docs/platforms/node-frameworks).
+- **Wait for Python support.** Keep your current setup until it's available.
+
+## Follow along
+
+Track progress, or tell us what you need, on [GitHub issues](https://github.com/gdhyani/cb-env/issues).

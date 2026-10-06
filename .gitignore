@@ -1,8 +1,12 @@
 # Private: git/GitHub account rules (never commit)
 GITHUB.md
 
-# Local-only docs: plans, specs, trial notes (never committed)
-docs/
+# Local-only docs: plans, specs, trial notes (never committed). Root only: content/docs, public/docs
+# and src/app/docs are the public documentation site and ARE committed.
+/docs/
+
+# Fumadocs generated collections
+.source/
 
 # Dependencies & build
 node_modules/
@@ -25,3 +29,6 @@ next-env.d.ts
 .pnp
 .pnp.*
 npm-debug.log*
+
+# Raw docs screenshots (framed copies go to public/docs/images)
+docs-images-raw/

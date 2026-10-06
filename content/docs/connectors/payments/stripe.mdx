@@ -1,0 +1,125 @@
+---
+title: Stripe
+description: Call the Stripe API with the official stripe SDK while the real secret key stays on the cb server.
+---
+
+Store your real Stripe secret key in cb once, and every developer's app gets a stand-in key. Under `cb run`, calls
+the official `stripe` SDK makes to `api.stripe.com` are redirected through cb, which checks the stand-in, swaps in
+the real key and streams Stripe's answer back. Your Stripe code doesn't change at all.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have a Stripe secret key (`sk_test_…` or `sk_live_…`) or a restricted key, from the API keys page of
+  the Stripe Dashboard.
+
+<Callout type="tip" title="Use a test-mode key for development">
+  Give development environments a `sk_test_…` key so developers create test objects only. Keep live keys for the
+  environments that really need them.
+</Callout>
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**Stripe** in the **Quick add** row, or click **Add variable** and set **What is this?** to **Stripe**.
+</Step>
+<Step>
+### Name the key and paste the secret key
+
+The dialog is titled **Add Stripe variable**. Type the **Key** your code reads, usually `STRIPE_SECRET_KEY`, and paste
+the real key into **Secret key**.
+</Step>
+<Step>
+### Add the publishable key (optional)
+
+If your front end needs the publishable key, open **Suggested extra keys**, tick
+`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, rename it to match your code if needed, and paste the `pk_…` key. It is public,
+so developers get it as-is.
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb calls Stripe with the real key before saving. If Stripe rejects it ("The API rejected the
+key (HTTP 401)"), nothing is saved.
+</Step>
+</Steps>
+
+<Frame src="/docs/images/connectors/add-stripe.png" alt="Add Stripe variable dialog, Key STRIPE_SECRET_KEY, Secret key filled (masked), Suggested extra keys open" caption="Add Stripe variable dialog, Key STRIPE_SECRET_KEY, Secret key filled (masked), Suggested extra keys open" />
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, usually `STRIPE_SECRET_KEY`.
+  </Field>
+  <Field name="What is this?" type="select" required default="Stripe">
+    The variable type.
+  </Field>
+  <Field name="Secret key" type="secret" required>
+    The real key: `sk_live_…`, `sk_test_…` or a restricted key. Write-only: nobody can view it after saving, but you
+    can replace it.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" type="text">
+    Under **Suggested extra keys**: the publishable key (`pk_…`), stored as a plain value. Rename it to whatever your
+    code reads, such as `VITE_STRIPE_PUBLISHABLE_KEY`.
+  </Field>
+</Fields>
+
+## What your app sees
+
+The secret key is a stand-in made by cb for each device. It only works through cb.
+
+<EnvTable rows={[
+  { name: "STRIPE_SECRET_KEY", example: "sk_test_cb_…", kind: "stand-in" },
+  { name: "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", example: "pk_test_…", kind: "plain" },
+]} />
+
+## Use it in code
+
+Use the official SDK exactly as in production. Don't set a custom host or base URL.
+
+```ts title="app/api/pay/route.ts"
+import Stripe from "stripe";
+
+export async function GET() {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+  const intent = await stripe.paymentIntents.create({ amount: 1999, currency: "usd" });
+  return Response.json({ id: intent.id, status: intent.status });
+}
+```
+
+<Callout type="note" title="Webhooks">
+  To receive Stripe webhooks on each developer's machine, add a **Webhook signing secret** variable. cb sends each
+  event to the developer whose app caused it. See [Stripe webhooks](/docs/guides/webhooks/stripe).
+</Callout>
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+`cb run` redirects connections to `api.stripe.com` from your app to the local agent, which tunnels them to the cb
+gateway. `npx cb env print` lists the redirect. See [How it works](/docs/overview/how-it-works).
+
+## Limits
+
+- Only `api.stripe.com` is redirected. Calls your server makes to other Stripe hosts don't go through cb.
+- The redirect applies to Node.js processes started by `cb run`. Browser code uses the publishable key directly with
+  Stripe, as usual.
+- If a Stripe response contains the real key, cb replaces it with `[cb-redacted]`.
+- If an admin revokes your access, API calls return `403` with `{"error":"cb_access_revoked"}`.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `Invalid API Key provided: sk_test_cb_…` | The app isn't running under `cb run`, so the stand-in went straight to Stripe. Start it with `npx cb run -- …` or the scripts `cb init` set up. |
+| `401` with `{"error":"cb_invalid_credential"}` | The stand-in belongs to another device or is stale. Run the app under `cb run` on this machine and don't copy the key between machines. |
+| **Save & test** fails with "The API rejected the key" | The key is wrong, revoked, or a restricted key without read access to the balance. Paste a working key. |
+| `403` with `{"error":"cb_access_revoked"}` | You don't have access to this service, or it was revoked. Ask an admin; see [Access](/docs/guides/admin/access). |

@@ -16,7 +16,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    // `dark`: the app is dark only; the docs theme (Fumadocs) keys its tokens off this class.
+    <html lang="en" className={`dark ${geistSans.variable} ${geistMono.variable}`}>
       <body className="min-h-dvh">
         <AppProviders>{children}</AppProviders>
       </body>

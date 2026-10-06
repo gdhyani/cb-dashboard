@@ -1,0 +1,148 @@
+---
+title: Email (SMTP)
+description: Send email through SendGrid, Amazon SES, Mailgun or any SMTP server with nodemailer, without the real SMTP password.
+status: beta
+---
+
+Store your real SMTP URL in cb once. Every developer's app gets a stand-in login for a local mail server run by the
+cb agent. When the app logs in, the cb gateway checks the stand-in, opens its own session to your real mail server
+with the real login over TLS, and relays the message. nodemailer works unchanged.
+
+## Before you start
+
+- You are an owner or admin of the organization.
+- You have the real SMTP host, port, username and password from your mail provider. For SendGrid the username is
+  literally `apikey` and the password is the API key.
+- The cb server can reach the mail server on that port.
+- Developers who will run the app have [access](/docs/guides/dashboard/access) to the environment.
+
+## Add it in the dashboard
+
+<Steps>
+<Step>
+### Open the Variables tab
+
+Open your project, pick the environment, and go to the [Variables tab](/docs/guides/dashboard/variables). Click
+**SMTP** in the **Quick add** row, or click **Add variable** and set **What is this?** to **Email (SMTP)**. The
+dialog is titled **Add SMTP variable**.
+</Step>
+<Step>
+### Name the key and paste the SMTP URL
+
+Type the **Key** your code reads, for example `SMTP_URL`, and paste the real URL into **SMTP URL**, such as
+`smtp://user:password@smtp.sendgrid.net:587`. Use `smtps://…:465` for a server that wants TLS from the start.
+</Step>
+<Step>
+### Choose the extra keys
+
+If your code reads separate settings instead of one URL, open **Suggested extra keys** and tick `SMTP_HOST`,
+`SMTP_PORT`, `SMTP_USER` and `SMTP_PASS`. Rename them to match your code.
+
+<Callout type="tip">
+  If your code reads `SMTP_SECURE`, add it as a separate **Plain value** variable set to `false`. The local mail
+  server speaks plain SMTP on `127.0.0.1`; cb adds TLS on the way to the real server.
+</Callout>
+</Step>
+<Step>
+### Save & test
+
+Click **Save & test**. cb logs in to the mail server with the real URL from its server before saving. If the login
+fails, nothing is saved and the dialog shows the error.
+</Step>
+</Steps>
+
+<Frame src="/docs/images/connectors/add-smtp.png" alt="Add SMTP variable dialog, Key SMTP_URL, SMTP URL filled (masked), Suggested extra keys open with SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS" caption="Add SMTP variable dialog, Key SMTP_URL, SMTP URL filled (masked), Suggested extra keys open with SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS" />
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `SMTP_URL`. cb never names it for you.
+  </Field>
+  <Field name="What is this?" type="select" required default="Email (SMTP)">
+    The variable type.
+  </Field>
+  <Field name="SMTP URL" type="secret" required>
+    The real URL, such as `smtp://user:password@smtp.sendgrid.net:587`. Write-only: nobody can view it after
+    saving, but you can replace it.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="CA certificate (PEM)" type="multiline">
+    Only for a self-hosted mail server with a private certificate authority. cb trusts it for this server only, on
+    top of the public certificate authorities.
+  </Field>
+</Fields>
+
+## What your app sees
+
+<EnvTable rows={[
+  { name: "SMTP_URL", example: "smtp://cbu_ab12cd34:…@127.0.0.1:7410", kind: "stand-in" },
+  { name: "SMTP_HOST", example: "127.0.0.1", kind: "stand-in" },
+  { name: "SMTP_PORT", example: "7410", kind: "stand-in" },
+  { name: "SMTP_USER", example: "cbu_ab12cd34", kind: "stand-in" },
+  { name: "SMTP_PASS", example: "32-character stand-in made for this device", kind: "stand-in" },
+]} />
+
+The extra keys appear only if you ticked them. The port belongs to the local agent and is kept between runs.
+
+## Use it in code
+
+<Tabs items={["SMTP URL", "Separate settings"]}>
+<Tab value="SMTP URL">
+```ts title="lib/mail.ts"
+import nodemailer from "nodemailer";
+
+const mailer = nodemailer.createTransport(process.env.SMTP_URL);
+
+await mailer.sendMail({
+  from: "shop@acme.example",
+  to: "ada@acme.example",
+  subject: "Your order",
+  text: "Thanks for your order!",
+});
+```
+</Tab>
+<Tab value="Separate settings">
+```ts title="lib/mail.ts"
+import nodemailer from "nodemailer";
+
+const mailer = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: process.env.SMTP_SECURE === "true", // false under cb
+  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+});
+```
+</Tab>
+</Tabs>
+
+On the real side, cb uses implicit TLS for an `smtps://` URL, and STARTTLS for `smtp://` when the server offers it.
+The server's certificate is always verified.
+
+## Run it
+
+```bash
+npx cb run -- npm run dev
+```
+
+If you ran `cb init`, your package scripts already run under cb. To see the stand-in values, run
+`npx cb env print`. See [cb run](/docs/guides/develop/cb-run).
+
+## Limits
+
+- The app must log in with `AUTH PLAIN` or `AUTH LOGIN`, which nodemailer uses by default.
+- The local mail server doesn't offer TLS. Leave `secure` off and don't set `requireTLS` for it.
+- One SMTP variable talks to one mail server and one login.
+- If an admin revokes your access, the session ends with "421 4.7.0 cb: access revoked by admin".
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| **Save & test** times out | The cb server can't reach the mail server on that port. Some hosts block outbound port 25; use 587 or 465. |
+| "535 5.7.8 Authentication credentials invalid" in your app | The app logged in with values that aren't this device's stand-ins, for example an old password from a `.env` file. Run `npx cb doctor`. |
+| "530 5.7.0 Authentication required" | The app sent mail without logging in. Pass `auth` (or a URL with a user and password) to nodemailer. |
+| TLS or "wrong version number" errors | The app tried TLS to the local server. Set `secure: false` and remove `requireTLS`. |
+| "421 4.7.0 cb: the gateway could not reach the mail server" | The cb server couldn't open or log in to the real session. Check the SMTP URL with **Replace value**. |
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

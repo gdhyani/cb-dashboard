@@ -1,0 +1,40 @@
+---
+title: Welcome to cb
+description: Run your app against real databases and APIs without a single real secret on your laptop.
+---
+
+cb gives every developer on your team a working app — real Postgres, real Stripe, real OpenAI — without ever
+handing them a real secret. Your code reads `process.env` exactly as it does today. The values it finds are
+**stand-ins** that only work through cb; the real credentials stay encrypted on the cb server, and you can
+revoke anyone's access in seconds.
+
+<ArchitectureDiagram />
+
+## Start here
+
+<Cards>
+  <Card title="Quick start" href="/docs/quick-start">
+    From sign-up to your app running under cb in about ten minutes.
+  </Card>
+  <Card title="How it works" href="/docs/overview/how-it-works">
+    Stand-in values, the local agent and the gateway, explained.
+  </Card>
+  <Card title="Supported platforms" href="/docs/platforms">
+    Next.js, Node.js, NestJS, Vite and more — and what changes for each.
+  </Card>
+  <Card title="Connectors" href="/docs/connectors">
+    Databases, payments, AI, cloud, email, sign-in and push providers.
+  </Card>
+</Cards>
+
+## Who these docs are for
+
+- **Developers** — install `@cb/env`, run `cb run`, and keep using the official SDKs you already know.
+  Start with the [Quick start](/docs/quick-start) and your [platform](/docs/platforms).
+- **Admins** — add your services once, decide who can use them, and see every connection in the audit log.
+  Start with [Variables](/docs/guides/dashboard/variables) and [Access](/docs/guides/admin/access).
+- **Contributors** — cb is open source under Apache-2.0. See [Contributing](/docs/community).
+
+<Callout type="tip" title="New to cb?">
+  Read [What is cb](/docs/overview) first — it takes two minutes and makes everything else click.
+</Callout>

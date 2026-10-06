@@ -1,0 +1,493 @@
+---
+title: CLI
+description: Every cb command, its flags, its JSON output and its exit codes.
+---
+
+The `cb` command ships with the `@cb/env` package. You use it to log in your device, link a folder to a
+[project](/docs/overview/concepts#project), and run your app with [stand-in values](/docs/overview/concepts#stand-in-values)
+and brokered connections. This page lists every command and flag the CLI accepts.
+
+Run any command through your package manager, or directly once the package is installed in your project:
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+<Tab value="npm">
+```bash
+npx cb --help
+```
+</Tab>
+<Tab value="pnpm">
+```bash
+pnpm exec cb --help
+```
+</Tab>
+<Tab value="yarn">
+```bash
+yarn cb --help
+```
+</Tab>
+</Tabs>
+
+## Common flags
+
+These flags are accepted by the commands listed in each command's table below; they are not accepted
+everywhere.
+
+| Flag | What it does |
+|---|---|
+| `--server <url>` | The cb backend to talk to. See [server resolution](#server-resolution). |
+| `--json` | Print one line of machine-readable JSON instead of text. Offered by commands that output data. |
+| `--env <name>` | The [environment](/docs/overview/concepts#environment) to use instead of your default one. |
+| `-h`, `--help` | Show help for the command. |
+| `-V`, `--version` | Print the CLI version (top level only: `cb --version`). |
+
+### Server resolution
+
+When a command needs the backend URL, it uses the first of these that is set:
+
+1. The `--server` flag.
+2. The `CB_SERVER_URL` environment variable.
+3. The `server` field in the nearest [`.cb/project.json`](/docs/reference/project-json).
+4. `http://localhost:4200`.
+
+Trailing slashes are removed. `cb types` and `cb up` don't take `--server`; they use `CB_SERVER_URL` or the
+`server` in `.cb/project.json`. `cb env print` always uses the `server` in `.cb/project.json`.
+
+### Environment resolution
+
+Commands that take `--env` pick the environment in this order: the `--env` flag, then the default you set with
+[`cb env use`](#cb-env-use) for this project, then `defaultEnvironment` from `.cb/project.json`.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | The command succeeded. |
+| `1` | The command failed. The error message on stderr states the cause and the next step; when the backend returned an error, a `correlation id:` line follows it. |
+| child's code | `cb run` and `cb shell` exit with the exit code of the command they ran. A command killed by a signal exits with `128 + signal number`. |
+
+## cb login
+
+Logs in this device with a device code that you approve in the dashboard.
+
+```bash
+cb login [--server <url>] [--no-browser]
+```
+
+| Flag | Default | What it does |
+|---|---|---|
+| `--server <url>` | See [server resolution](#server-resolution) | Backend to log in to. |
+| `--no-browser` | Opens the browser | Print the approval URL without opening a browser. |
+
+The command prints a URL and a code, opens the URL, and waits until you approve the code in the dashboard.
+The device is registered with your machine's hostname and OS. If you were already logged in to that server,
+the new login replaces the old device token.
+
+The device token is stored in your OS keychain. Where no keychain is available, it falls back to
+`~/.cb/credentials.json`, readable only by you, and the command tells you so. See [Paths](/docs/reference/paths).
+
+```bash
+npx cb login --server https://cb.example.com
+```
+
+Fails with exit code `1` when the code expires before it is approved (`cb: the login code expired before it
+was approved. Run "npx cb login" again.`) or the server can't be reached.
+
+## cb logout
+
+Revokes this device on the server and removes its token from this machine.
+
+```bash
+cb logout [--server <url>]
+```
+
+| Flag | Default | What it does |
+|---|---|---|
+| `--server <url>` | See [server resolution](#server-resolution) | Backend to log out of. |
+
+If the server already rejects the token (for example, an admin revoked the device), the local token is still
+removed. If you are not logged in, the command prints `Not logged in to <server>.` and exits `0`.
+
+```bash
+npx cb logout
+```
+
+## cb whoami
+
+Shows the logged-in user, their organizations and roles, the device and, inside a linked folder, the project.
+
+```bash
+cb whoami [--server <url>] [--json]
+```
+
+| Flag | Default | What it does |
+|---|---|---|
+| `--server <url>` | See [server resolution](#server-resolution) | Backend to ask. |
+| `--json` | Off | Print `{ server, device, user, memberships, deviceId }`. |
+
+```bash
+npx cb whoami
+```
+
+```text
+user    Ada Lovelace <ada@acme.example>
+server  http://localhost:4200
+device  ada-mbp
+org     Acme (owner)
+project shop (development)
+```
+
+Exits `1` when you are not logged in.
+
+## cb init
+
+Links the current folder to a cb project and wires your `package.json` scripts to `cb run`.
+
+```bash
+cb init [--server <url>] [--org <id|name>] [--project <id|slug>] [--env <name>] [-y]
+```
+
+| Flag | Default | What it does |
+|---|---|---|
+| `--server <url>` | See [server resolution](#server-resolution) | Backend that holds the project. Written to `.cb/project.json`. |
+| `--org <id\|name>` | Prompt (or the only one) | [Organization](/docs/overview/concepts#organization) to use. |
+| `--project <id\|slug>` | Prompt (or the only one) | Project to link. |
+| `--env <name>` | Prompt; with `-y`, `development` or the first environment | Default environment for this folder. |
+| `-y`, `--yes` | Off | Accept defaults and apply script changes without prompting. |
+
+What it does, in order:
+
+1. Lists your organizations, projects and environments and asks you to choose (an only choice is picked
+   automatically). Without a terminal, or with `-y`, it does not prompt; if several organizations or projects
+   match, it fails and asks you to pass `--org` or `--project`.
+2. Writes [`.cb/project.json`](/docs/reference/project-json). If you don't have access to the chosen
+   environment yet, it says so.
+3. Shows a diff of `package.json` scripts that start a Node tool (`node`, `nodemon`, `tsx`, `ts-node`,
+   `ts-node-dev`, `next`, `nest`, `vite`, `remix`, `nuxt`, `astro`, `react-router`, `tsup`, `jest`, `vitest`,
+   `mocha`) and, once you confirm, prefixes them with `cb run --`. Scripts that already start with `cb run`
+   are left alone.
+4. Warns about any `.env*` file (other than `.env.example`) that still defines a key cb manages, so you can
+   delete the real value from disk.
+
+```bash
+npx cb init --org Acme --project shop --env development -y
+```
+
+```text
+Linked .cb/project.json → Acme / shop / development
+package.json scripts:
+  - dev: next dev
+  + dev: cb run -- next dev
+Updated package.json.
+Next: run your app as usual, e.g. "npm run dev".
+```
+
+Exits `1` when you are not logged in, nothing matches a flag, or a choice is needed but there is no terminal.
+
+## cb run
+
+Runs a command with the environment's variables in `process.env` and its connections brokered through cb.
+
+```bash
+cb run [--env <name>] [--server <url>] [--no-restart] [--webhook-port <port>] -- <cmd...>
+```
+
+| Flag | Default | What it does |
+|---|---|---|
+| `--env <name>` | See [environment resolution](#environment-resolution) | Environment to run against. |
+| `--server <url>` | See [server resolution](#server-resolution) | Backend to use. |
+| `--no-restart` | Restart on | Don't restart your command when the environment's configuration changes. |
+| `--webhook-port <port>` | The port your app listens on (detected) | Deliver [webhooks](/docs/guides/webhooks/how-it-works) to this local port. |
+
+Everything after `--` is the command to run. `cb run`:
+
+- Starts the background agent if it isn't running and attaches this project's environment to it.
+- Starts your command with the environment's values merged into its environment (cb's values win for keys
+  cb manages) and `NODE_OPTIONS` extended with `--require` for the [preload](/docs/reference/api#preload-cbenvregister).
+- Forwards stdin, stdout, stderr and signals, and exits with your command's exit code.
+- Restarts your command when an admin changes the environment's configuration, unless you pass `--no-restart`.
+- Prints a banner when access is revoked and leaves your app running so it reports its own errors. It refuses
+  to start while access is revoked.
+- Checks the background agent every 5 seconds and restarts it on the same ports if it has stopped.
+
+The webhook port is chosen in this order: `--webhook-port`, `webhookPort` in `.cb/project.json`, then the port
+your app actually opens. If no listening port is seen within 10 seconds, webhooks go to `PORT` or `3000`.
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "cb run -- next dev"
+  }
+}
+```
+
+```bash
+npx cb run --env staging -- node server.js
+```
+
+<Callout type="tip">
+  Wire your scripts with [`cb init`](#cb-init) and keep running `npm run dev`. See
+  [Running your app with cb run](/docs/guides/develop/cb-run).
+</Callout>
+
+Exits with your command's code, or `1` when the folder isn't linked (`cb: this folder isn't linked to a cb
+project. Run "npx cb init".`), you are not logged in, access is revoked, or `--webhook-port` is not a port
+number.
+
+## cb shell
+
+Opens your interactive shell with the same environment and preload as `cb run`, so every Node tool you start
+from it is brokered too.
+
+```bash
+cb shell [--env <name>] [--server <url>]
+```
+
+| Flag | Default | What it does |
+|---|---|---|
+| `--env <name>` | See [environment resolution](#environment-resolution) | Environment to use. |
+| `--server <url>` | See [server resolution](#server-resolution) | Backend to use. |
+
+The shell is `$SHELL` (or `/bin/sh`) on macOS and Linux, and `%COMSPEC%` (or `cmd.exe`) on Windows. The prompt
+is prefixed with `(cb:<env>)`; your shell's rc files may override it. The shell is never restarted on
+configuration changes.
+
+```bash
+npx cb shell --env development
+```
+
+Exits with the shell's exit code.
+
+## cb env print
+
+Prints the environment your app will see: stand-in values, plain values and personal generated values. It
+never prints real secrets, except values an admin marked as shown as-is, which are labelled.
+
+```bash
+cb env print [--env <name>] [--json]
+```
+
+| Flag | Default | What it does |
+|---|---|---|
+| `--env <name>` | See [environment resolution](#environment-resolution) | Environment to print. |
+| `--json` | Off | Print `{ environment, env, visibleKeys, redirects }`. |
+
+Local ports that the agent has not assigned yet are shown as `127.0.0.1:<port>`. Each redirected host is
+listed as a comment.
+
+```bash
+npx cb env print
+```
+
+```text
+DATABASE_URL=postgresql://cbu_ab12cd34:…@127.0.0.1:7401/app
+OPENAI_API_KEY=sk-cb-…
+# api.openai.com:443 → agent (TLS terminated by the gateway)
+```
+
+## cb env use
+
+Sets your default environment for the linked project on this machine.
+
+```bash
+cb env use <name>
+```
+
+The choice is stored in `~/.cb/state.json` and is used by `cb run`, `cb shell`, `cb env print`, `cb types`,
+`cb up` and `cb webhooks listen` until you pass `--env` or run `cb env use` again. It does not change
+`.cb/project.json`.
+
+```bash
+npx cb env use staging
+```
+
+```text
+Default environment for shop is now "staging".
+```
+
+## cb status
+
+Shows backend health, your login and the project link.
+
+```bash
+cb status [--server <url>] [--json]
+```
+
+| Flag | Default | What it does |
+|---|---|---|
+| `--server <url>` | See [server resolution](#server-resolution) | Backend to check. |
+| `--json` | Off | Print `{ server, health, user, device, project }`. |
+
+```bash
+npx cb status
+```
+
+```text
+server  http://localhost:4200  ok  (mongodb up, uptime 2h, v0.0.0)
+login   ada@acme.example (device "ada-mbp")
+project shop (default env: development)
+```
+
+Exits `1` when the backend can't be reached.
+
+## cb doctor
+
+Checks your setup and suggests a fix for each problem.
+
+```bash
+cb doctor [--server <url>] [--json]
+```
+
+| Flag | Default | What it does |
+|---|---|---|
+| `--server <url>` | See [server resolution](#server-resolution) | Backend to check. |
+| `--json` | Off | Print `{ ok, checks: [{ name, status, detail, fix }] }`. `status` is `ok`, `warn` or `fail`. |
+
+Checks, in order:
+
+| Check | Fails or warns when |
+|---|---|
+| Node.js | Node.js is older than 22 (fail). |
+| Server | The backend can't be reached (fail). |
+| Login | You are not logged in to that server (fail). |
+| Keychain | No OS keychain is available, so the token is stored in `~/.cb/credentials.json` (warn). |
+| Agent | Never fails; reports whether the background agent is running. |
+| Ports | A local port cb assigned is in use by another process (fail). |
+| Project | The folder isn't linked (warn). |
+| package.json scripts | A `dev` or `start` script exists but no script uses `cb run` (warn). |
+| `.env*` files | A file contains a value that looks like a real secret, such as a live Stripe key, an AWS access key, a private key, a provider API key or a database URL with a password for a remote host (fail), or defines a key cb already provides (warn). Files ending in `.example`, `.sample` or `.template` are skipped. |
+
+```bash
+npx cb doctor
+```
+
+```text
+✓ Node.js                      v22.12.0
+✓ Server                       http://localhost:4200
+✓ Login                        ada@acme.example on "ada-mbp"
+✓ Keychain                     device token stored in the OS keychain
+✓ Agent                        not running (starts with `cb run` or `cb up`)
+✓ Ports                        3 listener port(s) available
+✓ Project                      shop (development)
+✓ package.json scripts         dev use cb run
+! .env: cb-managed keys        DATABASE_URL
+  → cb already provides these; remove them from .env so stale values never shadow cb's.
+
+All good.
+```
+
+Exits `1` when any check fails, `0` otherwise (warnings don't fail).
+
+## cb types
+
+Generates `.cb/env.d.ts` with the variable names of an environment, so `env.NAME` from `@cb/env` and
+`process.env.NAME` are typed.
+
+```bash
+cb types [--env <name>] [--json]
+```
+
+| Flag | Default | What it does |
+|---|---|---|
+| `--env <name>` | See [environment resolution](#environment-resolution) | Environment whose variable names to use. |
+| `--json` | Off | Print `{ environment, keys }` instead of writing the file. |
+
+The file holds names only; values are delivered at run time by `cb run`. Re-run the command after variables
+change. See [`@cb/env` API](/docs/reference/api#typed-names-with-cb-types) for the file's shape.
+
+```bash
+npx cb types
+```
+
+```text
+cb: wrote .cb/env.d.ts (4 variable(s)).
+```
+
+## cb up
+
+Starts the background agent and opens the linked project's connections before you run anything.
+
+```bash
+cb up [--env <name>] [--json]
+```
+
+| Flag | Default | What it does |
+|---|---|---|
+| `--env <name>` | See [environment resolution](#environment-resolution) | Environment to attach. |
+| `--json` | Off | Print `{ running, pid, attached }`. `attached` is `{ environment, listeners }`, or `null` outside a linked folder. |
+
+Outside a linked folder, `cb up` only starts the agent. You rarely need it: `cb run` starts the agent itself.
+
+```bash
+npx cb up
+```
+
+```text
+cb: background agent running (pid 48213).
+cb: development ready — 3 brokered connection(s).
+```
+
+## cb down
+
+Stops the background agent. Apps that are still running lose their brokered connections.
+
+```bash
+cb down
+```
+
+Takes no flags. Same as `cb agent stop`.
+
+## cb agent
+
+Inspects or stops the background agent.
+
+### cb agent status
+
+```bash
+cb agent status [--json]
+```
+
+| Flag | Default | What it does |
+|---|---|---|
+| `--json` | Off | Print `{ running, … }`. When the agent runs, the object also holds its `version`, `pid`, `uptimeMs` and `sessions`. |
+
+Each session line shows the project and environment, its connections, redirected hosts, attached apps, open
+tunnels and whether access is revoked.
+
+```text
+agent 0.0.0 · pid 48213 · up 12m · log /Users/ada/.cb/logs/agent.log
+  shop / development: 3 connection(s), 1 redirect(s), 1 app(s), 2 open tunnel(s)
+```
+
+### cb agent stop
+
+```bash
+cb agent stop
+```
+
+Stops the background agent, like `cb down`.
+
+## cb webhooks listen
+
+By default, a provider webhook reaches only the device whose app caused it. `cb webhooks listen` also sends
+this device the events nobody on the team caused, such as events created in the provider's dashboard or CLI,
+for 12 hours.
+
+```bash
+cb webhooks listen [--off] [--env <name>] [--server <url>]
+```
+
+| Flag | Default | What it does |
+|---|---|---|
+| `--off` | Off | Stop receiving unclaimed events. |
+| `--env <name>` | See [environment resolution](#environment-resolution) | Environment whose webhooks to receive. |
+| `--server <url>` | See [server resolution](#server-resolution) | Backend to use. |
+
+```bash
+npx cb webhooks listen
+```
+
+```text
+cb: this device also receives unclaimed webhooks for development until 10/6/2026, 9:00:00 PM (stop: cb webhooks listen --off)
+```
+
+See [Listening for unclaimed events](/docs/guides/webhooks/listen).

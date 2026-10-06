@@ -1,0 +1,16 @@
+{
+  "title": "Connectors",
+  "defaultOpen": false,
+  "pages": [
+    "index",
+    "choosing-a-type",
+    "basic",
+    "databases",
+    "payments",
+    "ai",
+    "cloud",
+    "sign-in",
+    "push",
+    "other"
+  ]
+}

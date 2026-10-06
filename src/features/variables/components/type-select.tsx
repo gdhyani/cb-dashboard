@@ -1,8 +1,8 @@
 "use client";
 
+import { ServiceLogo } from "@/shared/components/service-logo";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { TYPE_GROUPS, TYPES, type TypeId } from "../lib/catalog";
-import { ServiceLogo } from "./service-logo";
 
 /** "What is this?" — grouped list of every type (D6: AI and sign-in are single entries with a provider). */
 export function TypeSelect({ id, value, onChange }: { id: string; value: TypeId; onChange: (type: TypeId) => void }) {

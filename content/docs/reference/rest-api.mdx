@@ -1,0 +1,120 @@
+---
+title: REST API
+description: The response envelope, error shape, error codes and correlation IDs of the cb backend API.
+---
+
+The cb backend serves a REST API under `/api`. The [CLI](/docs/reference/cli), the background agent and the
+dashboard are its clients, and every endpoint answers in the same envelope. This page describes that shape so
+you can read responses and errors when you debug or script against your own server.
+
+<Callout type="warning" title="Not a stable public API yet">
+  The API exists to serve the cb CLI and the dashboard. Endpoints and payloads can change between releases
+  without notice. The envelope, error shape and correlation ID described here are shared by every endpoint.
+</Callout>
+
+## Response envelope
+
+A successful response wraps its payload in `data` and carries a `meta` object:
+
+```json title="Success"
+{
+  "success": true,
+  "data": { "id": "665f1c418a4b3d0012ab34d1", "name": "shop" },
+  "meta": { "correlationId": "3f9a2c1e-6b7d-4e8f-9a0b-1c2d3e4f5a6b" }
+}
+```
+
+Lists that are paginated add `meta.pagination`:
+
+```json title="Paginated"
+{
+  "success": true,
+  "data": [],
+  "meta": {
+    "correlationId": "3f9a2c1e-6b7d-4e8f-9a0b-1c2d3e4f5a6b",
+    "pagination": {
+      "page": 1,
+      "pageSize": 20,
+      "total": 134,
+      "totalPages": 7,
+      "hasNext": true,
+      "hasPrev": false
+    }
+  }
+}
+```
+
+## Error shape
+
+Every error has `success: false` and an `error` object. The HTTP status matches `error.statusCode`.
+
+```json title="Error"
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "message": "The request is invalid.",
+    "statusCode": 400,
+    "details": [{ "path": "name", "message": "Required" }],
+    "correlationId": "3f9a2c1e-6b7d-4e8f-9a0b-1c2d3e4f5a6b"
+  }
+}
+```
+
+| Field | Description |
+|---|---|
+| `code` | Stable, machine-readable error code. Branch on this, not on `message`. |
+| `message` | Human-readable explanation. |
+| `statusCode` | The HTTP status. |
+| `details` | Optional. Per-field problems, each with a `path` and a `message`. |
+| `correlationId` | The ID of this request. See [Correlation ID](#correlation-id). |
+
+Unexpected server errors are returned as `INTERNAL_ERROR` with a generic message; the details stay in the
+server log under the same correlation ID.
+
+## Error codes
+
+| Code | Status | Meaning |
+|---|---|---|
+| `VALIDATION_FAILED` | 400 | The request body, query or parameters are invalid. See `details`. |
+| `DEVICE_AUTH_PENDING` | 400 | The device login code hasn't been approved yet. The CLI keeps polling. |
+| `WEBHOOK_SIGNATURE_INVALID` | 400 | A webhook's signature doesn't match the endpoint's signing secret. |
+| `UNAUTHORIZED` | 401 | No valid session or token was sent. |
+| `INVALID_CREDENTIALS` | 401 | Email or password is incorrect. |
+| `INVALID_REFRESH_TOKEN` | 401 | The CLI session has ended. Run `npx cb login`. |
+| `REFRESH_TOKEN_REUSED` | 401 | The CLI session was signed out because its refresh token was used twice. Run `npx cb login`. |
+| `FORBIDDEN` | 403 | Your role doesn't allow this action. |
+| `CSRF_REQUIRED` | 403 | A cookie-authenticated change was sent without the `x-cb-csrf: 1` header. |
+| `NO_ACCESS` | 403 | You don't have [access](/docs/overview/concepts#access) to this environment. |
+| `ENVIRONMENT_KILLED` | 403 | An admin suspended this environment. |
+| `KILLSWITCH_ACTIVE` | 403 | Access is stopped by an [emergency stop](/docs/overview/concepts#emergency-stop). |
+| `NOT_FOUND` | 404 | The requested item doesn't exist or isn't visible to you. |
+| `ROUTE_NOT_FOUND` | 404 | The endpoint doesn't exist. |
+| `CONFLICT` | 409 | The item already exists or conflicts with another. |
+| `EMAIL_TAKEN` | 409 | An account with this email already exists. |
+| `LAST_OWNER` | 409 | The organization needs at least one owner. |
+| `INVITE_INVALID` | 410 | The invite link is invalid, already used or expired. |
+| `DEVICE_CODE_EXPIRED` | 410 | The login code expired. Run `npx cb login` again. |
+| `PAYLOAD_TOO_LARGE` | 413 | The request body is too large. |
+| `SERVICE_TEST_FAILED` | 422 | The connection test for a service failed; nothing was saved. |
+| `RATE_LIMITED` | 429 | Too many requests. Try again later. |
+| `INTERNAL_ERROR` | 500 | Something went wrong on the server. |
+| `SERVICE_UNAVAILABLE` | 503 | The server is temporarily unavailable. |
+
+## Correlation ID
+
+Every request has a correlation ID that ties the response to the server's log lines.
+
+- Clients may send one in the `x-correlation-id` header: letters, digits, `.`, `_`, `:` and `-`, up to 128
+  characters. Otherwise the backend generates one.
+- The backend returns it in the `x-correlation-id` response header and in `meta.correlationId` or
+  `error.correlationId`.
+- The CLI prints it after a failed command as `correlation id: …`. The dashboard shows it in error details.
+
+Quote the correlation ID when you report a problem: it finds the exact request in the backend logs.
+
+## Authentication
+
+The dashboard authenticates with a session cookie and sends `x-cb-csrf: 1` on every request that changes data.
+The CLI and the agent send a short-lived bearer access token, obtained through [`cb login`](/docs/reference/cli#cb-login)
+and refreshed automatically.

@@ -1,0 +1,151 @@
+---
+title: Next.js
+description: Run a Next.js 15 or 16 app under cb with only a change to your package.json scripts.
+---
+
+Next.js runs under cb unchanged. `next dev` (Turbopack or webpack), `next build` and `next start` all work, with the App Router or the Pages Router, and official SDKs such as Prisma, OpenAI, Stripe and Auth.js keep reading `process.env` as they always do. This page shows the script change, which parts of a Next.js app can use protected values, and the few limits to know about.
+
+## How cb hooks in
+
+[`cb run`](/docs/guides/develop/cb-run) starts `next` with your environment's [variables](/docs/overview/concepts#variable) merged into the process environment and the cb [preload](/docs/guides/develop/preload-and-api) added to `NODE_OPTIONS`. Next.js starts its server and build workers as child processes, and they inherit both — so route handlers, server actions and server components all see [stand-in values](/docs/overview/concepts#stand-in-values), and their connections to protected services are routed through cb.
+
+At build time, Next.js inlines `NEXT_PUBLIC_*` values into the browser bundle from the same environment, so those come from cb too.
+
+## Set it up
+
+<Steps>
+<Step>
+### Install `@cb/env`
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+<Tab value="npm">
+```bash
+npm install @cb/env
+```
+</Tab>
+<Tab value="pnpm">
+```bash
+pnpm add @cb/env
+```
+</Tab>
+<Tab value="yarn">
+```bash
+yarn add @cb/env
+```
+</Tab>
+</Tabs>
+</Step>
+<Step>
+### Link the project
+
+```bash
+npx cb init
+```
+
+`cb init` asks for your organization, project and environment, writes `.cb/project.json`, then lists the scripts it wants to change and asks `Update these scripts?`. If you haven't signed in on this machine yet, run `npx cb login` first.
+</Step>
+<Step>
+### Check the `package.json` change
+
+Every script that starts with `next` is prefixed with `cb run --`. Other scripts are left as they are.
+
+```diff title="package.json"
+ {
+   "scripts": {
+-    "dev": "next dev",
+-    "build": "next build",
+-    "start": "next start",
++    "dev": "cb run -- next dev",
++    "build": "cb run -- next build",
++    "start": "cb run -- next start",
+     "lint": "eslint"
+   }
+ }
+```
+
+<Callout type="warning" title="Scripts that start with another command">
+A script such as `"dev": "prisma generate && next dev"` starts with `prisma`, so `cb init` doesn't change it. Add the prefix yourself, in front of the part that needs cb: `"dev": "prisma generate && cb run -- next dev"`. `prisma generate` doesn't connect to the database, so it doesn't need cb. See [Custom scripts](/docs/guides/develop/custom-scripts).
+</Callout>
+</Step>
+<Step>
+### Start your app
+
+```bash
+npm run dev
+```
+
+`cb run` prints one line with your project, environment and the number of brokered connections, then Next.js starts as usual.
+</Step>
+</Steps>
+
+## Where your code reads values
+
+| Place | Runs on | Gets protected values? |
+| --- | --- | --- |
+| Route handlers (`app/**/route.ts`) and Pages Router API routes | Node.js | Yes |
+| Server actions (`"use server"`) | Node.js | Yes |
+| Server components, `generateMetadata`, `getServerSideProps`, `getStaticProps` | Node.js | Yes |
+| `next.config.*` and `instrumentation.ts` | Node.js | Yes |
+| Middleware on the edge runtime (`middleware.ts`) | Edge runtime | No — plain variables only |
+| Client components (`"use client"`) and anything they import | The browser | No — plain `NEXT_PUBLIC_*` values only |
+
+<Callout type="warning" title="NEXT_PUBLIC_ values are plain only">
+Next.js copies every `NEXT_PUBLIC_*` value into the JavaScript it sends to the browser. Make these plain variables in the dashboard. A protected value there would only ship a stand-in to the browser, where it can't reach the service.
+</Callout>
+
+The explicit API, `import { env } from "@cb/env"`, is server-only. Importing it from a client component makes `next build` fail, so a server value can't slip into a client bundle by accident.
+
+## Example
+
+This route handler streams a completion with the official OpenAI SDK. Nothing in it knows about cb: `OPENAI_API_KEY` holds a stand-in, and cb routes the request to `api.openai.com` through the gateway, which uses the real key.
+
+```ts title="app/api/chat/route.ts"
+import OpenAI from "openai";
+
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  const openai = new OpenAI(); // reads OPENAI_API_KEY from the environment
+  const stream = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    stream: true,
+    messages: [{ role: "user", content: "hi" }],
+  });
+  let text = "";
+  for await (const chunk of stream) text += chunk.choices[0]?.delta?.content ?? "";
+  return Response.json({ text });
+}
+```
+
+A server action that writes through Prisma works the same way:
+
+```ts title="app/actions.ts"
+"use server";
+
+import { prisma } from "@/lib/db";
+
+export async function placeOrder() {
+  const order = await prisma.order.create({ data: { sku: "A1" } });
+  return order.id;
+}
+```
+
+For Prisma, Drizzle Kit and other migration CLIs, see [Node tooling](/docs/platforms/node-tooling).
+
+## Limits
+
+- **Edge middleware reads plain variables only.** Use it for things like redirects, headers and feature flags. Call databases and providers from route handlers, server actions or server components instead.
+- **Browser code gets plain values only.** Client components can call your own route handlers or server actions, which then use the protected service.
+- **`next start` serves a build made under cb.** Run `next build` through `cb run` too (the `build` script above), so `NEXT_PUBLIC_*` values and build-time data come from your cb environment.
+
+## Troubleshooting
+
+**`cb: this process wasn't started with "cb run"`** — the cb preload was loaded without `cb run`, for example from your own `NODE_OPTIONS` or a debugger configuration. Start the app with `npm run dev`, or `npx cb run -- next dev`.
+
+**Next.js workers fail to start when `NODE_OPTIONS` already has a `--require`.** Next.js splits `NODE_OPTIONS` into one value per flag, so your own `--require` and cb's preload `--require` collapse into one broken path. Remove your own `--require` from `NODE_OPTIONS` while running under cb.
+
+**A `NEXT_PUBLIC_*` value is empty or out of date in the browser.** These are inlined at build time. Restart `next dev`, or rebuild with `npm run build`, after an admin changes them.
+
+**`@cb/env is server-only`** — a client component imports `@cb/env`. Read the value in server code and pass the result down as a prop, or use a plain `NEXT_PUBLIC_*` variable.
+
+More fixes are in [Troubleshooting](/docs/guides/troubleshooting).

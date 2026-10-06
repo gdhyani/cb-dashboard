@@ -1,0 +1,70 @@
+---
+title: Give cb a public address
+description: Set PUBLIC_URL on the cb backend so Stripe and Razorpay can reach your webhook URLs.
+---
+
+Stripe and Razorpay call webhook URLs from the internet. They cannot reach `localhost`, `127.0.0.1`, a private
+network address or a `.local` host name. Before you set up any webhook, the cb backend needs a public `https`
+address, which you give it with the `PUBLIC_URL` setting.
+
+## Why it matters
+
+Every webhook variable gets one cb URL, built from `PUBLIC_URL`:
+
+```text
+<PUBLIC_URL>/api/hooks/<id>
+```
+
+When `PUBLIC_URL` is not set, cb builds the URL from `http://localhost:4200`. The dashboard then shows a warning
+under the URL ("Stripe can't reach this address. Set PUBLIC_URL on the backend…"), and **Connect Stripe** and
+**Connect Razorpay** stay disabled.
+
+<Callout type="warning" title="Set PUBLIC_URL before you connect a provider">
+  A provider can never deliver to a `localhost` URL. Set `PUBLIC_URL`, restart the backend, and only then connect
+  Stripe or Razorpay, or paste the URL into the provider.
+</Callout>
+
+## Set PUBLIC_URL
+
+<Steps>
+<Step>
+### Get a public https address for the backend
+
+On a server, this is the backend's own https address. On your machine, run a tunnel that forwards a public https
+address to `http://localhost:4200`. See [Expose the backend with a tunnel](/docs/guides/self-host/public-url-tunnel).
+</Step>
+<Step>
+### Add it to the backend's `.env`
+
+```bash title=".env"
+PUBLIC_URL=https://cb.example.com
+```
+
+Use the address only, without `/api` and without a trailing path.
+</Step>
+<Step>
+### Restart the backend
+
+The backend reads its settings when it starts. After a restart, every webhook URL in the dashboard uses the new
+address, and the warning disappears.
+</Step>
+<Step>
+### Point the providers at the new address
+
+If you had already connected Stripe or Razorpay with an older address, the **Webhooks** tab shows
+"Stripe still sends to an old address of this cb server. Reconnect to point it here." Click **Reconnect**: cb
+updates the same webhook in the provider, so you copy nothing. If you set the webhook up yourself, paste the new
+URL into the provider instead.
+</Step>
+</Steps>
+
+## Next steps
+
+<Cards>
+  <Card title="Stripe webhooks" href="/docs/guides/webhooks/stripe">
+    Connect Stripe in one click.
+  </Card>
+  <Card title="Razorpay webhooks" href="/docs/guides/webhooks/razorpay">
+    Connect Razorpay in one click.
+  </Card>
+</Cards>

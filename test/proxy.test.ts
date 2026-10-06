@@ -23,3 +23,18 @@ describe("FR-UI-006 proxy (signed-out redirect)", () => {
     expect(proxy(req).headers.get("location")).toBeNull();
   });
 });
+
+describe("FR-DOC-001 docs are public", () => {
+  it("the sign-in proxy never matches /docs or the search index", () => {
+    for (const m of config.matcher) {
+      expect(m.startsWith("/docs")).toBe(false);
+      expect(m).not.toBe("/:path*");
+    }
+  });
+
+  it("DOCS_PATH and DOCS_SEARCH_PATH stay outside the /api rewrite", async () => {
+    const { DOCS_PATH, DOCS_SEARCH_PATH, API_BASE_PATH } = await import("@/constants");
+    expect(DOCS_PATH).toBe("/docs");
+    expect(DOCS_SEARCH_PATH.startsWith(API_BASE_PATH)).toBe(false);
+  });
+});

@@ -1,0 +1,160 @@
+---
+title: Stripe webhooks
+description: Add a Stripe webhook signing secret and let cb create the webhook in Stripe for full events, thin events or both.
+---
+
+With **Connect Stripe**, cb creates the webhook in your Stripe account using the Stripe secret key already saved in
+the same environment, and keeps the signing secret Stripe returns. Nobody copies a URL or a secret, and the secret is
+never shown. This page walks through that flow, how to change it later, and how to set the webhook up yourself
+instead.
+
+## Before you start
+
+- The environment has a **Stripe** variable holding your Stripe secret key. See [Stripe](/docs/connectors/payments/stripe).
+  A restricted key needs the **Webhook Endpoints: Write** permission.
+- The backend has a public address in `PUBLIC_URL`. See [Give cb a public address](/docs/guides/webhooks/public-url).
+- You are an owner or admin of the organization.
+
+## Connect Stripe
+
+<Steps>
+<Step>
+### Add the webhook variable
+
+Open your project, pick the environment, and go to the **Variables** tab. Click **Add variable**, then fill in the
+form:
+
+<Fields title="Required">
+  <Field name="Key" type="text" required>
+    The name your code reads, for example `STRIPE_WEBHOOK_SECRET`.
+  </Field>
+  <Field name="What is this?" type="select" required>
+    Choose **Webhook signing secret**.
+  </Field>
+  <Field name="Provider" type="select" required default="Stripe">
+    Choose **Stripe**.
+  </Field>
+  <Field name="Path in your app" type="text" required>
+    The route that handles webhooks in your app, for example `/api/webhooks/stripe`. It must start with `/` and
+    contain no spaces. cb posts each webhook to this path on the developer's machine, on the port their app listens
+    on.
+  </Field>
+</Fields>
+
+<Fields title="Optional (Advanced)" collapsible>
+  <Field name="Signing secret" type="secret">
+    Leave it empty. cb fills it when you connect Stripe. Paste a secret (`whsec_…`) here only if you set the
+    destination up in Stripe yourself.
+  </Field>
+  <Field name="Suggested extra keys → STRIPE_THIN_WEBHOOK_SECRET" type="checkbox">
+    Only if your app verifies thin events with their own environment variable. It gets its own stand-in value.
+  </Field>
+  <Field name="Thin events signing secret" type="secret">
+    Under **Advanced**. Only for a thin-events destination you created in Stripe yourself, with the same URL.
+  </Field>
+  <Field name="Thin events path" type="text" default="the path above">
+    Under **Advanced**. Only if your app takes thin events on a different route, for example
+    `/api/webhooks/stripe-thin`.
+  </Field>
+</Fields>
+
+Click **Save & test**. The dialog changes to **Connect Stripe**.
+</Step>
+<Step>
+### Choose what your app's webhook code uses
+
+Pick the card that matches your webhook handler:
+
+| Choice | Your code calls | What cb subscribes in Stripe |
+|---|---|---|
+| **Full events** (most apps) | `stripe.webhooks.constructEvent` | Every event, including ones Stripe adds later |
+| **Thin events** | `stripe.parseEventNotification` | 12 payment, checkout, subscription and invoice events |
+| **Both** | Both of the above | Both destinations, on the same URL and the same key |
+
+Stripe does not allow "every event" for thin destinations, so cb subscribes thin destinations to these events:
+`v1.payment_intent.succeeded`, `v1.payment_intent.payment_failed`, `v1.payment_intent.canceled`,
+`v1.charge.succeeded`, `v1.charge.refunded`, `v1.checkout.session.completed`, `v1.checkout.session.expired`,
+`v1.customer.subscription.created`, `v1.customer.subscription.updated`, `v1.customer.subscription.deleted`,
+`v1.invoice.paid` and `v1.invoice.payment_failed`. You can add or remove events in Stripe at any time.
+</Step>
+<Step>
+### Click Connect Stripe
+
+cb uses the environment's Stripe key to create the destination (or both) at the variable's cb URL, and stores the
+signing secret Stripe returns. The panel now reads "Connected to Stripe — events go to cb, then only to the developer
+who caused them." and lists what is subscribed, with an **Open in Stripe** link to the destination in the Stripe
+Dashboard.
+
+<Frame src="/docs/images/guides/connect-stripe.png" alt="Connect Stripe after saving: the webhook URL to paste into Stripe (with a Stripe key in the environment, cb offers to create the webhook for you)" caption="Connect Stripe after saving: the webhook URL to paste into Stripe (with a Stripe key in the environment, cb offers to create the webhook for you)" />
+
+This setup is also in the variable's Edit dialog and on the **Webhooks** tab of the environment.
+</Step>
+<Step>
+### Make a test payment
+
+Start your app with [`cb run`](/docs/guides/develop/cb-run) and create a payment from it. The terminal shows each
+webhook as it arrives:
+
+```bash
+cb: webhook stripe payment_intent.succeeded → 200 (14 ms)
+```
+
+Events sent from the Stripe Dashboard or with `stripe trigger` are not caused by any app, so they go to
+[`cb webhooks listen`](/docs/guides/webhooks/listen) devices only.
+</Step>
+</Steps>
+
+<Frame src="/docs/images/guides/webhooks-tab.png" alt="Webhooks tab with a connected Stripe webhook: key name, app path, Full events row, Open in Stripe link, webhook URL with Copy" caption="Webhooks tab with a connected Stripe webhook: key name, app path, Full events row, Open in Stripe link, webhook URL with Copy" />
+
+## Change what your app receives
+
+On the **Webhooks** tab (or in the variable's Edit dialog), open **Change what your app receives**, pick
+**Full events**, **Thin events** or **Both**, and click **Apply in Stripe**. A type you turn off is removed in Stripe
+too, so nothing keeps sending to a route your app no longer has.
+
+To add or remove individual events, use the **Open in Stripe** link and change them in the Stripe Dashboard.
+
+## Reconnect after the address changes
+
+If `PUBLIC_URL` changes (for example, a new tunnel address), the panel shows "Stripe still sends to an old address of
+this cb server. Reconnect to point it here." Click **Reconnect**. cb updates the same destination in Stripe and keeps
+its signing secret. If someone deleted the destination in Stripe, Reconnect creates it again.
+
+## Remove the webhook
+
+Removing the webhook variable from the **Variables** tab also deletes the destinations cb created in Stripe. The
+confirmation dialog says so before anything is removed.
+
+## Set it up yourself
+
+If you prefer to create the destination in Stripe by hand, or the environment has no Stripe key, open **Set it up
+yourself**. It shows the **Webhook URL** with a copy button.
+
+<Steps>
+<Step>
+### Add a destination in Stripe
+
+In the Stripe Dashboard, open **Developers → Webhooks**, add a destination, and paste the cb webhook URL.
+</Step>
+<Step>
+### Paste the signing secret into cb
+
+Copy the destination's signing secret (it starts with `whsec_`) and paste it into the variable with **Replace
+value**. For a thin-events destination on the same URL, paste its secret into **Thin events signing secret**
+instead.
+</Step>
+</Steps>
+
+<Callout type="note">
+  One webhook variable and one cb URL serve both full and thin events. cb tells them apart by the payload and checks
+  each one with its own signing secret.
+</Callout>
+
+## Common errors
+
+| Message | Fix |
+|---|---|
+| Add your Stripe secret key (type Stripe) in this environment first; cb uses it to create the webhook in Stripe. | Add a **Stripe** variable in the same environment, then connect again. |
+| This cb server has no public address (PUBLIC_URL), so Stripe could not reach it. | Set `PUBLIC_URL` and restart the backend. See [Give cb a public address](/docs/guides/webhooks/public-url). |
+| Stripe did not create the webhook: … A restricted key needs "Webhook Endpoints: Write"; or paste the signing secret yourself. | Give the restricted key that permission in Stripe, or use **Set it up yourself**. |
+| A Stripe signing secret starts with whsec_. | You pasted something other than a webhook signing secret. Copy it again from the destination in Stripe. |

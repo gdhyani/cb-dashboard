@@ -1,0 +1,157 @@
+---
+title: Local development
+description: Run the backend, the dashboard and the cb CLI from source on your own machine.
+---
+
+This page sets up all three repositories side by side so you can change any of them and see the result end to
+end. You run the backend on port 4200, the dashboard on port 4201, and the `cb` CLI from your local build.
+
+## Prerequisites
+
+- Node.js 22 or newer, and npm.
+- MongoDB running locally — the backend stores its own data there. The default address is
+  `mongodb://127.0.0.1:27017/cb`.
+- Docker, only for the gateway integration tests and the end-to-end suite.
+- `openssl`, to generate keys and the test certificates.
+
+## Set up the stack
+
+<Steps>
+<Step>
+### Clone the repositories side by side
+
+Contract sync and the end-to-end suite look for the backend in a sibling folder named `cb-backend`, so keep
+the three folders next to each other.
+
+```bash
+mkdir cb && cd cb
+git clone https://github.com/gdhyani/cb-backend.git
+git clone https://github.com/gdhyani/cb-dashboard.git
+git clone https://github.com/gdhyani/cb-env.git
+```
+
+If you plan to send a pull request, clone your fork instead and add the original as `upstream`.
+</Step>
+<Step>
+### Configure and start the backend
+
+```bash
+cd cb-backend
+npm install
+cp .env.example .env
+```
+
+Fill in `.env`. The backend checks every variable at startup and lists each one that is missing or invalid.
+
+| Variable | Value for local development |
+|---|---|
+| `MONGODB_URI` | `mongodb://127.0.0.1:27017/cb` |
+| `MASTER_KEY` | 32 random bytes, base64: run `openssl rand -base64 32` |
+| `SERVER_SECRET` | Another 32 random bytes, base64 — a different value from `MASTER_KEY` |
+| `DASHBOARD_URL` | `http://localhost:4201` |
+| `COOKIE_SECURE` | `false` (the dashboard runs on plain http locally) |
+| `PUBLIC_URL` | Optional. A public tunnel address, only when you work on webhooks |
+
+```bash
+npm run dev
+curl localhost:4200/api/health
+```
+
+<Callout type="danger" title="Keep .env out of git">
+  `.env` holds the keys that encrypt every stored credential. It is gitignored; never commit it, paste it into an
+  issue or reuse its values anywhere else.
+</Callout>
+</Step>
+<Step>
+### Start the dashboard
+
+```bash
+cd ../cb-dashboard
+npm install
+npm run dev
+```
+
+Open `http://localhost:4201`. Requests to `/api/*` are proxied to the backend at `CB_API_URL`
+(default `http://localhost:4200`); copy `.env.example` to `.env.local` only if you need to change it. The docs you
+are reading are served at `http://localhost:4201/docs`.
+</Step>
+<Step>
+### Build the CLI
+
+```bash
+cd ../cb-env
+npm install
+npm run build
+node dist/cli/index.js status
+```
+
+`status` checks the backend at `http://localhost:4200`; point it elsewhere with `--server` or `CB_SERVER_URL`.
+From here you can run every [CLI command](/docs/reference/cli) through `node dist/cli/index.js`.
+</Step>
+</Steps>
+
+## Run the tests
+
+Each repository has the same three checks. Run them before every pull request.
+
+```bash
+npm test             # Vitest
+npm run lint         # Biome
+npm run typecheck    # TypeScript
+```
+
+- **cb-backend:** `npm test` runs unit and integration tests against an in-memory MongoDB, so it needs no setup.
+  The gateway tests that talk to real databases, SMTP and S3 run only when the test services below are up.
+- **cb-dashboard:** `npm test` also checks the docs for broken links, missing images and anything that looks
+  like a real secret.
+- **cb-env:** `npm test` builds first, then runs the tests; the CLI tests run the compiled `cb` binary.
+
+## Test services in Docker
+
+`cb-backend/docker-compose.test.yml` starts the password-protected services the gateway tests connect to:
+Redis, PostgreSQL and MySQL (each also as a TLS-only variant), an SMTP server and S3-compatible storage. The file
+holds no passwords; you choose them and export them in your shell.
+
+| Variable | Used by |
+|---|---|
+| `CB_TEST_DB_PASSWORD` | PostgreSQL, MySQL, the SMTP server and S3 storage |
+| `CB_TEST_REDIS_PASSWORD` | Redis |
+
+```bash
+cd cb-backend
+sh scripts/test-certs.sh            # throwaway CA + localhost certificate for the TLS-only services
+export CB_TEST_DB_PASSWORD=… CB_TEST_REDIS_PASSWORD=…
+docker compose -f docker-compose.test.yml up -d --wait
+npm test
+```
+
+From the workspace folder, the same command is
+`docker compose -f cb-backend/docker-compose.test.yml up -d --wait`.
+
+<Callout type="note">
+  Compose refuses to start if either password is unset, and the Docker-backed tests skip themselves when
+  `CB_TEST_DB_PASSWORD` is missing. Use throwaway values: these are local test services, not real credentials.
+</Callout>
+
+## End-to-end suite
+
+`cb-env` contains three ordinary example apps (`express-mongo`, `nest-mysql`, `nextjs-prisma`) that use official
+SDKs and know nothing about cb. `npm run test:e2e` starts the backend from `../cb-backend` (or
+`CB_E2E_BACKEND_DIR`) with fresh keys and mock providers, logs in through the real device flow, runs each app
+under `cb run`, and fails if a per-run canary secret shows up anywhere it should not: the app's environment or
+memory, the agent, the cb home folder, the logs, any response, or the Next.js client bundles.
+
+```bash
+cd cb-env
+export CB_TEST_DB_PASSWORD=… CB_TEST_REDIS_PASSWORD=…
+docker compose -f ../cb-backend/docker-compose.test.yml up -d --wait
+(cd examples/express-mongo && npm ci) && (cd examples/nest-mysql && npm ci && npm run build) && (cd examples/nextjs-prisma && npm ci)
+npm run test:e2e                    # or one app: npm run test:e2e -- nextjs-prisma
+```
+
+Set `CB_E2E_KEEP=1` to keep the evidence folder after the run.
+
+## Contract changes
+
+`cb-backend/contracts/openapi.yaml` is the API contract. Change it in `cb-backend` first; then run
+`npm run sync:contract` in `cb-env` and `cb-dashboard` to regenerate their API types, in their own commits.

@@ -1,0 +1,21 @@
+---
+title: Docker & devcontainers
+description: Running apps inside Docker containers or devcontainers under cb is not available yet.
+status: coming-soon
+---
+
+cb works with apps that run directly on your machine today. Support for apps that run inside Docker containers or devcontainers is planned, but not available yet.
+
+## Status
+
+Containers aren't supported yet. cb's local agent listens on `127.0.0.1` on your machine, and its [preload](/docs/guides/develop/preload-and-api) is loaded by Node.js processes that cb starts on the host. A process inside a container reaches neither, so it gets none of your cb values.
+
+## What to do meanwhile
+
+Run the app on the host, not in a container. You can keep supporting services you run yourself — a local database or a mock server — in Docker; only the app process needs to run on the host.
+
+Don't copy real secrets into a container or an image to work around this. cb exists to keep real secrets off developer machines, and that includes the containers on them.
+
+## Follow along
+
+Track progress, or tell us what you need, on [GitHub issues](https://github.com/gdhyani/cb-env/issues).

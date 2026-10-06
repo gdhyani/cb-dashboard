@@ -1,0 +1,30 @@
+---
+title: All connectors
+description: Every kind of key and service cb can hand to your app, with one page per connector.
+---
+
+A connector is a type of variable you add in the dashboard: a database, a payment provider, an AI API, a cloud
+service, or a plain value. Each one decides what your app finds in `process.env` and how cb uses the real
+credential on your behalf. Pick a connector below for the exact fields to fill in, the values your app sees and
+working code with the official SDK.
+
+Not sure which type a key should be? Start with [Choosing a type](/docs/connectors/choosing-a-type).
+
+<ConnectorCards />
+
+<Callout type="note" title="What Beta means">
+  Works end to end with cb; we're still confirming it against every provider setup. Tell us how it goes.
+</Callout>
+
+## How every connector works
+
+All protected connectors follow the same pattern, described in [How it works](/docs/overview/how-it-works):
+
+- You paste the real value once, in the [Variables tab](/docs/guides/dashboard/variables). cb tests it, encrypts it
+  on the server and never shows it again.
+- Each developer's app gets a [stand-in value](/docs/overview/concepts#stand-in-values) made by cb for their device.
+  It only works through cb.
+- `cb run` starts a local agent that carries the app's connections to the cb gateway, which checks
+  [access](/docs/guides/admin/access) and uses the real credential.
+
+Your code keeps using the official SDKs, configured from `process.env` exactly as in production.

@@ -1,0 +1,87 @@
+---
+title: Expose the backend with a tunnel
+description: Give a local cb backend a public https address with a tunnel such as cloudflared, and set PUBLIC_URL.
+---
+
+Stripe and Razorpay deliver webhooks from the internet, so they need a public https address for your cb backend. On
+your own machine, a tunnel gives you one: it forwards a public address to `http://localhost:4200`. You need this only
+for [webhooks](/docs/guides/webhooks/how-it-works); everything else works without it.
+
+This page uses Cloudflare's `cloudflared`. Any tunnel that forwards an https address to port `4200` works the same
+way.
+
+<Steps>
+<Step>
+### Install cloudflared
+
+Install it from Cloudflare's downloads page, or with your package manager:
+
+<Tabs items={["macOS", "Windows", "Linux"]}>
+<Tab value="macOS">
+```bash
+brew install cloudflared
+```
+</Tab>
+<Tab value="Windows">
+```bash
+winget install --id Cloudflare.cloudflared
+```
+</Tab>
+<Tab value="Linux">
+Download the package for your distribution from Cloudflare's `cloudflared` releases and install it.
+</Tab>
+</Tabs>
+</Step>
+<Step>
+### Start a tunnel to the backend
+
+With the backend running on port `4200`:
+
+```bash
+cloudflared tunnel --url http://localhost:4200
+```
+
+`cloudflared` prints a public address such as `https://quiet-river-1234.trycloudflare.com`. Keep this terminal open:
+the address works only while the tunnel runs.
+
+Check it from another terminal:
+
+```bash
+curl https://quiet-river-1234.trycloudflare.com/api/health
+```
+</Step>
+<Step>
+### Set PUBLIC_URL
+
+Add the address to the backend's `.env`, without a trailing path:
+
+```bash title=".env"
+PUBLIC_URL=https://quiet-river-1234.trycloudflare.com
+```
+
+Restart the backend. The dev server does not reload on `.env` changes.
+</Step>
+<Step>
+### Connect or reconnect your webhooks
+
+Every webhook URL in the dashboard now starts with the public address, and the "can't reach this address" warning is
+gone. Connect Stripe or Razorpay as described in [Stripe webhooks](/docs/guides/webhooks/stripe) and
+[Razorpay webhooks](/docs/guides/webhooks/razorpay).
+
+If they were connected with an older address, the **Webhooks** tab shows a **Reconnect** button. Click it and cb
+points the same webhook in the provider at the new address.
+</Step>
+</Steps>
+
+<Callout type="warning" title="Quick tunnels change address on every start">
+  A `cloudflared tunnel --url` address is new each time you start it. Each time, update `PUBLIC_URL`, restart the
+  backend and click **Reconnect** on the Webhooks tab. For an address that stays the same, set up a named Cloudflare
+  tunnel on a domain you own.
+</Callout>
+
+<Callout type="note" title="The tunnel exposes the whole backend">
+  Everything the backend serves becomes reachable at the public address, including sign-up and the API. Calls that read or
+  change your organization's data still need a signed-in session or device login, and webhook calls need a valid
+  provider signature. Stop the tunnel when
+  you don't need it.
+</Callout>
