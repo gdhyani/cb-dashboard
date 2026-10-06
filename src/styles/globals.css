@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "fumadocs-ui/css/black.css";
+@import "fumadocs-ui/css/preset.css";
+/* Tailwind must see the classes used inside fumadocs-ui (docs only). */
+@source "../../node_modules/fumadocs-ui/dist/**/*.js";
 
 /* Monochrome tokens (shadcn names): black background, typographic hierarchy, no accent colour. */
 @theme {
@@ -235,4 +239,9 @@
       linear-gradient(to right, #000 0%, rgb(0 0 0 / 0.5) 70%, transparent 100%);
     mask-composite: intersect;
   }
+}
+
+/* Docs only (PRD v1.36): the one gradient allowed, behind docs diagrams (screenshots have it baked in). */
+:root {
+  --docs-frame-gradient: linear-gradient(135deg, #6d28d9 0%, #a21caf 55%, #db2777 100%);
 }

@@ -11,3 +11,13 @@ export const CLI_COMMANDS = {
   init: "npx cb init",
   run: "npm run dev",
 } as const;
+export const DOCS_PATH = "/docs";
+/** Prebuilt local search index (outside /api/*, which is rewritten to the backend). */
+export const DOCS_SEARCH_PATH = "/docs-search";
+export const GITHUB_URLS = {
+  env: "https://github.com/gdhyani/cb-env",
+  backend: "https://github.com/gdhyani/cb-backend",
+  dashboard: "https://github.com/gdhyani/cb-dashboard",
+} as const;
+/** "Edit this page" base: the docs content lives in the dashboard repo. */
+export const DOCS_CONTENT_EDIT_URL = `${GITHUB_URLS.dashboard}/blob/main/content/docs`;
