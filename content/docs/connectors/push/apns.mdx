@@ -27,10 +27,12 @@ Open your project, pick the environment, and go to the [Variables tab](/docs/gui
 **Add variable** and set **What is this?** to **Apple push key**. The dialog is titled **Add Apple push variable**.
 </Step>
 <Step>
-### Name the key and paste the .p8
+### Name the key and add the .p8
 
-Type the **Key** your code reads, for example `APNS_KEY`, and paste the full contents of the `.p8` file, from
-`-----BEGIN PRIVATE KEY-----` to `-----END PRIVATE KEY-----`, into **.p8 key**.
+Type the **Key** your code reads, for example `APNS_KEY`, and drop the `.p8` file on **.p8 key** (or choose it, or
+paste its full contents, from
+`-----BEGIN PRIVATE KEY-----` to `-----END PRIVATE KEY-----`). A wrong file is refused with the reason, for example
+"This is a certificate, not an Apple .p8 key."
 </Step>
 <Step>
 ### Enter the key ID and team ID
@@ -55,7 +57,7 @@ nothing is saved.
     The variable type.
   </Field>
   <Field name=".p8 key" type="secret, multiline" required>
-    The full PEM contents of the `.p8` file. Write-only: nobody can view it after saving, but you can replace it.
+    The `.p8` file, dropped, chosen or pasted as its full PEM contents. Write-only: nobody can view it after saving, but you can replace it.
   </Field>
   <Field name="Key ID" type="text" required>
     The 10-character key ID from Apple, such as `ABC123DEFG`.
@@ -145,7 +147,8 @@ If you ran `cb init`, your package scripts already run under cb. To see the stan
 | Problem | Fix |
 |---|---|
 | **Save & test** says "Apple rejected the key (InvalidProviderToken)" | The `.p8`, key ID and team ID don't belong together, or the key was revoked. Check all three in your Apple Developer account. |
-| "must be a PEM private key" | Paste the whole file contents, including the `BEGIN` and `END` lines. |
+| "This isn't an Apple .p8 key (-----BEGIN PRIVATE KEY-----)." or "must be a PEM private key" | Drop the `.p8` file itself, or paste the whole file contents including the `BEGIN` and `END` lines. |
+| "This is a certificate, not an Apple .p8 key." | You chose a certificate. Download the key (`AuthKey_<KeyID>.p8`) from **Certificates, Identifiers & Profiles → Keys**. |
 | "10-character key ID from Apple" or "10-character team ID from Apple" | Use the 10 capital letters and digits Apple shows. |
 | Pushes fail with `403 InvalidProviderToken` from cb | The app signed with a key that isn't this device's stand-in (for example a real `.p8` file on disk), or with a different key ID or team ID. Read all three from the environment. |
 | `BadDeviceToken` | The device token belongs to the other APNs environment. Use `production: false` (sandbox) for development builds. |
