@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { FileDrop } from "@/shared/components/file-drop";
 
@@ -47,5 +48,56 @@ describe("FileDrop: pick or drop a key / certificate file", () => {
     const { input } = setup();
     expect(input.getAttribute("accept")).toBe(".pem,.crt,.cer");
     expect(input.getAttribute("type")).toBe("file");
+  });
+
+  it("M9 a file that can't be read shows a plain error, never throws, and names no file", async () => {
+    const { onText, onError, input } = setup();
+    const broken = new File([PEM], "locked.pem");
+    Object.defineProperty(broken, "text", { value: () => Promise.reject(new Error("NotReadableError")) });
+    fireEvent.change(input, { target: { files: [broken] } });
+    await waitFor(() =>
+      expect(onError).toHaveBeenCalledWith("Couldn't read that file. Choose it again or paste its content."),
+    );
+    expect(onText).not.toHaveBeenCalled();
+    expect(screen.queryByText(/locked\.pem/)).toBeNull();
+  });
+
+  it("M9 the file name goes away once the field is cleared", async () => {
+    function Field() {
+      const [value, setValue] = useState("");
+      return (
+        <FileDrop
+          accept=".pem"
+          maxBytes={32_000}
+          label="CA certificate"
+          onText={setValue}
+          onError={vi.fn()}
+          filled={value !== ""}
+        >
+          <button type="button" onClick={() => setValue("")}>
+            Clear
+          </button>
+        </FileDrop>
+      );
+    }
+    render(<Field />);
+    fireEvent.change(screen.getByLabelText(/choose a file/i), { target: { files: [new File([PEM], "aiven-ca.pem")] } });
+    await screen.findByText(/aiven-ca\.pem/);
+    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+    expect(screen.queryByText(/aiven-ca\.pem/)).toBeNull();
+  });
+
+  it("M9 a file dropped on the field itself is read in, and the browser never opens it", async () => {
+    const onText = vi.fn();
+    render(
+      <FileDrop accept=".pem" maxBytes={32_000} label="CA certificate" onText={onText} onError={vi.fn()}>
+        <textarea aria-label="CA certificate value" />
+      </FileDrop>,
+    );
+    const field = screen.getByLabelText("CA certificate value");
+    // fireEvent returns false when the default (navigate to / open the file) was prevented.
+    expect(fireEvent.dragOver(field)).toBe(false);
+    expect(fireEvent.drop(field, { dataTransfer: { files: [new File([PEM], "ca.pem")] } })).toBe(false);
+    await waitFor(() => expect(onText).toHaveBeenCalledWith(PEM));
   });
 });

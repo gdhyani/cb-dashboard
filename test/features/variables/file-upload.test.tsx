@@ -60,6 +60,17 @@ describe("secret files by upload (Firebase JSON, CA .pem)", () => {
     expect(api.createService.mock.calls[0]?.[1].resource.serviceAccountJson).toBe(SA);
   });
 
+  it("M9 Firebase: a key file dropped on the field itself is read in (the browser never opens it); clearing the field drops the file name", async () => {
+    renderDialog({ initialType: "gcp" });
+    fireEvent.change(screen.getByLabelText("Key"), { target: { value: "FIREBASE_SERVICE_ACCOUNT" } });
+    const field = document.querySelector("textarea") as HTMLTextAreaElement;
+    expect(fireEvent.dragOver(field)).toBe(false);
+    expect(fireEvent.drop(field, { dataTransfer: { files: [winFile(SA, "sa.json")] } })).toBe(false);
+    await screen.findByText(/sa\.json/);
+    fireEvent.change(field, { target: { value: "" } });
+    expect(screen.queryByText(/sa\.json/)).toBeNull();
+  });
+
   it("Firebase: a file that is not a service-account key is refused with a reason that never shows its content", async () => {
     renderDialog({ initialType: "gcp" });
     fireEvent.change(screen.getByLabelText("Key"), { target: { value: "FIREBASE_SERVICE_ACCOUNT" } });

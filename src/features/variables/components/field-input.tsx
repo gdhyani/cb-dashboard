@@ -105,18 +105,22 @@ export function FieldInput({
   }
   return (
     <FormField id={id} label={label} hint={def.hint} error={fileError ?? error}>
-      {control}
-      {def.file && !readOnly && (
+      {def.file && !readOnly ? (
         <FileDrop
           accept={def.file.accept}
           maxBytes={def.file.maxBytes}
           label={def.label}
+          filled={value !== ""}
           onText={(text) => {
             setFileError(undefined);
             onChange(text);
           }}
           onError={setFileError}
-        />
+        >
+          {control}
+        </FileDrop>
+      ) : (
+        control
       )}
     </FormField>
   );
