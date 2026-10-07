@@ -101,3 +101,23 @@ describe("http instance", () => {
     expect(err).toMatchObject({ code: "UNEXPECTED_RESPONSE", statusCode: 502 });
   });
 });
+
+describe("ApiError cause (M11, FR-UI-001)", () => {
+  it("M11 keeps only the method and the path without its query string, never the full request URL", async () => {
+    mock.onGet(/\/orgs\/o1\/things/).reply(404, { success: false, error: { code: "NOT_FOUND", message: "nope" } });
+    mock.onGet(/\/down/).networkError();
+    const failed = [
+      await apiGet("/orgs/o1/things?token=stand-in-value#frag").catch((e: unknown) => e),
+      await apiGet("/down?q=stand-in-value").catch((e: unknown) => e),
+    ];
+    for (const err of failed) {
+      expect(err).toBeInstanceOf(ApiError);
+      const cause = (err as ApiError).cause as Record<string, unknown>;
+      expect(cause).not.toHaveProperty("url");
+      expect(JSON.stringify(cause)).not.toContain("stand-in-value");
+      expect(cause.method).toBe("get");
+    }
+    expect(((failed[0] as ApiError).cause as Record<string, unknown>).path).toBe("/orgs/o1/things");
+    expect(((failed[1] as ApiError).cause as Record<string, unknown>).path).toBe("/down");
+  });
+});

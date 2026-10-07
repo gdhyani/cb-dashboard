@@ -31,9 +31,11 @@ http.interceptors.request.use((config) => {
 /**
  * D2 (FR-UI-001): what an ApiError keeps of the failed request — never the axios error itself, whose `config.data`
  * is the request body (a secret the admin just typed). Errors live in dialog and query state.
+ * M11: only the method and the path; the query string and fragment can carry values, so they are cut off.
  */
 function causeOf(error: AxiosError) {
-  return { code: error.code, status: error.response?.status, method: error.config?.method, url: error.config?.url };
+  const path = error.config?.url?.split(/[?#]/)[0];
+  return { code: error.code, status: error.response?.status, method: error.config?.method, path };
 }
 
 http.interceptors.response.use(
