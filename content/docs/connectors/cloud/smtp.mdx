@@ -1,7 +1,6 @@
 ---
 title: Email (SMTP)
-description: Send email through SendGrid, Amazon SES, Mailgun or any SMTP server with nodemailer, without the real SMTP password.
-status: beta
+description: Send email through SendGrid, Amazon SES, Resend, Mailgun or any SMTP server with nodemailer, without the real SMTP password.
 ---
 
 Store your real SMTP URL in cb once. Every developer's app gets a stand-in login for a local mail server run by the
@@ -69,7 +68,7 @@ fails, nothing is saved and the dialog shows the error.
 <Fields title="Optional (Advanced)" collapsible>
   <Field name="CA certificate (PEM)" type="multiline">
     Only for a self-hosted mail server with a private certificate authority. cb trusts it for this server only, on
-    top of the public certificate authorities.
+    top of the public certificate authorities. Drop the `.pem` file on the field, choose it, or paste it.
   </Field>
 </Fields>
 
