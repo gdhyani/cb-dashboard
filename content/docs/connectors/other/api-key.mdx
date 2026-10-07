@@ -1,7 +1,6 @@
 ---
 title: Other API key
 description: Broker the key of any HTTP API without a preset, with a Bearer, x-api-key, Basic or custom-header key.
-status: beta
 ---
 
 Use **Other API key** for any HTTP API that cb has no preset for: a SaaS API, a partner API or an internal service.
@@ -106,7 +105,7 @@ the API answers `401` or `403`; on failure nothing is saved and the dialog shows
   </Field>
   <Field name="CA certificate (PEM)" type="multiline">
     Only for internal APIs that use a private certificate authority. cb trusts it for this API only, on top of the
-    public certificate authorities. TLS verification is never turned off.
+    public certificate authorities. TLS verification is never turned off. Drop the `.pem` file on the field, choose it, or paste it.
   </Field>
 </Fields>
 

@@ -123,6 +123,9 @@ export function EditVariableDialog({
   const [replacing, setReplacing] = useState(startReplacing);
   const [secrets, setSecrets] = useState<Record<string, string>>({});
   const [settings, setSettings] = useState<Record<string, string>>(initialSettings);
+  // B10: a stored CA certificate is shown by subject and expiry only; Remove sends "" on Save.
+  const storedCa = config.caCertFile as { subject: string; notAfter: string } | undefined;
+  const [removeCa, setRemoveCa] = useState(false);
   const [extraKeys, setExtraKeys] = useState<Record<string, string>>(() =>
     Object.fromEntries(extras.map((x) => [x.id, x.key])),
   );
@@ -167,6 +170,7 @@ export function EditVariableDialog({
   /** Back to the read-only view; typed secrets are dropped (FR-UI-001), unsaved edits too when `discard`. */
   function toView(discard: boolean) {
     setSecrets({});
+    if (discard) setRemoveCa(false);
     setReplacing(false);
     setError(null);
     setKeyError(undefined);
@@ -206,6 +210,7 @@ export function EditVariableDialog({
                   ? null
                   : next;
         }
+        if (removeCa && !(settings.caCert ?? "").trim()) body.caCert = "";
         if (awsNewEndpoint) body.endpoint = awsNewEndpoint;
         if (Object.keys(body).length > 0)
           await services.update.mutateAsync({ id: group.resource.id, body: { ...body, test: true } });
@@ -267,6 +272,7 @@ export function EditVariableDialog({
           </DialogDescription>
         </DialogHeader>
         <form
+          method="post"
           className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();
@@ -352,15 +358,40 @@ export function EditVariableDialog({
           {settingsDefs
             .filter((f) => !f.showWhen || (settings[f.showWhen.field] ?? "") === f.showWhen.equals)
             .map((f) => (
-              <FieldInput
-                key={f.name}
-                idPrefix="edit"
-                def={f}
-                value={settings[f.name] ?? ""}
-                onChange={(v) => setSettings((s) => ({ ...s, [f.name]: v }))}
-                readOnly={!editing}
-                error={editing && settings[f.name]?.trim() ? f.validate?.(settings[f.name]?.trim() ?? "") : undefined}
-              />
+              <div key={f.name} className="flex flex-col gap-1.5">
+                {f.name === "caCert" && storedCa && !removeCa && (
+                  <p className="flex flex-wrap items-center gap-x-2 text-xs text-subtle">
+                    <span>
+                      Set · <span className="font-mono text-foreground">{storedCa.subject}</span> · valid until{" "}
+                      {new Date(storedCa.notAfter).toLocaleDateString()}
+                    </span>
+                    {editing && (
+                      <button
+                        type="button"
+                        onClick={() => setRemoveCa(true)}
+                        className="text-destructive underline underline-offset-2"
+                      >
+                        Remove CA certificate
+                      </button>
+                    )}
+                  </p>
+                )}
+                {f.name === "caCert" && removeCa && (
+                  <p className="text-xs text-subtle">The CA certificate is removed when you save.</p>
+                )}
+                <FieldInput
+                  idPrefix="edit"
+                  def={
+                    f.name === "caCert" && storedCa
+                      ? { ...f, hint: "Drop a new file (or paste it) to replace the one stored." }
+                      : f
+                  }
+                  value={settings[f.name] ?? ""}
+                  onChange={(v) => setSettings((s) => ({ ...s, [f.name]: v }))}
+                  readOnly={!editing}
+                  error={editing && settings[f.name]?.trim() ? f.validate?.(settings[f.name]?.trim() ?? "") : undefined}
+                />
+              </div>
             ))}
 
           {extras.length > 0 && (

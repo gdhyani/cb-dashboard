@@ -75,6 +75,13 @@ Google Gemini, Groq, Mistral, OpenRouter and **Custom / self-hosted**. Sign-in o
 
 Paste the real value once, for example a **Connection URL**, a **Secret key** or an **API key**. The field is
 write-only. For a **Random secret** there is nothing to paste; choose a **Format** instead.
+
+A service-account JSON, an Apple `.p8` key or a CA certificate can also be dropped on the field (or on **Drop the
+file here or choose a file** under it). A wrong file is refused with the reason, for example "This is a certificate,
+not a service-account key file.", and its content is never shown.
+
+If the key name starts with `NEXT_PUBLIC_`, `VITE_`, `PUBLIC_`, `EXPO_PUBLIC_` or `REACT_APP_`, the dialog warns you:
+browser code would only ever get the stand-in, never the real value.
 </Step>
 <Step>
 ### Fill in the required details
@@ -92,7 +99,8 @@ API base URL. Tick only the ones your code reads, and rename them to match your 
 ### Set connection details (optional)
 
 Open **Advanced** for connection details only, such as a CA certificate, a custom endpoint or extra headers. Most
-setups leave it closed.
+setups leave it closed. An Aiven or DigitalOcean URL opens **Advanced** by itself and asks for the provider's CA
+certificate.
 </Step>
 <Step>
 ### Save & test
@@ -162,6 +170,20 @@ values cb generates, and **generated for each developer** for a random secret. P
 Extra keys are grouped under their main key, indented with **↳** and labelled **with `MAIN_KEY`**, so you can see
 which keys belong to one service.
 
+### Key status
+
+Each service's main key has a status dot. The value stays hidden in every state.
+
+<Frame src="/docs/images/guides/key-status.png" alt="Variables table with green dots on working keys, a hollow ring on a key not checked yet, and a red Expired badge on STRIPE_SECRET_KEY whose tooltip says the provider answered 401 and to replace the value" caption="Green: working · hollow ring: not checked yet · red Expired: the provider refused the key" />
+
+| Dot | Means | What to do |
+|---|---|---|
+| Green — **Working** | The last Save & test, Test connection or app request through cb was accepted by the provider. | Nothing. |
+| Red — **Expired** badge | The provider refused the stored key: it was deleted, rotated or expired at the provider. Hover the badge for the reason. Apps keep getting the provider's own error. | **Replace value** with a working key. |
+| Hollow ring — **Not checked yet** | Saved without a test, or saved before key status existed. | **Test connection** from the row's "…" menu. |
+
+The table refreshes the status every 30 seconds.
+
 ## Edit a variable
 
 Select a key to open it read-only. Choose **Edit** to change it. You can:
@@ -170,7 +192,8 @@ Select a key to open it read-only. Choose **Edit** to change it. You can:
 - **Replace value.** Paste the new real value; it is tested before it is stored. See
   [Rotate a secret](/docs/guides/admin/rotate-secret).
 - **Change settings**, such as the API base URL or a CA certificate. A new address needs the key again, so the old
-  key is never sent anywhere new.
+  key is never sent anywhere new. A stored CA shows as **Set**, its subject and **valid until** its expiry date, with
+  **Remove CA certificate**; drop a new file to replace it.
 - **Rename extra keys** under **Extra keys of this service**.
 - For databases, add a **Read-only login**; for Stripe, a **Restricted key**. People get it from
   **Who can use it**.
@@ -222,6 +245,12 @@ Paste the contents under **Your .env**, one `KEY=value` per line. Comments and `
 
 cb guesses a type for each key. Change any guess in its **What is …?** list. Keys that already exist are left as
 they are, and lines that aren't `KEY=value` are skipped.
+
+A line that looks like a secret but matches no known service (a name with `SECRET`, `TOKEN`, `PASSWORD`, `PASS`,
+`API_KEY`, `DSN`, `WEBHOOK`…, a long random value, or a URL with a password or a token in it) gets **no guess**:
+choose what it is before importing. **Plain** would show the value to every developer; pick a service type,
+**Random secret**, or **Secret shown as-is** instead. A browser prefix (`NEXT_PUBLIC_`, `VITE_`…) is guessed Plain
+only for a publishable `pk_` key or a value that doesn't look secret.
 </Step>
 <Step>
 ### Import
@@ -236,7 +265,7 @@ After importing, delete the real values from your local `.env` files so no real 
 warns about any cb-managed keys still defined in `.env*` files.
 </Callout>
 
-<Frame src="/docs/images/guides/import-env.png" alt="Import .env dialog after Review, with a type per key" caption="Import .env dialog after Review, with a type per key" />
+<Frame src="/docs/images/guides/import-env.png" alt="Import .env dialog after Review: PORT guessed Plain, DATABASE_URL guessed Postgres, two existing keys left as is, and SESSION_TOKEN with no guess (Choose what it is…) and a warning that Plain shows it to every developer" caption="After Review: a secret-looking line gets no guess until you choose what it is" />
 
 ## Connection map
 

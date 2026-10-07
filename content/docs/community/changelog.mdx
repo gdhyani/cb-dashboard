@@ -7,6 +7,51 @@ This page lists notable changes across the three cb repositories, grouped by the
 first. Internal maintenance (dependency updates, CI and tooling) is left out. cb is pre-1.0, so every change lands
 on `main`.
 
+## 7 October 2026
+
+### Dashboard
+
+- **Drop key files.** The service-account JSON, a CA certificate (`.pem`) and an Apple `.p8` key can be dropped or
+  chosen as a file instead of pasted. Wrong files are refused with the reason, never shown; files saved on Windows
+  work as they are.
+- **Aiven and DigitalOcean databases** open **Advanced** by themselves and ask for the provider's CA certificate.
+  A stored CA is shown by its subject and expiry, with **Remove**; a new file replaces it.
+- **Key status.** Every service's main key has a dot: green **Working**, a red **Expired** badge when the provider refuses
+  the key (deleted, rotated or expired), a hollow ring for **Not checked yet**. The key stays hidden in every state.
+- Secret fields never offer to save in the browser's password manager, and no form can put a value in a URL.
+- **Drop a key file straight onto the text field.** A file that can't be read says so plainly; the file name goes
+  away when the field is cleared, and the browser never opens a dropped file.
+- **Import .env** never guesses Plain for a line that looks like a secret, and can import it as **Secret shown
+  as-is**. That includes secrets behind a browser prefix (`NEXT_PUBLIC_…SECRET…`), password, auth, signing and DSN
+  names, and URLs that carry a password or a token. A key named after another service (`CLERK_SECRET_KEY=sk_test_…`)
+  is not guessed as Stripe.
+- **Add variable** warns when a protected key is named `NEXT_PUBLIC_`, `VITE_`, `PUBLIC_`, `EXPO_PUBLIC_` or
+  `REACT_APP_`: browser code would only get the stand-in.
+- **Email (SMTP)** is no longer Beta: verified with Resend.
+- **Google and GitHub sign-in** are no longer Beta.
+
+### Backend
+
+- **Uploaded files are stored encrypted** in a file store: the backend's database (default) or a private
+  Supabase Storage bucket (`FILE_STORE=supabase`). `npm run migrate:file-store -- --apply` moves older files.
+- The gateway also hides a real key that a provider echoes in a **response header**, a **redirect**, a
+  **compressed** body, or **URL-encoded / JSON-escaped / Basic** form; AWS errors never show the real access key id.
+- Deleting a service, an environment or a project removes everything kept for it (stored files, stand-in key
+  material, swapped tokens).
+- **Save & test** explains a database whose certificate is signed by a private CA.
+- A key that was replaced is never marked **Expired** by a connection opened before the replace.
+- `SUPABASE_URL` must use `https://` (plain `http://` only for `localhost`). CA certificates saved before the file
+  store are shown by subject and expiry only, like newer ones.
+
+### CLI
+
+- `cb env print` lists the path of stand-in key files and honours `CB_SERVER_URL` like every other command.
+- The agent's log and lock files are readable only by you; `Basic …` credentials are removed from its log.
+- The agent ignores `SIGUSR1` and never inherits `NODE_OPTIONS`, so no other process on your machine can attach a
+  debugger to it or load code into it.
+- **cb needs Node.js 22.14 or newer.** `cb doctor` warns on 22.0–22.13, where the agent can't block debuggers.
+- The agent log no longer hides ordinary text that follows the word "Basic".
+
 ## 6 October 2026
 
 ### Dashboard

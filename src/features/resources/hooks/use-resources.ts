@@ -5,13 +5,19 @@ import { resourceKeys } from "../api/resources.keys";
 import type { CreateResourceInput, CredentialsInput } from "../types";
 
 export const useResources = (envId: string) =>
-  useQuery({ queryKey: resourceKeys.list(envId), queryFn: () => api.listResources(envId) });
+  useQuery({
+    queryKey: resourceKeys.list(envId),
+    queryFn: () => api.listResources(envId),
+    // B11: a key the provider starts refusing turns red without a reload.
+    refetchInterval: 30_000,
+  });
 
 export const usePresets = () =>
   useQuery({ queryKey: resourceKeys.presets, queryFn: api.listPresets, staleTime: 60 * 60 * 1000 });
 
 /** J2: test a resource's real credentials from the gateway; the result is kept per resource+profile. */
 export function useTestResource(resourceId: string) {
+  const client = useQueryClient();
   return useMutation({
     mutationFn: (profile?: string) => api.testResource(resourceId, profile),
     onSuccess: (r) =>
@@ -19,6 +25,8 @@ export function useTestResource(resourceId: string) {
         ? notifySuccess(`Connection ok — ${r.message} (${r.latencyMs} ms)`)
         : notifyError(undefined, `Connection failed — ${r.message}`),
     onError: (e) => notifyError(e),
+    // B11: the test result is the key's new status dot.
+    onSettled: () => client.invalidateQueries({ queryKey: ["environments"] }),
   });
 }
 

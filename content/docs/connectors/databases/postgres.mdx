@@ -64,8 +64,9 @@ app_user (PostgreSQL 16.4)". If the test fails, nothing is saved and the dialog 
 
 <Fields title="Optional (Advanced)" collapsible>
   <Field name="CA certificate (PEM)" type="multiline">
-    Only for self-hosted servers or providers that give you a CA file (Aiven, DigitalOcean). cb trusts it for this
-    database only, on top of the public certificate authorities.
+    Only for self-hosted servers or providers that give you a CA file (Aiven, DigitalOcean). Drop the `.pem` file,
+    choose it or paste it. cb trusts it for this database only, on top of the public certificate authorities. A URL
+    on an Aiven or DigitalOcean host opens **Advanced** for you and asks for it.
   </Field>
 </Fields>
 
@@ -178,7 +179,8 @@ See [cb run](/docs/guides/develop/cb-run) and [Custom scripts](/docs/guides/deve
 | Problem | Fix |
 |---|---|
 | "postgres server does not offer TLS" | The stored URL asks for TLS but the server doesn't support it. Fix the server, or remove `sslmode` from the URL for a server on a private network. |
-| **Save & test** fails with a certificate error | The server uses a private certificate authority. Paste its CA into **CA certificate (PEM)** under Advanced. |
+| **Save & test** fails with a certificate error | The server uses a private certificate authority. Drop its CA file into **CA certificate (PEM)** under Advanced. |
+| **Save & test** says "The server's certificate is signed by a private CA…" | Same cause, caught before saving: add the provider's CA certificate under Advanced (Aiven: service **Overview → CA certificate**; DigitalOcean: **Connection details → Download CA certificate**). |
 | "The server does not support SSL connections" in your app | Your code forces TLS. Remove the `ssl` option for local runs. |
 | `password authentication failed for user "cbu_…"` | The stand-in belongs to another device or is stale. Run the app under `cb run` on this machine and don't copy the URL between machines. |
 | "cb: the gateway could not authenticate to the database" | The stored credentials stopped working. Replace the value with a working URL; see [Rotate a secret](/docs/guides/admin/rotate-secret). |

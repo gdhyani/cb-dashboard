@@ -38,6 +38,7 @@ export function EnvironmentList({ project, isAdmin }: { project: Project; isAdmi
       </ul>
       {isAdmin && (
         <form
+          method="post"
           className="flex flex-col gap-2 sm:flex-row"
           onSubmit={(ev) => {
             ev.preventDefault();

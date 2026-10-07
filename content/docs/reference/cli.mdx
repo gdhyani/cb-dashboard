@@ -50,7 +50,7 @@ When a command needs the backend URL, it uses the first of these that is set:
 4. `http://localhost:4200`.
 
 Trailing slashes are removed. `cb types` and `cb up` don't take `--server`; they use `CB_SERVER_URL` or the
-`server` in `.cb/project.json`. `cb env print` always uses the `server` in `.cb/project.json`.
+`server` in `.cb/project.json`. `cb env print` takes no `--server` either and resolves the same way.
 
 ### Environment resolution
 
@@ -275,8 +275,9 @@ cb env print [--env <name>] [--json]
 | `--env <name>` | See [environment resolution](#environment-resolution) | Environment to print. |
 | `--json` | Off | Print `{ environment, env, visibleKeys, redirects }`. |
 
-Local ports that the agent has not assigned yet are shown as `127.0.0.1:<port>`. Each redirected host is
-listed as a comment.
+Local ports that the agent has not assigned yet are shown as `127.0.0.1:<port>`. Keys your app reads as a file
+(for example `GOOGLE_APPLICATION_CREDENTIALS`) show the path of the stand-in file the agent writes, never its
+contents. Each redirected host is listed as a comment.
 
 ```bash
 npx cb env print

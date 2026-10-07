@@ -30,19 +30,49 @@ export function parseDotenv(raw: string): { entries: DotenvEntry[]; skipped: { l
 /** Names of secrets an app invents for itself: each developer can get their own (Random secret, D3). */
 const INVENTED = /^(AUTH|NEXTAUTH|SESSION|JWT|COOKIE|APP|ENCRYPTION|CSRF)_SECRET$|^SECRET_KEY_BASE$/;
 
-/** A first guess at "What is this?" for one pasted line; the admin confirms or changes it. */
-export function guessType(key: string, value: string): { type: TypeId; provider?: string } {
+/** Key names that announce a secret, and values that look like one (long, random, no spaces, not a URL). */
+const SECRET_NAME =
+  /(SECRET|TOKEN|PASSWORD|PASSWD|PRIVATE|CREDENTIAL|SERVICE_ROLE|API_?KEY|_KEY$|WEBHOOK|SIGNING|HMAC|SALT)|(^|_)(PASS|PWD|DSN)(_|$)|_AUTH$/;
+const SECRET_VALUE = /^((sk|rk)_(test|live)_|sk-|gsk_|AIza)/;
+/** M15: key names that name another provider whose keys can look like Stripe's (sk_test_) or OpenAI's (sk-). */
+const OTHER_PROVIDER = /(^|_)(CLERK|RESEND|SUPABASE|GITHUB|GITLAB|TWILIO|SENDGRID|PAYPAL|SHOPIFY|SLACK)(_|$)/;
+const BROWSER_PREFIX = /^(NEXT_PUBLIC_|PUBLIC_|VITE_|EXPO_PUBLIC_|REACT_APP_)/;
+const randomPart = (v: string) => v.length >= 16 && /[A-Za-z]/.test(v) && /\d/.test(v);
+const looksRandom = (v: string) => !/\s/.test(v) && !/^https?:\/\//.test(v) && randomPart(v);
+/** A URL that carries a password (user:pass@) or a long token in its path or query, like a Slack webhook. */
+const secretUrl = (v: string) =>
+  /^https?:\/\//.test(v) &&
+  (/^https?:\/\/[^/@\s]+:[^/@\s]*@/.test(v) ||
+    v
+      .split(/[/?&=#]/)
+      .slice(3)
+      .some((part) => part.length >= 20 && randomPart(part)));
+
+/**
+ * A first guess at "What is this?" for one pasted line; the admin confirms or changes it. Something that looks secret
+ * but has no known shape gets no guess ("unsure"): Plain would hand the real value to every developer.
+ */
+export function guessType(key: string, value: string): { type: TypeId | "unsure"; provider?: string } {
   if (/^mongodb(\+srv)?:\/\//.test(value)) return { type: "mongodb" };
   if (/^postgres(ql)?:\/\//.test(value)) return { type: "postgres" };
   if (/^mysql:\/\//.test(value)) return { type: "mysql" };
   if (/^rediss?:\/\//.test(value)) return { type: "redis" };
-  if (/^(NEXT_PUBLIC_|PUBLIC_|VITE_|EXPO_PUBLIC_)/.test(key)) return { type: "plain" };
+  if (secretUrl(value)) return { type: "unsure" };
+  // A browser prefix means "public" only when nothing else says secret (a publishable pk_ key is public by design).
+  if (BROWSER_PREFIX.test(key)) {
+    if (value.startsWith("pk_")) return { type: "plain" };
+    const secret = SECRET_NAME.test(key) || SECRET_VALUE.test(value) || looksRandom(value);
+    return { type: secret ? "unsure" : "plain" };
+  }
+  // M15: a Stripe/OpenAI-shaped value under another provider's name gets no guess (it would fail that check confusingly).
+  if (/^((sk|rk)_(test|live)_|sk-(?!ant-))/.test(value) && OTHER_PROVIDER.test(key)) return { type: "unsure" };
   if (/^(sk|rk)_(test|live)_/.test(value)) return { type: "stripe" };
   if (value.startsWith("sk-ant-")) return { type: "ai", provider: "anthropic" };
   if (value.startsWith("sk-")) return { type: "ai", provider: "openai" };
   if (value.startsWith("gsk_")) return { type: "ai", provider: "groq" };
   if (value.startsWith("AIza")) return { type: "ai", provider: "gemini" };
   if (INVENTED.test(key)) return { type: "gen" };
+  if (SECRET_NAME.test(key) || looksRandom(value)) return { type: "unsure" };
   return { type: "plain" };
 }
 
@@ -50,6 +80,7 @@ export function guessType(key: string, value: string): { type: TypeId; provider?
 export const IMPORTABLE: { type: TypeId; provider?: string; label: string }[] = [
   { type: "plain", label: "Plain value" },
   { type: "gen", label: "Random secret (each developer)" },
+  { type: "visible", label: "Secret shown as-is (developers see it)" },
   { type: "mongodb", label: "MongoDB" },
   { type: "postgres", label: "Postgres" },
   { type: "mysql", label: "MySQL" },

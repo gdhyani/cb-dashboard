@@ -67,6 +67,20 @@ describe("grouping (D1, legacy data)", () => {
     expect(g.orphans.map((o) => o.resource.name)).toEqual(["cache"]);
   });
 
+  it("Firebase read as a key file: the credentials-file key is the main key, not the project id or email", () => {
+    const g = groupVariables(
+      [
+        v({ key: "FIREBASE_CLIENT_EMAIL", type: "brokered", resourceId: "fb", field: "clientEmail" }),
+        v({ key: "FIREBASE_PROJECT_ID", type: "brokered", resourceId: "fb", field: "projectId" }),
+        v({ key: "GOOGLE_APPLICATION_CREDENTIALS", type: "brokered", resourceId: "fb", field: "credentialsFile" }),
+      ],
+      [r({ id: "fb", kind: "google-sa" })],
+    );
+    const svc = g.items.find((i) => i.kind === "service");
+    if (svc?.kind !== "service") throw new Error("expected a service group");
+    expect(svc.group.main?.key).toBe("GOOGLE_APPLICATION_CREDENTIALS");
+  });
+
   it("chip labels and provider detection", () => {
     expect(typeOfResource(r({ kind: "http", config: { provider: "openai", upstreamUrl: "https://x" } }))).toEqual({
       type: "ai",

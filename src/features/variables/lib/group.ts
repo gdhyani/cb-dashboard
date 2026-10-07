@@ -127,8 +127,13 @@ export function groupVariables(variables: Variable[], resources: Resource[]): Gr
       orphans.push({ resource, type, provider, rows: [] });
       continue;
     }
+    // A Google service account can be read as the whole JSON, a key file or the private key: each is its main key.
+    const mainFields =
+      resource.kind === "google-sa"
+        ? ["credentialsJson", "credentialsFile", "privateKey"]
+        : [MAIN_FIELD[resource.kind]];
     const main =
-      list.find((v) => v.type === "brokered" && v.field === MAIN_FIELD[resource.kind]) ??
+      mainFields.map((f) => list.find((v) => v.type === "brokered" && v.field === f)).find(Boolean) ??
       list.find((v) => v.type === "brokered") ??
       list[0];
     const rows: Row[] = [

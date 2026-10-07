@@ -62,6 +62,7 @@ export function AcceptInvite({ token }: { token: string }) {
           </div>
         ) : (
           <form
+            method="post"
             className="flex flex-col gap-4"
             onSubmit={form.handleSubmit((v) => accept.mutate({ token, ...v }, { onSuccess: (r) => goToOrg(r.orgId) }))}
           >

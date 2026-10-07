@@ -87,3 +87,28 @@ describe("OQ10 Import .env (one 'What is this?' per line, FR-UI-001)", () => {
     );
   });
 });
+
+describe("Import .env: a secret is never imported as Plain by default (security run 2026-10-07)", () => {
+  it("a secret-looking line has no type until the admin chooses; 'Secret shown as-is' creates a visible variable", async () => {
+    api.createVariable.mockResolvedValue({});
+    renderDialog();
+    fireEvent.change(screen.getByLabelText("Your .env"), {
+      target: { value: "CB_TOKEN=CANARY_8b584afc52a0cfdb33633e4d64901bef\nAPP_NAME=shop" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Review" }));
+    const pick = (await screen.findByLabelText("What is CB_TOKEN?")) as HTMLSelectElement;
+    expect(pick.value).toBe("");
+    expect(screen.getByText(/looks like a secret/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Import 2 variables/ })).toBeDisabled();
+    fireEvent.change(pick, { target: { value: "visible" } });
+    fireEvent.click(screen.getByRole("button", { name: /Import 2 variables/ }));
+    await waitFor(() =>
+      expect(api.createVariable).toHaveBeenCalledWith("e1", {
+        type: "visible",
+        key: "CB_TOKEN",
+        value: "CANARY_8b584afc52a0cfdb33633e4d64901bef",
+      }),
+    );
+    expect(api.createVariable).toHaveBeenCalledWith("e1", { type: "plain", key: "APP_NAME", value: "shop" });
+  });
+});

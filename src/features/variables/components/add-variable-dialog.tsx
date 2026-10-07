@@ -21,6 +21,7 @@ import {
   initialExtras,
   KEY_PATTERN,
   normalizeKey,
+  privateCaProvider,
   TYPES,
   type TypeId,
   WEBHOOK_PROVIDERS,
@@ -106,6 +107,11 @@ export function AddVariableDialog({
     return Boolean(ed && !ed.field && !e.value?.trim() && !(ed.defaultFrom && draft.fields[ed.defaultFrom]?.trim()));
   });
   const fieldsInvalid = Boolean(fieldError([...required, ...advanced], draft.fields));
+  // D3: a database on a private-CA provider needs that CA; open Advanced and say so until it is given.
+  const caProvider =
+    advanced.some((f) => f.name === "caCert") && !draft.fields.caCert?.trim()
+      ? privateCaProvider(draft.value)
+      : undefined;
   const valueError = valueMode !== "none" && draft.value.trim() ? def.value?.validate?.(draft.value.trim()) : undefined;
   const canSave =
     KEY_PATTERN.test(draft.key) &&
@@ -204,11 +210,14 @@ export function AddVariableDialog({
             {valueMode === "none"
               ? "cb makes the signing secret and shows it once after saving, with the URL to paste into the provider."
               : protectedType
-                ? "Paste the real value once. cb keeps it on the server and tests it before saving."
+                ? def.value?.file
+                  ? "Paste or drop the file once. cb keeps it on the server and tests it before saving."
+                  : "Paste the real value once. cb keeps it on the server and tests it before saving."
                 : "Every key your app reads from process.env lives here."}
           </DialogDescription>
         </DialogHeader>
         <form
+          method="post"
           className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();
@@ -239,7 +248,11 @@ export function AddVariableDialog({
             <TypeSelect
               id="add-type"
               value={draft.type}
-              onChange={(t) => setDraft((d) => freshDraft(t, undefined, d.key))}
+              onChange={(t) => {
+                // A refusal belongs to the type it was for; a new type starts clean.
+                setError(null);
+                setDraft((d) => freshDraft(t, undefined, d.key));
+              }}
             />
           </FormField>
           {def.providers && (
@@ -307,7 +320,28 @@ export function AddVariableDialog({
             />
           ))}
           <ExtrasSection defs={extraDefs} extras={draft.extras} onChange={(extras) => update({ extras })} />
-          <AdvancedSection idPrefix="add-adv" fields={advanced} values={draft.fields} onChange={setField} />
+          <AdvancedSection
+            idPrefix="add-adv"
+            fields={advanced}
+            values={draft.fields}
+            onChange={setField}
+            forceOpen={Boolean(caProvider)}
+            hint={
+              caProvider
+                ? `${caProvider} signs its servers with its own CA. Add ca.pem from the service's Overview page (Download CA certificate).`
+                : undefined
+            }
+          />
+          {protectedType && /^(NEXT_PUBLIC_|VITE_|PUBLIC_|EXPO_PUBLIC_|REACT_APP_)/.test(draft.key) && (
+            <p
+              role="note"
+              className="flex items-start gap-2 rounded-md border border-amber-400/40 p-3 text-xs text-amber-300"
+            >
+              <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0" />
+              Keys with this prefix are sent to the browser by your framework. Only a stand-in would ever reach it, so
+              nothing real leaks — but browser code can't use a protected key. Use a server-side name instead.
+            </p>
+          )}
           {protectedType && draft.type !== "visible" && (
             <p className="flex items-start gap-2 rounded-md border border-border p-3 text-xs text-subtle">
               <Lock aria-hidden className="mt-0.5 size-3.5 shrink-0" />

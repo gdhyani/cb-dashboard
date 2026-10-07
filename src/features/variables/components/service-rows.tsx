@@ -137,6 +137,7 @@ export function ServiceRows({
             chip={chip}
             actions={isAdmin ? actions : undefined}
             onOpen={isAdmin ? () => onOpen(row.variable, group) : undefined}
+            health={row.extra ? undefined : group.resource.health}
           />
         );
       })}

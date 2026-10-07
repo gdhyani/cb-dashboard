@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { FileDrop } from "@/shared/components/file-drop";
 import { FormField } from "@/shared/components/form-field";
 import { SecretInput, SecretTextarea } from "@/shared/components/secret-input";
 import { Input } from "@/shared/ui/input";
@@ -28,6 +30,7 @@ export function FieldInput({
   readOnly?: boolean;
 }) {
   const id = `${idPrefix}-${def.name}`;
+  const [fileError, setFileError] = useState<string>();
   const label = def.optional ? `${def.label} (optional)` : def.label;
   let control: React.ReactNode;
   if (def.select) {
@@ -53,7 +56,10 @@ export function FieldInput({
         value={value}
         isSet={isSet}
         placeholder={def.placeholder}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          setFileError(undefined);
+          onChange(e.target.value);
+        }}
       />
     );
   } else if (def.secret) {
@@ -75,7 +81,12 @@ export function FieldInput({
         readOnly={readOnly}
         placeholder={def.placeholder}
         className="font-mono text-xs"
-        onChange={(e) => onChange(e.target.value)}
+        autoComplete="off"
+        spellCheck={false}
+        onChange={(e) => {
+          setFileError(undefined);
+          onChange(e.target.value);
+        }}
       />
     );
   } else {
@@ -93,8 +104,24 @@ export function FieldInput({
     );
   }
   return (
-    <FormField id={id} label={label} hint={def.hint} error={error}>
-      {control}
+    <FormField id={id} label={label} hint={def.hint} error={fileError ?? error}>
+      {def.file && !readOnly ? (
+        <FileDrop
+          accept={def.file.accept}
+          maxBytes={def.file.maxBytes}
+          label={def.label}
+          filled={value !== ""}
+          onText={(text) => {
+            setFileError(undefined);
+            onChange(text);
+          }}
+          onError={setFileError}
+        >
+          {control}
+        </FileDrop>
+      ) : (
+        control
+      )}
     </FormField>
   );
 }
