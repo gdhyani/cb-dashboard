@@ -121,7 +121,7 @@ COOKIE_SECURE=false
   </Field>
   <Field name="FILE_STORE" type="mongo | supabase" default="mongo">
     Where uploaded files (service-account JSON, `.p8` keys, CA certificates) are kept. cb encrypts each file with
-    `MASTER_KEY` first, so the store only holds ciphertext. With `supabase`, also set `SUPABASE_URL` and
+    `MASTER_KEY` first, so the store only holds ciphertext. With `supabase`, also set `SUPABASE_URL` (`https://`) and
     `SUPABASE_SECRET_KEY` (and optionally `SUPABASE_STORAGE_BUCKET`, default `cb-files`, created private).
   </Field>
 </Fields>

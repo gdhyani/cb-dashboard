@@ -12,7 +12,7 @@ pull requests against them.
 | Area | Rule |
 |---|---|
 | Language | TypeScript with `strict` on. No `any` unless a comment explains why it is needed. |
-| Runtime | Node.js 22 and 24 are supported; CI also runs a newer release. npm only — no pnpm, yarn or monorepo tooling. |
+| Runtime | Node.js 22 (22.14 or newer) and 24 are supported; CI also runs a newer release. npm only — no pnpm, yarn or monorepo tooling. |
 | Validation | zod at every boundary: HTTP requests and responses, IPC messages, files read from disk, WebSocket open parameters and environment variables. |
 | Lint and format | Biome (`npm run lint`). Do not add ESLint or Prettier. |
 | Tests | Vitest. Write the failing test first, then the code. Every new behaviour has at least one test. |

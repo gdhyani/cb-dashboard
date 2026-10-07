@@ -17,11 +17,14 @@ on `main`.
 - **Aiven and DigitalOcean databases** open **Advanced** by themselves and ask for the provider's CA certificate.
   A stored CA is shown by its subject and expiry, with **Remove**; a new file replaces it.
 - **Key status.** Every service key has a dot: green **Working**, a red **Expired** badge when the provider refuses
-  the key (deleted, rotated or expired), grey **Not checked yet**. The key stays hidden in every state.
+  the key (deleted, rotated or expired), a hollow ring for **Not checked yet**. The key stays hidden in every state.
 - Secret fields never offer to save in the browser's password manager, and no form can put a value in a URL.
+- **Drop a key file straight onto the text field.** A file that can't be read says so plainly; the file name goes
+  away when the field is cleared, and the browser never opens a dropped file.
 - **Import .env** never guesses Plain for a line that looks like a secret, and can import it as **Secret shown
   as-is**. That includes secrets behind a browser prefix (`NEXT_PUBLIC_…SECRET…`), password, auth, signing and DSN
-  names, and URLs that carry a password or a token. A protected key named `NEXT_PUBLIC_…` (or `VITE_…`) gets a warning.
+  names, and URLs that carry a password or a token. A key named after another service (`CLERK_SECRET_KEY=sk_test_…`)
+  is not guessed as Stripe. A protected key named `NEXT_PUBLIC_…` (or `VITE_…`) gets a warning.
 
 ### Backend
 
@@ -32,6 +35,9 @@ on `main`.
 - Deleting a service, an environment or a project removes everything kept for it (stored files, stand-in key
   material, swapped tokens).
 - **Save & test** explains a database whose certificate is signed by a private CA.
+- A key that was replaced is never marked **Expired** by a connection opened before the replace.
+- `SUPABASE_URL` must use `https://` (plain `http://` only for `localhost`). CA certificates saved before the file
+  store are shown by subject and expiry only, like newer ones.
 
 ### CLI
 
@@ -39,6 +45,8 @@ on `main`.
 - The agent's log and lock files are readable only by you; `Basic …` credentials are removed from its log.
 - The agent ignores `SIGUSR1` and never inherits `NODE_OPTIONS`, so no other process on your machine can attach a
   debugger to it or load code into it.
+- **cb needs Node.js 22.14 or newer.** `cb doctor` warns on 22.0–22.13, where the agent can't block debuggers.
+- The agent log no longer hides ordinary text that follows the word "Basic".
 
 ## 6 October 2026
 
