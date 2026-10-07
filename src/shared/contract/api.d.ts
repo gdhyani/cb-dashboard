@@ -1466,7 +1466,7 @@ export interface components {
             environmentId: components["schemas"]["ObjectId"];
             kind: components["schemas"]["ResourceKind"];
             name: string;
-            /** @description Non-secret configuration (e.g. host, database, tls, upstreamUrl, authScheme, fakePrefix, basePath, redirectHosts, region, endpoint, tokenUrl, projectId, clientEmail, keyId, teamId). Never contains credentials. A CA certificate is shown as `caCertFile` ({subject, notAfter, size}) — the PEM itself stays in the file store. */
+            /** @description Non-secret configuration (e.g. host, database, tls, upstreamUrl, authScheme, fakePrefix, basePath, redirectHosts, region, endpoint, tokenUrl, projectId, clientEmail, keyId, teamId). Never contains credentials. A CA certificate is shown only as `caCertFile` ({subject, notAfter, size}); `caCert` (the PEM) is never returned, including for rows stored before the file-store migration. */
             config: {
                 [key: string]: unknown;
             };
