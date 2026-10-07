@@ -34,6 +34,8 @@ const INVENTED = /^(AUTH|NEXTAUTH|SESSION|JWT|COOKIE|APP|ENCRYPTION|CSRF)_SECRET
 const SECRET_NAME =
   /(SECRET|TOKEN|PASSWORD|PASSWD|PRIVATE|CREDENTIAL|SERVICE_ROLE|API_?KEY|_KEY$|WEBHOOK|SIGNING|HMAC|SALT)|(^|_)(PASS|PWD|DSN)(_|$)|_AUTH$/;
 const SECRET_VALUE = /^((sk|rk)_(test|live)_|sk-|gsk_|AIza)/;
+/** M15: key names that name another provider whose keys can look like Stripe's (sk_test_) or OpenAI's (sk-). */
+const OTHER_PROVIDER = /(^|_)(CLERK|RESEND|SUPABASE|GITHUB|GITLAB|TWILIO|SENDGRID|PAYPAL|SHOPIFY|SLACK)(_|$)/;
 const BROWSER_PREFIX = /^(NEXT_PUBLIC_|PUBLIC_|VITE_|EXPO_PUBLIC_)/;
 const randomPart = (v: string) => v.length >= 16 && /[A-Za-z]/.test(v) && /\d/.test(v);
 const looksRandom = (v: string) => !/\s/.test(v) && !/^https?:\/\//.test(v) && randomPart(v);
@@ -62,6 +64,8 @@ export function guessType(key: string, value: string): { type: TypeId | "unsure"
     const secret = SECRET_NAME.test(key) || SECRET_VALUE.test(value) || looksRandom(value);
     return { type: secret ? "unsure" : "plain" };
   }
+  // M15: a Stripe/OpenAI-shaped value under another provider's name gets no guess (it would fail that check confusingly).
+  if (/^((sk|rk)_(test|live)_|sk-(?!ant-))/.test(value) && OTHER_PROVIDER.test(key)) return { type: "unsure" };
   if (/^(sk|rk)_(test|live)_/.test(value)) return { type: "stripe" };
   if (value.startsWith("sk-ant-")) return { type: "ai", provider: "anthropic" };
   if (value.startsWith("sk-")) return { type: "ai", provider: "openai" };

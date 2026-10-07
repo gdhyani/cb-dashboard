@@ -45,7 +45,20 @@ describe("Import .env never defaults a secret to Plain (security run 2026-10-07)
   it("a random-looking value with no known shape gets no default: the admin must choose", () => {
     expect(guessType("CB_TOKEN", "CANARY_8b584afc52a0cfdb33633e4d64901bef")).toEqual({ type: "unsure" });
     expect(guessType("RESEND_API_KEY", "re_AbCdEf123456789xyz")).toEqual({ type: "unsure" });
-    expect(guessType("CLERK_SECRET_KEY", "sk_test_aGVsbG8gd29ybGQ")).toMatchObject({ type: "stripe" }); // Stripe-shaped: still a guess
+  });
+
+  it("M15 a key named for another provider is not guessed Stripe or OpenAI just because its value looks like one", () => {
+    expect(guessType("CLERK_SECRET_KEY", "sk_test_aGVsbG8gd29ybGQ")).toEqual({ type: "unsure" });
+    expect(guessType("RESEND_API_KEY", "sk_live_aGVsbG8gd29ybGQ")).toEqual({ type: "unsure" });
+    expect(guessType("SUPABASE_SERVICE_KEY", "sk-aGVsbG8gd29ybGQ")).toEqual({ type: "unsure" });
+    expect(guessType("GITHUB_TOKEN", "sk-aGVsbG8gd29ybGQ")).toEqual({ type: "unsure" });
+    // Named for Stripe / OpenAI, or not named at all: the shape still guesses.
+    expect(guessType("STRIPE_SECRET_KEY", "sk_test_aGVsbG8gd29ybGQ")).toEqual({ type: "stripe" });
+    expect(guessType("SECRET_KEY", "sk_test_aGVsbG8gd29ybGQ")).toEqual({ type: "stripe" });
+    expect(guessType("OPENAI_API_KEY", "sk-proj-x")).toEqual({ type: "ai", provider: "openai" });
+    expect(guessType("API_KEY", "sk-proj-x")).toEqual({ type: "ai", provider: "openai" });
+    // A word inside another word is not a provider name.
+    expect(guessType("CLERKSHIP_STRIPE_KEY", "sk_test_aGVsbG8gd29ybGQ")).toEqual({ type: "stripe" });
   });
 
   it("key names that say secret / token / password / private / key are never guessed Plain", () => {
