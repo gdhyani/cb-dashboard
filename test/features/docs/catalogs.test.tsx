@@ -5,7 +5,7 @@ import { CONNECTORS } from "@/features/docs/lib/connectors";
 import { PLATFORMS } from "@/features/docs/lib/platforms";
 
 // Verified against real providers on 2026-10-07 (PRD v1.48 §17.4): mysql, openai, gemini, groq, firebase, api-key.
-const BETA = ["anthropic", "mistral", "custom-ai", "google", "github", "oauth", "apns"];
+const BETA = ["anthropic", "mistral", "custom-ai", "oauth", "apns"];
 
 describe("FR-DOC-006 connector catalog", () => {
   it("slugs are unique", () => {
