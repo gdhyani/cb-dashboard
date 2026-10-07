@@ -24,6 +24,12 @@ when the URL asks for it, and passes the traffic through. Your driver or ORM wor
   pooler reuses server sessions, so session state such as temporary tables can outlive your app's connection.
 </Callout>
 
+<Callout type="note" title="Amazon RDS">
+  <StatusBadge status="beta" /> Amazon RDS for PostgreSQL is not yet confirmed against a real instance. RDS
+  certificates are signed by Amazon's own CA, so add the RDS CA bundle (`global-bundle.pem` from AWS) under
+  **Advanced → CA certificate**.
+</Callout>
+
 ## Add it in the dashboard
 
 <Steps>
