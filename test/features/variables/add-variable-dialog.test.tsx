@@ -135,12 +135,14 @@ describe("Add variable dialog (D2, D5, FR-UI-001)", () => {
     expect(await screen.findByText("MONGODB_URI already exists in this environment.")).toBeInTheDocument();
   });
 
-  it("AI Custom pre-ticks the base-URL extra and lets the user rename it", async () => {
+  it("AI Custom pre-ticks the base-URL and model extras, needs a model name, lets the user rename the URL key", async () => {
     api.createService.mockResolvedValue({ service: {}, variables: [{ key: "LLM_API_KEY" }], test: null });
     renderDialog({ initialType: "ai", initialProvider: "custom" });
     fireEvent.change(screen.getByLabelText("Key"), { target: { value: "LLM_API_KEY" } });
     fireEvent.change(screen.getByLabelText(/API key/), { target: { value: "k" } });
     fireEvent.change(screen.getByLabelText("Base URL"), { target: { value: "http://10.0.4.12:8000" } });
+    expect(screen.getByRole("button", { name: "Save & test" })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("Model name"), { target: { value: "llama3.1:8b" } });
     fireEvent.click(screen.getByRole("button", { name: /Suggested extra keys/ }));
     const extraKey = screen.getByDisplayValue("LLM_BASE_URL");
     fireEvent.change(extraKey, { target: { value: "model server url" } });
@@ -150,8 +152,18 @@ describe("Add variable dialog (D2, D5, FR-UI-001)", () => {
     expect(api.createService.mock.calls[0]?.[1]).toMatchObject({
       key: "LLM_API_KEY",
       resource: { kind: "http", provider: "ai-custom", upstreamUrl: "http://10.0.4.12:8000", apiKey: "k" },
-      extras: [{ key: "MODEL_SERVER_URL", field: "baseUrl" }],
+      extras: [
+        { key: "MODEL_SERVER_URL", field: "baseUrl" },
+        { key: "LLM_MODEL", value: "llama3.1:8b" },
+      ],
     });
+    expect(api.createService.mock.calls[0]?.[1].resource).not.toHaveProperty("model");
+  });
+
+  it("D2: the Key placeholder follows the chosen type and provider", () => {
+    renderDialog({ initialType: "stripe" });
+    expect(screen.getByLabelText("Key")).toHaveAttribute("placeholder", "STRIPE_SECRET_KEY");
+    expect(screen.getByText("The name your code reads, e.g. STRIPE_SECRET_KEY.")).toBeInTheDocument();
   });
 
   it("never asks for a fake value or prefix", () => {

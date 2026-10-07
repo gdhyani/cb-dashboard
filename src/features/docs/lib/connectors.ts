@@ -22,7 +22,7 @@ export const CONNECTORS: Connector[] = [
   { slug: "groq", name: "Groq", group: "ai", beta: false, logo: "letter:Gq" },
   { slug: "mistral", name: "Mistral", group: "ai", beta: true, logo: "mistralai" },
   { slug: "openrouter", name: "OpenRouter", group: "ai", beta: false, logo: "openrouter" },
-  { slug: "custom-ai", name: "Custom AI (self-hosted)", group: "ai", beta: true, logo: "letter:⌂" },
+  { slug: "custom-ai", name: "Custom AI (self-hosted)", group: "ai", beta: false, logo: "letter:⌂" },
   { slug: "aws", name: "AWS (S3, R2, SES)", group: "cloud", beta: false, logo: "aws" },
   { slug: "smtp", name: "SMTP email", group: "cloud", beta: false, logo: "mail" },
   { slug: "google", name: "Google sign-in", group: "sign-in", beta: false, logo: "google" },

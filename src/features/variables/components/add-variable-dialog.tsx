@@ -20,6 +20,7 @@ import {
   fieldError,
   initialExtras,
   KEY_PATTERN,
+  keyExample,
   normalizeKey,
   privateCaProvider,
   TYPES,
@@ -227,7 +228,7 @@ export function AddVariableDialog({
           <FormField
             id="add-key"
             label="Key"
-            hint="The name your code reads, e.g. DATABASE_URL."
+            hint={`The name your code reads, e.g. ${keyExample(draft.type, draft.provider)}.`}
             error={keyError ?? (keyInvalid ? KEY_HINT : undefined)}
           >
             <Input
@@ -236,7 +237,7 @@ export function AddVariableDialog({
               autoFocus
               autoComplete="off"
               spellCheck={false}
-              placeholder="DATABASE_URL"
+              placeholder={keyExample(draft.type, draft.provider)}
               className="font-mono"
               onChange={(e) => {
                 setKeyError(undefined);
@@ -319,7 +320,12 @@ export function AddVariableDialog({
               error={draft.fields[f.name]?.trim() ? f.validate?.(draft.fields[f.name]?.trim() ?? "") : undefined}
             />
           ))}
-          <ExtrasSection defs={extraDefs} extras={draft.extras} onChange={(extras) => update({ extras })} />
+          <ExtrasSection
+            defs={extraDefs}
+            extras={draft.extras}
+            fields={draft.fields}
+            onChange={(extras) => update({ extras })}
+          />
           <AdvancedSection
             idPrefix="add-adv"
             fields={advanced}
