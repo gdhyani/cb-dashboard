@@ -73,13 +73,15 @@ describe("Import .env never defaults a secret to Plain (security run 2026-10-07)
     expect(guessType("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", "pk_test_123")).toEqual({ type: "plain" }); // public prefix: browser anyway
   });
 
-  it("a browser prefix never makes a real secret Plain (NEXT_PUBLIC_/VITE_/PUBLIC_/EXPO_PUBLIC_)", () => {
+  it("a browser prefix never makes a real secret Plain (NEXT_PUBLIC_/VITE_/PUBLIC_/EXPO_PUBLIC_/REACT_APP_)", () => {
     expect(guessType("NEXT_PUBLIC_STRIPE_SECRET_KEY", "sk_live_aGVsbG8gd29ybGQ1234")).toEqual({ type: "unsure" });
     expect(guessType("VITE_SUPABASE_SERVICE_ROLE_KEY", "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZSJ9.x1")).toEqual({
       type: "unsure",
     });
     expect(guessType("PUBLIC_OPENAI_KEY", "sk-proj-abc")).toEqual({ type: "unsure" });
     expect(guessType("EXPO_PUBLIC_API_TOKEN", "short")).toEqual({ type: "unsure" });
+    expect(guessType("REACT_APP_STRIPE_SECRET_KEY", "sk_live_aGVsbG8gd29ybGQ1234")).toEqual({ type: "unsure" });
+    expect(guessType("REACT_APP_TITLE", "Storefront")).toEqual({ type: "plain" });
     expect(guessType("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", "pk_live_51AbCdEf0123456789xyz")).toEqual({ type: "plain" });
     expect(guessType("NEXT_PUBLIC_API_URL", "https://api.example.com/v1")).toEqual({ type: "plain" });
   });

@@ -36,7 +36,7 @@ const SECRET_NAME =
 const SECRET_VALUE = /^((sk|rk)_(test|live)_|sk-|gsk_|AIza)/;
 /** M15: key names that name another provider whose keys can look like Stripe's (sk_test_) or OpenAI's (sk-). */
 const OTHER_PROVIDER = /(^|_)(CLERK|RESEND|SUPABASE|GITHUB|GITLAB|TWILIO|SENDGRID|PAYPAL|SHOPIFY|SLACK)(_|$)/;
-const BROWSER_PREFIX = /^(NEXT_PUBLIC_|PUBLIC_|VITE_|EXPO_PUBLIC_)/;
+const BROWSER_PREFIX = /^(NEXT_PUBLIC_|PUBLIC_|VITE_|EXPO_PUBLIC_|REACT_APP_)/;
 const randomPart = (v: string) => v.length >= 16 && /[A-Za-z]/.test(v) && /\d/.test(v);
 const looksRandom = (v: string) => !/\s/.test(v) && !/^https?:\/\//.test(v) && randomPart(v);
 /** A URL that carries a password (user:pass@) or a long token in its path or query, like a Slack webhook. */
