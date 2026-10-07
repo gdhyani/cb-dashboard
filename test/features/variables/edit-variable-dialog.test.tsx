@@ -173,6 +173,8 @@ describe("Edit variable dialog (D9, FR-UI-001)", () => {
     expect(screen.getByRole("heading", { name: "Edit AI variable · LLM_API_KEY" })).toBeInTheDocument();
     const base = screen.getByLabelText("Base URL");
     expect(base).toHaveValue("http://10.0.4.12:8000");
+    // The model name is its own plain variable (LLM_MODEL), never a service setting.
+    expect(screen.queryByLabelText("Model name")).toBeNull();
     fireEvent.change(base, { target: { value: "http://10.0.4.20:8000" } });
     // review I5: a new address needs the key again.
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();

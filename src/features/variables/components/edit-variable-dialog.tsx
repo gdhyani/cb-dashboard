@@ -94,7 +94,8 @@ export function EditVariableDialog({
     () =>
       isMain
         ? [...def.required(group?.provider), ...def.advanced(group?.provider)].filter(
-            (f) => !f.secret && f.name !== "readsAs",
+            // Form-only fields (AI Custom's model name) live in their own plain variable, edited there.
+            (f) => !f.secret && f.name !== "readsAs" && !f.formOnly,
           )
         : [],
     [isMain, def, group?.provider],

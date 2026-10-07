@@ -4,6 +4,7 @@ import {
   type DraftState,
   dialogTitle,
   initialExtras,
+  keyExample,
   normalizeKey,
   QUICK_ADD,
   TYPES,
@@ -29,6 +30,25 @@ describe("D2 key names", () => {
     expect(normalizeKey("mongodb uri")).toBe("MONGODB_URI");
     expect(normalizeKey("next-public.app url")).toBe("NEXT_PUBLIC_APP_URL");
     expect(normalizeKey("")).toBe("");
+  });
+});
+
+describe("D2 key placeholder follows the type", () => {
+  it("shows a greyed example for the chosen type and provider, never a value", () => {
+    expect(keyExample("stripe")).toBe("STRIPE_SECRET_KEY");
+    expect(keyExample("mongodb")).toBe("MONGODB_URI");
+    expect(keyExample("postgres")).toBe("DATABASE_URL");
+    expect(keyExample("ai", "anthropic")).toBe("ANTHROPIC_API_KEY");
+    expect(keyExample("ai", "custom")).toBe("LLM_API_KEY");
+    expect(keyExample("webhook", "razorpay")).toBe("RAZORPAY_WEBHOOK_SECRET");
+    expect(keyExample("oauth", "github")).toBe("GITHUB_CLIENT_SECRET");
+    expect(keyExample("aws", "ses")).toBe("AWS_SECRET_ACCESS_KEY");
+  });
+
+  it("every type and provider has an UPPER_SNAKE example", () => {
+    for (const t of Object.values(TYPES))
+      for (const p of t.providers?.map((x) => x.id) ?? [undefined])
+        expect(keyExample(t.id, p)).toMatch(/^[A-Z][A-Z0-9_]*$/);
   });
 });
 
@@ -99,6 +119,24 @@ describe("buildCreateRequest (catalog → API)", () => {
       },
       extras: [{ key: "MODEL_SERVER_URL", field: "baseUrl" }],
     });
+  });
+
+  it("AI Custom asks for a model name and saves it as the plain LLM_MODEL extra, never on the service", () => {
+    expect(TYPES.ai.required("custom").find((f) => f.name === "model")).toMatchObject({ label: "Model name" });
+    expect(TYPES.ai.required("openai").some((f) => f.name === "model")).toBe(false);
+    const model = initialExtras("ai", "custom").find((e) => e.suggestedKey === "LLM_MODEL");
+    expect(model).toMatchObject({ on: true });
+    if (!model) throw new Error("expected the model extra");
+    const r = draft({
+      key: "LLM_API_KEY",
+      type: "ai",
+      provider: "custom",
+      value: "k",
+      fields: { upstreamUrl: "http://10.0.4.12:8000/v1", model: "llama3.1:8b" },
+      extras: [model],
+    });
+    expect(r.body).toMatchObject({ extras: [{ key: "LLM_MODEL", value: "llama3.1:8b" }] });
+    expect((r.body as { resource: Record<string, unknown> }).resource).not.toHaveProperty("model");
   });
 
   it("Stripe publishable key extra is a linked plain value; unticked extras are not sent", () => {

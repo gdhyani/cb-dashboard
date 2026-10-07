@@ -36,6 +36,8 @@ export interface ProviderDef {
   placeholder: string;
   /** Extra key suggested for SDKs that read a base URL. */
   baseUrlKey: string;
+  /** Greyed example in the Key field (never filled in, D2). */
+  keyExample?: string;
 }
 
 export interface FieldDef {
@@ -54,6 +56,8 @@ export interface FieldDef {
   showWhen?: { field: string; equals: string };
   /** The value can also be chosen or dropped as a file (key files, CA certificates). */
   file?: { accept: string; maxBytes: number };
+  /** Asked in the form but never sent to the service; it feeds a plain extra via defaultFrom. */
+  formOnly?: boolean;
 }
 
 // Checks for uploaded key / certificate files. They name the problem, never the content (B4).
@@ -120,6 +124,8 @@ export interface TypeDef {
   name: string;
   /** Used in titles: "Add <title> variable". */
   title: string;
+  /** Greyed example in the Key field; a provider's own example wins (D2: never filled in). */
+  keyExample: string;
   group: TypeGroup;
   desc: string;
   icon: IconId;
@@ -247,10 +253,18 @@ const API_CA_CERT: FieldDef = {
   hint: "Only for internal APIs that use a private certificate authority.",
 };
 
-const db = (id: TypeId, name: string, kind: ResourceKind, icon: IconId, placeholder: string): TypeDef => ({
+const db = (
+  id: TypeId,
+  name: string,
+  kind: ResourceKind,
+  icon: IconId,
+  placeholder: string,
+  keyExample: string,
+): TypeDef => ({
   id,
   name,
   title: name,
+  keyExample,
   group: "Databases",
   desc: "connection URL",
   icon,
@@ -266,6 +280,7 @@ export const AI_PROVIDERS: ProviderDef[] = [
     id: "openai",
     name: "OpenAI",
     presetId: "openai",
+    keyExample: "OPENAI_API_KEY",
     icon: "letter:AI",
     placeholder: "sk-proj-…",
     baseUrlKey: "OPENAI_BASE_URL",
@@ -274,6 +289,7 @@ export const AI_PROVIDERS: ProviderDef[] = [
     id: "anthropic",
     name: "Anthropic",
     presetId: "anthropic",
+    keyExample: "ANTHROPIC_API_KEY",
     icon: "anthropic",
     placeholder: "sk-ant-…",
     baseUrlKey: "ANTHROPIC_BASE_URL",
@@ -282,15 +298,25 @@ export const AI_PROVIDERS: ProviderDef[] = [
     id: "gemini",
     name: "Google Gemini",
     presetId: "gemini",
+    keyExample: "GEMINI_API_KEY",
     icon: "googlegemini",
     placeholder: "AIza…",
     baseUrlKey: "GEMINI_BASE_URL",
   },
-  { id: "groq", name: "Groq", presetId: "groq", icon: "letter:Gq", placeholder: "gsk_…", baseUrlKey: "GROQ_BASE_URL" },
+  {
+    id: "groq",
+    name: "Groq",
+    presetId: "groq",
+    keyExample: "GROQ_API_KEY",
+    icon: "letter:Gq",
+    placeholder: "gsk_…",
+    baseUrlKey: "GROQ_BASE_URL",
+  },
   {
     id: "mistral",
     name: "Mistral",
     presetId: "mistral",
+    keyExample: "MISTRAL_API_KEY",
     icon: "mistralai",
     placeholder: "the API key",
     baseUrlKey: "MISTRAL_BASE_URL",
@@ -299,6 +325,7 @@ export const AI_PROVIDERS: ProviderDef[] = [
     id: "openrouter",
     name: "OpenRouter",
     presetId: "openrouter",
+    keyExample: "OPENROUTER_API_KEY",
     icon: "openrouter",
     placeholder: "sk-or-…",
     baseUrlKey: "OPENROUTER_BASE_URL",
@@ -306,6 +333,7 @@ export const AI_PROVIDERS: ProviderDef[] = [
   {
     id: "custom",
     name: "Custom / self-hosted",
+    keyExample: "LLM_API_KEY",
     icon: "letter:⌂",
     placeholder: "the key your server expects",
     baseUrlKey: "LLM_BASE_URL",
@@ -317,6 +345,7 @@ export const OAUTH_PROVIDERS: ProviderDef[] = [
     id: "google",
     name: "Google",
     presetId: "google-oauth",
+    keyExample: "GOOGLE_CLIENT_SECRET",
     icon: "google",
     placeholder: "GOCSPX-…",
     baseUrlKey: "GOOGLE_CLIENT_ID",
@@ -325,6 +354,7 @@ export const OAUTH_PROVIDERS: ProviderDef[] = [
     id: "github",
     name: "GitHub",
     presetId: "github-oauth",
+    keyExample: "GITHUB_CLIENT_SECRET",
     icon: "github",
     placeholder: "the client secret",
     baseUrlKey: "GITHUB_CLIENT_ID",
@@ -332,6 +362,7 @@ export const OAUTH_PROVIDERS: ProviderDef[] = [
   {
     id: "custom",
     name: "Other (any OAuth provider)",
+    keyExample: "OAUTH_CLIENT_SECRET",
     icon: "letter:ID",
     placeholder: "the client secret",
     baseUrlKey: "OAUTH_CLIENT_ID",
@@ -339,6 +370,12 @@ export const OAUTH_PROVIDERS: ProviderDef[] = [
 ];
 
 const providerOf = (list: ProviderDef[], id?: string) => list.find((p) => p.id === id) ?? list[0];
+
+/** D2: the greyed example in the Key field for this type and provider. A placeholder only — never typed in. */
+export function keyExample(type: TypeId, provider?: string): string {
+  const def = TYPES[type];
+  return (def.providers && providerOf(def.providers, provider)?.keyExample) || def.keyExample;
+}
 
 /**
  * AWS: which API the key is for. cb sends each AWS variable's requests to one endpoint, so the choice fills the endpoint
@@ -379,13 +416,21 @@ function awsEndpointExtras(p?: string): ExtraDef[] {
 
 /** FR-WH-001: where each provider shows the signing secret (and takes the URL). */
 export const WEBHOOK_PROVIDERS: ProviderDef[] = [
-  { id: "stripe", name: "Stripe", icon: "stripe", placeholder: "whsec_…", baseUrlKey: "" },
+  {
+    id: "stripe",
+    name: "Stripe",
+    icon: "stripe",
+    placeholder: "whsec_…",
+    baseUrlKey: "",
+    keyExample: "STRIPE_WEBHOOK_SECRET",
+  },
   {
     id: "razorpay",
     name: "Razorpay",
     icon: "razorpay",
     placeholder: "the secret you set on the webhook",
     baseUrlKey: "",
+    keyExample: "RAZORPAY_WEBHOOK_SECRET",
   },
 ];
 
@@ -394,6 +439,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     id: "plain",
     name: "Plain value",
     title: "",
+    keyExample: "NEXT_PUBLIC_APP_URL",
     group: "Basic",
     desc: "shown as-is",
     icon: "letter:Aa",
@@ -406,6 +452,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     id: "gen",
     name: "Random secret",
     title: "random secret",
+    keyExample: "SESSION_SECRET",
     group: "Basic",
     desc: "different per developer",
     icon: "secret",
@@ -417,6 +464,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     id: "visible",
     name: "Secret shown as-is",
     title: "secret shown as-is",
+    keyExample: "LICENSE_KEY",
     group: "Basic",
     desc: "last resort",
     icon: "letter:!",
@@ -425,14 +473,29 @@ export const TYPES: Record<TypeId, TypeDef> = {
     extras: none,
     advanced: none,
   },
-  mongodb: db("mongodb", "MongoDB", "mongodb", "mongodb", "mongodb+srv://user:password@cluster0.xxxx.mongodb.net/db"),
-  postgres: db("postgres", "Postgres", "postgres", "postgresql", "postgresql://user:password@host:5432/db"),
-  mysql: db("mysql", "MySQL", "mysql", "mysql", "mysql://user:password@host:3306/db"),
-  redis: db("redis", "Redis", "redis", "redis", "rediss://default:password@host:6379"),
+  mongodb: db(
+    "mongodb",
+    "MongoDB",
+    "mongodb",
+    "mongodb",
+    "mongodb+srv://user:password@cluster0.xxxx.mongodb.net/db",
+    "MONGODB_URI",
+  ),
+  postgres: db(
+    "postgres",
+    "Postgres",
+    "postgres",
+    "postgresql",
+    "postgresql://user:password@host:5432/db",
+    "DATABASE_URL",
+  ),
+  mysql: db("mysql", "MySQL", "mysql", "mysql", "mysql://user:password@host:3306/db", "DATABASE_URL"),
+  redis: db("redis", "Redis", "redis", "redis", "rediss://default:password@host:6379", "REDIS_URL"),
   supabase: {
     id: "supabase",
     name: "Supabase",
     title: "Supabase",
+    keyExample: "SUPABASE_SECRET_KEY",
     group: "Databases",
     desc: "secret key + project URL",
     icon: "supabase",
@@ -477,6 +540,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     id: "stripe",
     name: "Stripe",
     title: "Stripe",
+    keyExample: "STRIPE_SECRET_KEY",
     group: "Payments",
     desc: "secret key",
     icon: "stripe",
@@ -497,6 +561,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     id: "razorpay",
     name: "Razorpay",
     title: "Razorpay",
+    keyExample: "RAZORPAY_KEY_SECRET",
     group: "Payments",
     desc: "key secret",
     icon: "razorpay",
@@ -526,6 +591,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     id: "webhook",
     name: "Webhook signing secret",
     title: "webhook",
+    keyExample: "STRIPE_WEBHOOK_SECRET",
     group: "Payments",
     desc: "verifies payment webhooks",
     icon: "letter:WH",
@@ -590,6 +656,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     id: "ai",
     name: "AI API key",
     title: "AI",
+    keyExample: "OPENAI_API_KEY",
     group: "AI",
     desc: "OpenAI, Anthropic, Gemini, self-hosted…",
     icon: "letter:AI",
@@ -605,6 +672,13 @@ export const TYPES: Record<TypeId, TypeDef> = {
               placeholder: "http://10.0.4.12:8000/v1",
               hint: "Where your model server listens. Private IPs may use http://; cb's server must be able to reach it.",
             },
+            {
+              name: "model",
+              label: "Model name",
+              placeholder: "llama3.1:8b",
+              hint: "The model your app asks the server for. Saved as a plain value; change it any time.",
+              formOnly: true,
+            },
             AUTH_SCHEME,
             AUTH_HEADER,
             BASIC_USER,
@@ -618,6 +692,16 @@ export const TYPES: Record<TypeId, TypeDef> = {
         field: "baseUrl",
         preticked: p === "custom",
       },
+      ...(p === "custom"
+        ? [
+            {
+              suggestedKey: "LLM_MODEL",
+              what: "Model name (public) — the one above",
+              preticked: true,
+              defaultFrom: "model",
+            },
+          ]
+        : []),
     ],
     advanced: (p) =>
       p === "custom"
@@ -637,6 +721,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     id: "oauth",
     name: "Sign-in client secret",
     title: "sign-in",
+    keyExample: "GOOGLE_CLIENT_SECRET",
     group: "Sign-in & push",
     desc: "Google, GitHub, any OAuth",
     icon: "letter:ID",
@@ -656,6 +741,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     id: "gcp",
     name: "Google service account",
     title: "Google service account",
+    keyExample: "FIREBASE_SERVICE_ACCOUNT",
     group: "Sign-in & push",
     desc: "Firebase, FCM, GCP",
     icon: "googlecloud",
@@ -698,6 +784,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     id: "apns",
     name: "Apple push key",
     title: "Apple push",
+    keyExample: "APNS_KEY",
     group: "Sign-in & push",
     desc: "APNs .p8",
     icon: "apple",
@@ -724,6 +811,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     id: "aws",
     name: "AWS / S3-compatible",
     title: "AWS / S3-compatible",
+    keyExample: "AWS_SECRET_ACCESS_KEY",
     group: "Cloud & email",
     desc: "S3, SES, R2…",
     icon: "aws",
@@ -778,6 +866,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     id: "smtp",
     name: "Email (SMTP)",
     title: "SMTP",
+    keyExample: "SMTP_URL",
     group: "Cloud & email",
     desc: "SendGrid, SES, Mailgun…",
     icon: "mail",
@@ -801,6 +890,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     id: "http",
     name: "Other API key",
     title: "API key",
+    keyExample: "API_KEY",
     group: "Other",
     desc: "anything without a preset",
     icon: "api",
@@ -911,7 +1001,7 @@ const hostList = (raw: string | undefined) =>
 function filledFields(def: TypeDef, d: DraftState): Record<string, string> {
   const out: Record<string, string> = {};
   for (const f of [...def.required(d.provider), ...def.advanced(d.provider)]) {
-    if (f.name === "readsAs") continue;
+    if (f.name === "readsAs" || f.formOnly) continue;
     if (f.showWhen && (d.fields[f.showWhen.field] ?? "") !== f.showWhen.equals) continue;
     const v = (d.fields[f.name] ?? f.defaultValue ?? "").trim();
     if (v) out[f.name] = v;
