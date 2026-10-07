@@ -320,7 +320,12 @@ export function AddVariableDialog({
               error={draft.fields[f.name]?.trim() ? f.validate?.(draft.fields[f.name]?.trim() ?? "") : undefined}
             />
           ))}
-          <ExtrasSection defs={extraDefs} extras={draft.extras} onChange={(extras) => update({ extras })} />
+          <ExtrasSection
+            defs={extraDefs}
+            extras={draft.extras}
+            fields={draft.fields}
+            onChange={(extras) => update({ extras })}
+          />
           <AdvancedSection
             idPrefix="add-adv"
             fields={advanced}

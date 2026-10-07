@@ -9,15 +9,20 @@ import { type DraftExtra, type ExtraDef, normalizeKey } from "../lib/catalog";
 export function ExtrasSection({
   defs,
   extras,
+  fields = {},
   onChange,
 }: {
   defs: ExtraDef[];
   extras: DraftExtra[];
+  /** The draft's typed fields, so a value that defaults from one (`defaultFrom`) shows it. */
+  fields?: Record<string, string | undefined>;
   onChange: (extras: DraftExtra[]) => void;
 }) {
   const [open, setOpen] = useState(false);
   if (defs.length === 0) return null;
   const ticked = extras.filter((e) => e.on).length;
+  // Same fallback buildCreateRequest uses when the value is left empty.
+  const defaultOf = (def: ExtraDef) => (def.defaultFrom ? (fields[def.defaultFrom] ?? "").trim() : "");
   const set = (i: number, patch: Partial<DraftExtra>) =>
     onChange(extras.map((e, j) => (j === i ? { ...e, ...patch } : e)));
   return (
@@ -59,13 +64,15 @@ export function ExtrasSection({
                   <span className="text-xs text-subtle">{def.what}</span>
                 </div>
                 {e.on && !def.field && (
-                  <Input
-                    value={e.value ?? ""}
-                    aria-label={def.what}
-                    placeholder={def.placeholder}
-                    onChange={(ev) => set(i, { value: ev.target.value })}
-                    className="ml-6 h-8 font-mono text-xs"
-                  />
+                  <div className="pl-6">
+                    <Input
+                      value={e.value ?? defaultOf(def)}
+                      aria-label={def.what}
+                      placeholder={defaultOf(def) || def.placeholder}
+                      onChange={(ev) => set(i, { value: ev.target.value })}
+                      className="h-8 font-mono text-xs"
+                    />
+                  </div>
                 )}
               </div>
             );
