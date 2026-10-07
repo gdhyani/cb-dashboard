@@ -85,8 +85,7 @@ export function ImportEnvDialog({
       const [type, provider] = r.choice.split(":");
       try {
         if (type === "plain") await api.createVariable(envId, { type: "plain", key: r.key, value: r.value });
-        else if (type === "visible")
-          await api.createVariable(envId, { type: "visible", key: r.key, value: r.value } as CreateVariableInput);
+        else if (type === "visible") await api.createVariable(envId, { type: "visible", key: r.key, value: r.value });
         else if (type === "gen")
           await api.createVariable(envId, {
             type: "generated",
