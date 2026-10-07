@@ -61,6 +61,7 @@ export function FileDrop({
 
   return (
     // M9: dragover/drop are handled for the whole component (field + zone) so the browser never opens the file.
+    // biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop only; the keyboard path is the labelled file input
     <div
       onDragOver={(e) => {
         e.preventDefault();
