@@ -29,6 +29,14 @@ on `main`.
   `REACT_APP_`: browser code would only get the stand-in.
 - **Email (SMTP)** is no longer Beta: verified with Resend.
 - **Google and GitHub sign-in** are no longer Beta.
+- **Beta is marked where a provider is not yet confirmed:** Cloudflare R2 and other S3-compatible storage, Amazon
+  SQS and Amazon RDS now carry a Beta badge on their connector pages, next to Anthropic, Mistral and Apple Push.
+- **Suggested extra keys** that copy another field (the Supabase `SUPABASE_URL`, the Razorpay key ID) now show that
+  value while you add the variable, and no longer overflow the dialog.
+- **Custom / self-hosted AI** asks for the **Model name** and saves it as the plain key `LLM_MODEL`; it is no
+  longer Beta.
+- The **Key** field's greyed example follows the type you pick (`STRIPE_SECRET_KEY` for Stripe, `MONGODB_URI` for
+  MongoDB) instead of always `DATABASE_URL`.
 
 ### Backend
 

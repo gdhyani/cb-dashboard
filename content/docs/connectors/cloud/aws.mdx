@@ -180,8 +180,15 @@ await ses.send(
 </Callout>
 
 <Callout type="note" title="Verified services">
-  S3 (including presigned URLs) and SES are verified end to end with real AWS. Amazon SQS is not offered for now.
+  S3 (including presigned URLs) and SES are verified end to end with real AWS.
 </Callout>
+
+| Service | Status |
+|---|---|
+| Amazon S3, presigned URLs included | <StatusBadge status="supported" /> |
+| Amazon SES (email) | <StatusBadge status="supported" /> |
+| S3-compatible: Cloudflare R2, MinIO, Backblaze | <StatusBadge status="beta" /> |
+| Amazon SQS (not offered in the dashboard for now) | <StatusBadge status="beta" /> |
 
 ## Run it
 
