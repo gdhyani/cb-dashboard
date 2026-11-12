@@ -29,13 +29,7 @@ export function BlogBento({ posts }: { posts: BlogPostSummary[] }) {
               }`}
             >
               <div
-                className={
-                  i === 0
-                    ? "aspect-[16/9] md:aspect-auto md:min-h-0 md:flex-1"
-                    : i === 3
-                      ? "aspect-[16/9] md:w-1/2 md:shrink-0"
-                      : "aspect-[16/9]"
-                }
+                className={i === 0 ? "aspect-[16/9]" : i === 3 ? "aspect-[16/9] md:w-1/2 md:shrink-0" : "aspect-[16/9]"}
               >
                 <Image
                   src={p.image}

@@ -1,7 +1,7 @@
 ---
 title: "Inside cb: the technology, layer by layer"
 description: The engineering behind keeping real keys off laptops. The npm package, the Node preload, the agent and its tunnel, the gateway's protocol adapters, the cryptography, redaction, revocation and how we test it.
-date: 2026-11-13
+date: 2026-11-07
 image: /blog/covers/inside-cb.svg
 imageAlt: Three stacked layers labelled @cb/env, gateway and vault
 author: The cb team
@@ -172,8 +172,8 @@ no API ever returns a stored secret.
 ## 7. Taking access away
 
 Grants, revocations and the emergency stop go through an internal event bus. Every tunnel for the affected
-device or environment is closed within five seconds, with an error the app's driver understands (a Postgres
-`ErrorResponse`, an HTTP 403, a Redis error) rather than a hang, and the agent's event stream tells `cb run` to
+device or environment is closed within five seconds, with an error the app's driver understands where the protocol allows one (a Postgres
+`ErrorResponse`, a MySQL `ERR` packet, an HTTP 403) rather than a hang, and the agent's event stream tells `cb run` to
 show why. Stand-ins stop working at once because the gateway re-checks access on every connection.
 
 ## 8. How we test it

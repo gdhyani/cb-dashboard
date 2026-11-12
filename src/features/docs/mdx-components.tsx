@@ -3,13 +3,16 @@ import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import type { MDXComponents } from "mdx/types";
 import { ArchitectureDiagram } from "./components/architecture-diagram";
+import { ConnectionModes } from "./components/blog/connection-modes";
 import { CoverageChart } from "./components/blog/coverage-chart";
 import { EnvCompositionChart } from "./components/blog/env-composition-chart";
 import { EnvPrecedenceDiagram } from "./components/blog/env-precedence-diagram";
+import { EnvTypeExplorer } from "./components/blog/env-type-explorer";
 import { EnvVisibilityDiagram } from "./components/blog/env-visibility-diagram";
-import { HttpsPathSequence, PostgresLoginSequence } from "./components/blog/gateway-sequences";
+import { HttpsPathSequence, PostgresLoginSequence, Sequence } from "./components/blog/gateway-sequences";
 import { LeakMapDiagram } from "./components/blog/leak-map-diagram";
 import { LeakScanChart } from "./components/blog/leak-scan-chart";
+import { PacketLayers } from "./components/blog/packet-layers";
 import { SecurePassageDiagram } from "./components/blog/secure-passage-diagram";
 import { StandInDiagram } from "./components/blog/stand-in-diagram";
 import { ValueTypesMatrix } from "./components/blog/value-types-matrix";
@@ -50,6 +53,10 @@ export function getMDXComponents(overrides?: MDXComponents): MDXComponents {
     EnvPrecedenceDiagram,
     EnvVisibilityDiagram,
     HttpsPathSequence,
+    Sequence,
+    EnvTypeExplorer,
+    PacketLayers,
+    ConnectionModes,
     LeakScanChart,
     PostgresLoginSequence,
     LeakMapDiagram,

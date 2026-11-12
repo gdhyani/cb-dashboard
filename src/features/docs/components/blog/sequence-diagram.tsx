@@ -1,10 +1,8 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
+import type { SequenceLane, SequenceStep } from "../../lib/sequences";
 import { DiagramFrame } from "../diagram-frame";
-
-export type SequenceLane = { label: string; sub?: string; side: "laptop" | "server" | "service" };
-export type SequenceStep = { from: number; to: number; label: string; real?: boolean };
 
 const LANE_W = 150;
 const TOP = 70;
@@ -111,15 +109,30 @@ export function SequenceDiagram({
           const dir = x2 > x1 ? 1 : -1;
           return (
             <g key={`${s.from}-${s.to}-${s.label}`} data-testid="sequence-step">
-              <line
-                x1={x1}
-                y1={y}
-                x2={x2 - dir * 6}
-                y2={y}
-                stroke={s.real ? REAL : "#8f8f8f"}
-                markerEnd={`url(#${s.real ? "seq-arrow-real" : "seq-arrow"})`}
-              />
-              <text x={(x1 + x2) / 2} y={y - 7} textAnchor="middle" fill={s.real ? REAL : "#bdbdbd"} fontSize={10.5}>
+              {s.from === s.to ? (
+                <path
+                  d={`M${x1} ${y - 8} h26 v16 h-20`}
+                  fill="none"
+                  stroke={s.real ? REAL : "#8f8f8f"}
+                  markerEnd={`url(#${s.real ? "seq-arrow-real" : "seq-arrow"})`}
+                />
+              ) : (
+                <line
+                  x1={x1}
+                  y1={y}
+                  x2={x2 - dir * 6}
+                  y2={y}
+                  stroke={s.real ? REAL : "#8f8f8f"}
+                  markerEnd={`url(#${s.real ? "seq-arrow-real" : "seq-arrow"})`}
+                />
+              )}
+              <text
+                x={s.from === s.to ? x1 + 32 : (x1 + x2) / 2}
+                y={s.from === s.to ? y + 4 : y - 7}
+                textAnchor={s.from === s.to ? "start" : "middle"}
+                fill={s.real ? REAL : "#bdbdbd"}
+                fontSize={10.5}
+              >
                 {s.label}
               </text>
               {!still && (
