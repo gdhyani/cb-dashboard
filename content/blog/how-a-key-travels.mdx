@@ -1,0 +1,116 @@
+---
+title: How a key travels without ever reaching your laptop
+description: A technical walk through cb's secure path, from the stand-in in process.env to the real key on the last hop, and every layer that keeps developers, tools and leaks away from it.
+date: 2026-11-06
+image: /blog/covers/how-a-key-travels.svg
+imageAlt: The path from app to agent to gateway to service, with only the last hop in amber
+author: The cb team
+---
+
+The promise of cb fits in one sentence: a developer's app works against real services, and the real keys never
+reach the developer's machine. This post explains how that holds up, layer by layer, and where its limits are.
+
+## The shape of the path
+
+<SecurePassageDiagram />
+
+There are four parts:
+
+1. **The app**, started with `cb run`. Its environment holds stand-ins.
+2. **The cb agent**, a small background process on the laptop. It is a byte pipe: it knows who the device is
+   and where to send traffic, and nothing about any protocol.
+3. **The encrypted tunnel**, a WebSocket over TLS from the agent to the cb server, authenticated with the
+   device's own token.
+4. **The cb gateway** on the server. It is the only part that ever decrypts a real key, and only for the
+   moment it needs it.
+
+## Step 1: a stand-in instead of a key
+
+When an admin saves a key, cb stores it and from then on hands each developer a stand-in. A stand-in looks like
+the real thing, `sk_test_cb_…` for Stripe or `postgres://…` for a database, so SDKs accept it. But it is not
+derived from the real key at all.
+
+<StandInDiagram />
+
+The stand-in is an HMAC-SHA256 of the device, the environment and the service, keyed by a secret that only the
+cb server has. Three properties follow from that:
+
+- **It reveals nothing about the real key.** The real key is not an input.
+- **It is different on every device.** Two developers never share a stand-in.
+- **It is useless when copied.** The gateway recomputes what this device's stand-in should be and compares the
+  two in constant time. A stand-in pasted on another laptop, or sent from anywhere except through cb, is refused.
+
+## Step 2: getting the app's traffic to cb, without changing the app
+
+The app still connects to `api.stripe.com` or to the host in `DATABASE_URL`. cb redirects those connections in
+two ways, both limited to processes started by `cb run`:
+
+- **Database-style URLs** point at a local port on 127.0.0.1 (in the 7400–7999 range), where the agent listens
+  and tunnels the bytes to cb.
+- **HTTPS APIs** keep their real hostname. A small preload, loaded only into the app's process, steers those
+  connections into the tunnel. TLS inside the app is checked against cb's own certificate authority, trusted only
+  inside that process. Nothing is installed on the system, and the browser and other programs are untouched.
+
+## Step 3: swapping in the real key, as late as possible
+
+At the gateway the stand-in is checked, the developer's access is checked, and only then is the real key
+decrypted. How it is used depends on how the service authenticates:
+
+- **Database logins**: the gateway completes the real login handshake itself (for example SCRAM for Postgres
+  and MongoDB, caching_sha2 for MySQL), over verified TLS to the database.
+- **API keys**: the stand-in in the request header is replaced with the real key.
+- **Signed requests** such as AWS: the gateway verifies the app's signature made with the stand-in, then signs
+  the request again with the real key. Presigned S3 links are handled the same way.
+- **Webhooks**: Stripe and Razorpay send events to cb's public address. cb checks the provider's signature with
+  the real secret, works out which developer's test caused the event, and signs it again with that developer's
+  stand-in before delivering it to their app.
+
+The real key exists in memory for that one request and goes to exactly one place: the real service.
+
+## Step 4: making sure nothing comes back
+
+Some APIs echo credentials: an error that quotes the key, a redirect URL that carries it, a body that repeats the
+request. Before any response leaves the cb server for the laptop, the gateway scans the body and headers for the
+real values it used, in plain, URL-encoded, base64 and JSON-escaped forms, and replaces them. Compressed
+responses are decoded first so nothing slips through inside gzip.
+
+## At rest: encrypted, and write-only
+
+Real keys are stored with envelope encryption: each secret is sealed with its own random 256-bit key using
+AES-256-GCM, and that key is sealed again with the server's master key. No API returns a stored real value. The
+dashboard shows that a key is set and when it was last replaced, never the value. Not to developers, and not to
+the admin who typed it in.
+
+<Frame src="/docs/images/guides/edit-dialog.png" alt="The Edit dialog of a protected key, offering only rename, replace and settings" caption="A protected key can be renamed or replaced, never read back." />
+
+## Taking access away
+
+Because developers never hold real keys, offboarding is not a rotation exercise. Removing someone's access, or
+pressing the emergency stop for an environment, closes their live connections within five seconds, and their
+stand-ins stop working at once. Every connection is in the activity log.
+
+<Frame src="/docs/images/guides/emergency-stop.png" alt="The emergency stop page" caption="Emergency stop: cut every connection to an environment in one action." />
+
+## What we tested, and how
+
+We do not take this on trust. The security suite runs every path a developer, a tool or a leak could use to
+reach a real value: the app's memory and heap snapshots, the agent's files and logs, process listings, debugger
+attachment, crash dumps, network captures between the app and the agent, provider errors that echo keys, the
+dashboard as admin, developer and outsider, and malicious npm packages that run at install and at runtime. After
+each run a scan searches every file a developer can read for every real key. The latest run checked 31 real
+secrets across more than 12,000 files and found none.
+
+## Where the limits are
+
+Honesty about limits matters more than the claim:
+
+- **Access is still access.** A developer who can't see the database password can still query the database
+  through cb while they have access. cb removes the key from the laptop; it does not remove the permission.
+  Use per-environment keys and least-privilege database users, and cb's credential profiles, to keep that tight.
+- **Shown as-is keys are real keys.** That type exists for the rare provider that needs it, and is marked
+  everywhere.
+- **The cb server is the vault.** Whoever runs it holds the master key. Run it like you would run any secrets
+  store.
+
+The full threat model is in the [security overview](/docs/overview/security), and the architecture in
+[how it works](/docs/overview/how-it-works).

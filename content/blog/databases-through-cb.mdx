@@ -1,0 +1,114 @@
+---
+title: Databases through cb
+description: How cb logs in to Postgres, MySQL, MongoDB and Redis on your behalf. Connection strings before and after, the wire-protocol handshakes, TLS and private CAs, read-only profiles, and what your driver sees when access is removed.
+date: 2026-11-10
+image: /blog/covers/databases-through-cb.svg
+imageAlt: Four database cylinders behind one gateway, each joined by a line to a laptop
+author: The cb team
+---
+
+Database passwords are the most common secret in a `.env` file and the most dangerous one: they give direct
+access to data, not just to an API with rate limits. They are also the hardest to protect, because the password
+travels inside each database's own login handshake. cb's gateway speaks those handshakes. This post shows how,
+for each engine.
+
+## The connection string, before and after
+
+The admin pastes the real URL once. Your app gets a local one with a stand-in login, on a port the agent owns:
+
+| Engine | The real URL (stays on the cb server) | What your app gets |
+|---|---|---|
+| PostgreSQL | `postgresql://app:…@ep-x.neon.tech/app?sslmode=require` | `postgresql://cbu_ab12cd34:…@127.0.0.1:7402/app?sslmode=disable` |
+| MySQL | `mysql://app:…@gateway01.tidbcloud.com:4000/app?ssl=true` | `mysql://cbu_ab12cd34:…@127.0.0.1:7403/app` |
+| MongoDB | `mongodb+srv://app:…@cluster0.mongodb.net/shop` | `mongodb://cbu_ab12cd34:…@127.0.0.1:7401/shop?directConnection=true&authSource=admin` |
+| Redis | `rediss://default:…@redis-123.cloud.redislabs.com:16379` | `redis://cbu_ab12cd34:…@127.0.0.1:7404` |
+
+The user name and password are stand-ins made for this device. The local hop needs no TLS because it never leaves
+the machine (see [the network model](/blog/network-model)); TLS to the database is done by the cb server, always
+with certificate verification.
+
+## PostgreSQL
+
+<Sequence name="postgres" />
+
+The gateway plays a Postgres server. It answers your driver's `SSLRequest` with "no" (it is loopback), reads the
+`StartupMessage`, and asks for a cleartext password. That request is safe here: it travels over loopback and the
+encrypted tunnel, and the password it carries is the stand-in. The gateway checks it in constant time, connects to
+the real database over TLS, logs in with whatever the server asks for (SCRAM-SHA-256, MD5 or cleartext), and relays
+`AuthenticationOk`, the server parameters and `ReadyForQuery`. From then on it copies bytes. Query cancellation
+works too: the backend key data is remapped so a `CancelRequest` reaches the right session.
+
+Tested with `pg`, postgres.js, Prisma, Drizzle and Knex, and verified against Neon through its pooler (which also
+requires channel binding upstream).
+
+## MySQL
+
+<Sequence name="mysql" />
+
+MySQL starts with the *server* talking, so the gateway connects upstream first and reads the real greeting. It then
+sends your driver a greeting with the same version and capabilities but its own random challenge, so the driver
+answers with `mysql_native_password` computed over the stand-in. The gateway checks that answer, then finishes the
+real login, upgrading to TLS when the stored URL asks for it (`ssl=true`, `ssl-mode=REQUIRED` and similar) and
+handling `caching_sha2_password`'s full authentication. Verified against TiDB Cloud and Aiven, whose private CA is
+uploaded once as a file.
+
+## MongoDB
+
+<Sequence name="mongodb" />
+
+MongoDB drivers open monitoring connections that never log in, so the gateway forwards only `hello` until a
+connection authenticates (stripping hints like `speculativeAuthenticate` so the driver does a normal SCRAM
+exchange with cb). It acts as a SCRAM-SHA-256 server towards your driver to check the stand-in, then resolves the
+real cluster (including the SRV lookup for `mongodb+srv`), connects to the primary over TLS, asks which mechanisms
+the real user supports, and logs in with SCRAM-SHA-256 or SHA-1. Verified against MongoDB Atlas, with both
+`mongodb+srv` and the older multi-host URLs.
+
+## Redis
+
+<Sequence name="redis" />
+
+The gateway logs in upstream first (with TLS for `rediss://`), then intercepts your client's `AUTH` or
+`HELLO … AUTH`: it checks the stand-in and answers `+OK` itself, so your client's login never reaches the real
+server. After that it is a straight pipe. The stand-in URL keeps the database number from the real one. Verified
+against Redis Cloud and Upstash.
+
+## Supabase
+
+Supabase's server SDK talks HTTPS, not the Postgres protocol, so it uses the HTTP gateway (Layer 2): the project URL
+stays `https://<ref>.supabase.co`, and the secret key is swapped in both headers the SDK sends (`apikey` and
+`Authorization`). The public publishable key passes through untouched.
+
+## Private CAs and private networks
+
+Some providers (Aiven, DigitalOcean, self-hosted servers) sign their certificates with their own CA. Upload the CA
+file under **Advanced → CA certificate**: the gateway then trusts that CA for that one service, in addition to the
+system roots, and still checks the hostname. The cb server must be able to reach the database, so a database on a
+private network needs cb running where it can reach it.
+
+## Read-only and per-person database users
+
+A service can hold more than one set of real credentials, called **profiles**: the default login plus, say, a
+`readonly` database user. An admin chooses which profile each person's access uses. Two developers each get a `DATABASE_URL`
+that looks the same, and one of them writes while the other only reads. Changing someone's profile
+closes their live connections so they reconnect with the new login.
+
+## When access is removed
+
+The gateway closes affected connections within five seconds. Where the protocol allows it, the driver first gets
+an error it understands, instead of a silent hang. The error is only sent between two messages, never spliced into
+the middle of a reply (the gateway waits up to a second for one to finish):
+
+| Engine | What your app sees |
+|---|---|
+| PostgreSQL | An `ErrorResponse` (SQLSTATE `57P01`): `cb: access revoked by admin` |
+| MySQL | An `ERR` packet with the same message |
+| MongoDB | A reply with `ok: 0`, code 13 `Unauthorized` and the same message |
+| SMTP | `421 4.7.0 cb: access revoked by admin` |
+| Redis | The connection closes without a reply: an unexpected `-ERR` would corrupt the client's command queue. `cb run` prints why |
+
+## Limits
+
+- MongoDB connects to the **primary** only; secondary reads are not supported yet.
+- Redis is **standalone** only; Redis Cluster is on the list for later.
+- Poolers that reuse server sessions (like Neon's) can keep session state, such as temporary tables, between your
+  app's connections, exactly as they would without cb.
