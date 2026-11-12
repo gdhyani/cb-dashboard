@@ -41,6 +41,9 @@ Each of these actions is permanent. Deleting asks you to type a confirmation and
 | **Delete organization** | Owners | Type the organization name and your password. Every project, environment, variable, stored credential, webhook, access grant, invite and the activity log are deleted, and every member loses access at once. Members keep their own accounts. |
 | **Delete account** | Everyone | Type your email and your password. Your account, sessions and CLI devices are deleted and every live connection closes. If you are the **only owner** of an organization, that organization is deleted too, with everything in it; the dialog names it first. In other organizations you simply leave, and your past activity shows as "Deleted user". |
 
+If you leave or delete your last organization, signing in shows **You're not in an organization**: open an invite link
+from an owner or admin to join one, or delete your account from there.
+
 <Callout type="danger" title="There is no undo">
 Deleted organizations, credentials and accounts can't be restored. If you only want to stop someone's access for a
 while, use [Emergency Stop](/docs/guides/dashboard/emergency-stop) or remove their access instead.

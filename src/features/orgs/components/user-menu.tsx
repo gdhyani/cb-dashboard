@@ -7,6 +7,7 @@ import { DOCS_PATH } from "@/constants";
 import { useLogout, useMe } from "@/features/auth/hooks/use-auth";
 import { AvatarInitials } from "@/shared/components/avatar-initials";
 import { BadgeLabel } from "@/shared/components/badge-label";
+import { Hint } from "@/shared/components/hint";
 import { THEME_ICONS } from "@/shared/components/theme-toggle";
 import { THEME_CHOICES, type ThemeChoice } from "@/shared/theme/theme";
 import { useTheme } from "@/shared/theme/use-theme";
@@ -32,12 +33,14 @@ export function UserMenu({ orgId }: { orgId: string }) {
   const name = me.data?.user.name ?? "";
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label="Account menu"
-        className="flex size-8 items-center justify-center rounded-full transition-opacity hover:opacity-80"
-      >
-        <AvatarInitials name={name} size="sm" />
-      </DropdownMenuTrigger>
+      <Hint label="Account">
+        <DropdownMenuTrigger
+          aria-label="Account menu"
+          className="flex size-8 items-center justify-center rounded-full transition-opacity hover:opacity-80"
+        >
+          <AvatarInitials name={name} size="sm" />
+        </DropdownMenuTrigger>
+      </Hint>
       <DropdownMenuContent align="end" className="w-60">
         <div className="flex flex-col gap-0.5 px-2 py-1.5">
           <span className="flex items-center gap-2">

@@ -5,14 +5,15 @@ import { useEffect } from "react";
 import { PRODUCT_NAME } from "@/constants";
 import { useMe } from "../hooks/use-auth";
 
-/** "/" → first organization when logged in, otherwise the login page. */
+/** "/" → first organization when signed in (or /no-organization), otherwise the sign-in page. */
 export function HomeRedirect() {
   const router = useRouter();
   const me = useMe({ allowSignedOut: true });
   useEffect(() => {
     if (me.data) {
       const first = me.data.memberships[0];
-      router.replace(first ? `/orgs/${first.orgId}` : "/signup");
+      // Signed in but in no organization (left or deleted it): explain instead of offering a second sign-up.
+      router.replace(first ? `/orgs/${first.orgId}` : "/no-organization");
     } else if (me.error) {
       router.replace("/login");
     }

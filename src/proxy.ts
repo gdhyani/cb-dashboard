@@ -11,4 +11,4 @@ export function proxy(request: NextRequest) {
   return NextResponse.redirect(url);
 }
 
-export const config = { matcher: ["/", "/orgs/:path*", "/device"] };
+export const config = { matcher: ["/", "/orgs/:path*", "/device", "/no-organization"] };

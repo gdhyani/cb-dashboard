@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { THEME_STORAGE_KEY } from "@/constants";
 import { ThemeToggle } from "@/shared/components/theme-toggle";
+import { TooltipProvider } from "@/shared/ui/tooltip";
 
 describe("FR-UI-008 top-bar theme switcher", () => {
   beforeAll(() => {
@@ -15,7 +16,11 @@ describe("FR-UI-008 top-bar theme switcher", () => {
   });
 
   it("shows the current choice and switches the theme from its menu", async () => {
-    render(<ThemeToggle />);
+    render(
+      <TooltipProvider>
+        <ThemeToggle />
+      </TooltipProvider>,
+    );
     const trigger = screen.getByRole("button", { name: "Theme: dark" });
     fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
     fireEvent.click(await screen.findByRole("menuitemradio", { name: /Light/ }));

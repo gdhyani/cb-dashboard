@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Hint } from "@/shared/components/hint";
 import { cn } from "@/shared/lib/utils";
 import {
   DropdownMenu,
@@ -97,41 +98,44 @@ export function OrgSidebar({
           {group.map(({ href, label, icon: Icon, exact }) => {
             const active = isActive(pathname, href, exact);
             return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                title={showLabels ? undefined : label}
-                className={cn(
-                  "flex h-8 min-w-0 items-center gap-2.5 rounded-md px-1.5 text-sm whitespace-nowrap transition-colors",
-                  active
-                    ? "bg-selection font-medium text-foreground"
-                    : "text-foreground-lighter hover:bg-accent hover:text-foreground",
-                )}
-              >
-                <Icon className="size-5 shrink-0" strokeWidth={1.5} aria-hidden="true" />
-                <span
-                  className={cn("truncate transition-opacity duration-150", showLabels ? "opacity-100" : "opacity-0")}
+              <Hint key={href} label={label} side="right" disabled={showLabels}>
+                <Link
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex h-8 min-w-0 items-center gap-2.5 rounded-md px-1.5 text-sm whitespace-nowrap transition-colors",
+                    active
+                      ? "bg-selection font-medium text-foreground"
+                      : "text-foreground-lighter hover:bg-accent hover:text-foreground",
+                  )}
                 >
-                  {label}
-                </span>
-              </Link>
+                  <Icon className="size-5 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+                  <span
+                    className={cn("truncate transition-opacity duration-150", showLabels ? "opacity-100" : "opacity-0")}
+                  >
+                    {label}
+                  </span>
+                </Link>
+              </Hint>
             );
           })}
         </div>
       ))}
       {variant === "rail" && mode && onModeChange && (
         <DropdownMenu>
-          <DropdownMenuTrigger
-            aria-label="Sidebar control"
-            title={showLabels ? undefined : "Sidebar control"}
-            className="mt-auto flex h-8 min-w-0 items-center gap-2.5 rounded-md px-1.5 text-sm whitespace-nowrap text-foreground-lighter transition-colors hover:bg-accent hover:text-foreground data-[state=open]:bg-accent"
-          >
-            <PanelLeft className="size-5 shrink-0" strokeWidth={1.5} aria-hidden="true" />
-            <span className={cn("truncate transition-opacity duration-150", showLabels ? "opacity-100" : "opacity-0")}>
-              Sidebar control
-            </span>
-          </DropdownMenuTrigger>
+          <Hint label="Sidebar control" side="right" disabled={showLabels}>
+            <DropdownMenuTrigger
+              aria-label="Sidebar control"
+              className="mt-auto flex h-8 min-w-0 items-center gap-2.5 rounded-md px-1.5 text-sm whitespace-nowrap text-foreground-lighter transition-colors hover:bg-accent hover:text-foreground data-[state=open]:bg-accent"
+            >
+              <PanelLeft className="size-5 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+              <span
+                className={cn("truncate transition-opacity duration-150", showLabels ? "opacity-100" : "opacity-0")}
+              >
+                Sidebar control
+              </span>
+            </DropdownMenuTrigger>
+          </Hint>
           <DropdownMenuContent side="top" align="start" className="w-48">
             <DropdownMenuLabel>Sidebar control</DropdownMenuLabel>
             <DropdownMenuRadioGroup value={mode} onValueChange={(v) => onModeChange(v as SidebarMode)}>

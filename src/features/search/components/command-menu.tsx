@@ -15,7 +15,7 @@ import {
   User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { type ComponentProps, useEffect } from "react";
 import { CLI_COMMANDS, DOCS_PATH } from "@/constants";
 import { useLogout } from "@/features/auth/hooks/use-auth";
 import { useMembers } from "@/features/members/hooks/use-members";
@@ -44,12 +44,13 @@ export function useCommandShortcut(onOpen: () => void) {
 }
 
 /** Studio's search pill in the top bar; an icon button on phones. */
-export function SearchButton({ onClick, className }: { onClick: () => void; className?: string }) {
+export function SearchButton({ className, ...props }: ComponentProps<"button">) {
+  // Spreads the rest (ref, pointer and focus handlers) so a tooltip can wrap it.
   return (
     <button
       type="button"
-      onClick={onClick}
       aria-label="Search"
+      {...props}
       className={cn(
         "flex h-8 w-8 items-center justify-center gap-2 rounded-full text-foreground-lighter transition-colors hover:bg-accent hover:text-foreground sm:h-[30px] sm:w-56 sm:justify-start sm:border sm:border-border-strong sm:bg-surface-75 sm:px-3 sm:hover:border-border-stronger sm:hover:bg-surface-75",
         className,

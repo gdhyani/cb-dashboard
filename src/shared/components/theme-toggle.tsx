@@ -12,6 +12,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
+import { Hint } from "./hint";
 
 export const THEME_ICONS = { dark: Moon, light: Sun, system: Monitor } as const;
 
@@ -21,16 +22,17 @@ export function ThemeToggle({ className }: { className?: string }) {
   const Current = THEME_ICONS[choice];
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label={`Theme: ${choice}`}
-        title="Theme"
-        className={cn(
-          "flex size-8 items-center justify-center rounded-md text-foreground-lighter transition-colors hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground",
-          className,
-        )}
-      >
-        <Current className="size-4" strokeWidth={1.5} />
-      </DropdownMenuTrigger>
+      <Hint label="Theme">
+        <DropdownMenuTrigger
+          aria-label={`Theme: ${choice}`}
+          className={cn(
+            "flex size-8 items-center justify-center rounded-md text-foreground-lighter transition-colors hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground",
+            className,
+          )}
+        >
+          <Current className="size-4" strokeWidth={1.5} />
+        </DropdownMenuTrigger>
+      </Hint>
       <DropdownMenuContent align="end" className="w-40">
         <DropdownMenuLabel>Theme</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={choice} onValueChange={(v) => setChoice(v as ThemeChoice)}>
