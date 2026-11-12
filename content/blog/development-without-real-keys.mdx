@@ -1,0 +1,79 @@
+---
+title: Development without real keys
+description: Every developer laptop holds a copy of the company's most valuable passwords. We are building cb so it holds none, without changing a line of your code.
+date: 2026-11-11
+author: The cb team
+---
+
+Open any web project and you will find a `.env` file. Inside it sit the keys to the business: the production-like
+database, the payment account, the AI provider, the cloud bucket, the email sender. Every developer on the team
+has a copy. So does every laptop they ever used, every AI coding agent they ever pointed at the folder, and every
+npm package that ran an install script on their machine.
+
+We think that is the wrong default, and **cb** is our answer to it.
+
+## Where a key in a .env file ends up
+
+A key in a `.env` file is not stored in one place. It travels with the file and with the person.
+
+<LeakMapDiagram />
+
+None of these are exotic attacks. A commit with the wrong file, a screen share with a terminal open, a
+compromised dependency, a teammate who leaves with a copy. Rotating the key after each of them is slow and
+usually skipped. And the newest risk is the quietest one: coding agents read every file in the project to be
+helpful, including the one with the secrets.
+
+## What cb does instead
+
+cb gives every developer a working environment **without giving them the real values**. The app still reads
+`process.env.DATABASE_URL` and `process.env.STRIPE_SECRET_KEY`. Those variables are still set, and the official
+SDKs still connect and get real answers. But what the laptop holds is a **stand-in**: a value that only works
+from that device, only through cb, and only while that developer has access.
+
+<SecurePassageDiagram />
+
+The real key lives only on the cb server, encrypted. When the app connects, cb checks the stand-in and signs in
+to the real service with the real key on the last hop. The developer gets real data and real behaviour; the
+laptop never holds anything worth stealing.
+
+## What it looks like for the team
+
+An admin adds each key once, in the dashboard. They pick what kind of key it is, paste the real value, and cb
+tests it against the provider before saving it. After that the value is never shown again, to anyone.
+
+<Frame src="/docs/images/guides/variables-table.png" alt="The Variables tab with protected keys showing only that a real value is set" caption="The Variables tab: protected keys show that a real value is set, never the value." />
+
+A developer runs two commands:
+
+```bash
+npx cb login
+npx cb run -- npm run dev
+```
+
+There is no secret to paste and no `.env` to share. When someone leaves, the admin removes their access and
+every connection they had closes within seconds. Nothing needs rotating, because they never held the key.
+
+## What we are building, exactly
+
+cb is three open-source pieces:
+
+- **The `cb` command** (npm package `@cb/env`): logs in, starts your app, and runs a small background agent that
+  carries traffic to cb.
+- **The cb server**: holds the real keys, checks stand-ins, and talks to the real services. All the
+  protocol-aware work happens here.
+- **The dashboard**: where admins add keys, decide who can use them, and see activity.
+
+It is built for JavaScript and TypeScript projects on Node.js, Next.js and React, on macOS, Linux and Windows,
+and it works with the official SDKs as they are. No wrappers, no new client libraries.
+
+## Where it stands today
+
+cb already covers databases (Postgres, MySQL, MongoDB, Redis, Supabase), payments and their webhooks (Stripe,
+Razorpay), AI providers, AWS S3 and SES, SMTP email, Google and GitHub sign-in, Firebase and plain API keys.
+Most of these are verified end to end against real accounts; the rest are marked Beta in the docs until they are.
+
+<CoverageChart />
+
+The next two posts go deeper: [what is really in a .env file](/blog/whats-really-in-your-env-file), and
+[how a key travels without ever reaching a laptop](/blog/how-a-key-travels). To try it, start with the
+[Quick Start](/docs/quick-start).

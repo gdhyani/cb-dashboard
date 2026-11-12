@@ -338,3 +338,9 @@
 [class*="grid-area:toc-popover"] > div {
   background-color: var(--color-fd-background);
 }
+
+/* Blog posts (FR-DOC-010): figures and diagrams use the full column; running text keeps a readable line length. */
+#nd-page[data-blog-post] header,
+#nd-page[data-blog-post] .prose > :where(p, ul, ol, h2, h3, blockquote) {
+  max-width: 68ch;
+}

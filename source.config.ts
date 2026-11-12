@@ -1,4 +1,4 @@
-import { defineConfig, defineDocs, frontmatterSchema } from "fumadocs-mdx/config";
+import { defineCollections, defineConfig, defineDocs, frontmatterSchema } from "fumadocs-mdx/config";
 import { z } from "zod";
 
 export const docs = defineDocs({
@@ -9,6 +9,17 @@ export const docs = defineDocs({
     // "Copy page" and "View as Markdown" serve the processed Markdown of each page.
     postprocess: { includeProcessedMarkdown: true },
   },
+});
+
+// FR-DOC-010: the blog. YAML reads an unquoted date as a Date; keep it as the calendar day "YYYY-MM-DD".
+export const blog = defineCollections({
+  type: "doc",
+  dir: "content/blog",
+  schema: frontmatterSchema.extend({
+    date: z.union([z.string(), z.date()]).transform((d) => (typeof d === "string" ? d : d.toISOString().slice(0, 10))),
+    author: z.string(),
+  }),
+  postprocess: { includeProcessedMarkdown: true },
 });
 
 export default defineConfig();

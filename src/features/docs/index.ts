@@ -1,4 +1,7 @@
+export { BlogPostHeader } from "./components/blog/blog-post-header";
+export { BlogPostList } from "./components/blog/blog-post-list";
 export { type DocStatus, StatusBadge } from "./components/status-badge";
+export { blogSource, listPosts, summarize } from "./lib/blog-source";
 export { CONNECTORS, connectorHref } from "./lib/connectors";
 export { docsLayoutOptions } from "./lib/layout-options";
 export { PLATFORMS, platformHref } from "./lib/platforms";
