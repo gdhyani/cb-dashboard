@@ -62,7 +62,7 @@ function ConnectedRow({
   return (
     <div className="flex flex-col gap-1 rounded-md border border-border px-3 py-2.5">
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-        <CheckCircle2 aria-hidden className="size-4 text-emerald-300" />
+        <CheckCircle2 aria-hidden className="size-4 text-success" />
         <span className="font-medium text-foreground">{title}</span>
         <span className="text-xs text-subtle">
           {allEvents ? "all events, including ones Stripe adds later" : `${events.length} events`}
@@ -128,7 +128,7 @@ const hasKey = (resources: Resource[] | undefined, provider: string) =>
 
 function StaleWarning({ name }: { name: string }) {
   return (
-    <p role="alert" className="text-sm text-amber-300">
+    <p role="alert" className="text-sm text-warning">
       {name} still sends to an old address of this cb server. Reconnect to point it here.
     </p>
   );

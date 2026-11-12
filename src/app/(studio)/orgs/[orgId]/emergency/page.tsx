@@ -1,0 +1,11 @@
+import { EmergencyStopView } from "@/features/emergency-stop";
+import { PageContainer } from "@/shared/components/page-container";
+
+export default async function EmergencyStopPage({ params }: { params: Promise<{ orgId: string }> }) {
+  const { orgId } = await params;
+  return (
+    <PageContainer>
+      <EmergencyStopView orgId={orgId} />
+    </PageContainer>
+  );
+}

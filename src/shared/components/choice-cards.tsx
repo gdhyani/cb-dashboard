@@ -32,7 +32,7 @@ export function ChoiceCards<T extends string>({
           key={c.value}
           className={cn(
             "relative flex cursor-pointer flex-col items-start gap-0.5 rounded-md border px-3 py-2.5 text-left transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
-            value === c.value ? "border-foreground bg-white/[0.04]" : "border-border hover:border-border-strong",
+            value === c.value ? "border-foreground bg-muted" : "border-border hover:border-border-strong",
           )}
         >
           <input

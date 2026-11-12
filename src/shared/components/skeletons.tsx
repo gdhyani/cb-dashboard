@@ -5,7 +5,10 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
 /** Table/list rows: a title line, a meta line, a trailing control. */
 export function SkeletonRows({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="flex flex-col divide-y divide-border rounded-lg border border-border" aria-busy="true">
+    <div
+      className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface-100"
+      aria-busy="true"
+    >
       {range(rows).map((i) => (
         <div key={i} className="flex items-center gap-4 px-4 py-3.5">
           <div className="flex flex-1 flex-col gap-2">
@@ -24,7 +27,7 @@ export function SkeletonCards({ cards = 2, columns = 2 }: { cards?: number; colu
   return (
     <div className={columns === 2 ? "grid gap-3 sm:grid-cols-2" : "flex flex-col gap-3"} aria-busy="true">
       {range(cards).map((i) => (
-        <div key={i} className="flex flex-col gap-4 rounded-lg border border-border p-5">
+        <div key={i} className="flex flex-col gap-4 rounded-lg border border-border bg-surface-100 p-5">
           <div className="flex flex-col gap-2">
             <Skeleton className="h-4 w-1/3" />
             <Skeleton className="h-3 w-1/2" />
@@ -50,13 +53,12 @@ export function SkeletonChart({ height = 160 }: { height?: number }) {
   );
 }
 
-/** Page header: eyebrow, display title, one line of description. */
+/** Page header: title and one line of description. */
 export function SkeletonHeader() {
   return (
-    <div className="flex flex-col gap-3 pb-2" aria-busy="true">
-      <Skeleton className="h-3 w-24" />
-      <Skeleton className="h-9 w-56" />
-      <Skeleton className="h-4 w-72 max-w-full" />
+    <div className="flex flex-col gap-3 pt-8 pb-2 md:pt-12" aria-busy="true">
+      <Skeleton className="h-6 w-56" />
+      <Skeleton className="h-4 w-80 max-w-full" />
     </div>
   );
 }

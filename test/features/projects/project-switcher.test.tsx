@@ -57,15 +57,15 @@ const renderSwitcher = (canCreate = true) =>
   );
 
 describe("ProjectSwitcher (navbar)", () => {
-  it("labels the trigger with the current project, or All projects outside one", async () => {
+  it("labels the trigger with the current project, or 'Select a project' outside one", async () => {
     pathname = "/orgs/o1/projects/p2/environments/e1";
     renderSwitcher();
     expect(await screen.findByText("Billing")).toBeInTheDocument();
   });
 
-  it("shows All projects when no project is open", () => {
+  it("asks to select a project when none is open", () => {
     renderSwitcher();
-    expect(screen.getByText("All projects")).toBeInTheDocument();
+    expect(screen.getByText("Select a project")).toBeInTheDocument();
   });
 
   it("searches projects and navigates to the one picked", async () => {

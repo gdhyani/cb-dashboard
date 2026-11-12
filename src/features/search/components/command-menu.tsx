@@ -28,21 +28,23 @@ export function useCommandShortcut(onOpen: () => void) {
   }, [onOpen]);
 }
 
+/** Studio's search pill in the top bar; an icon button on phones. */
 export function SearchButton({ onClick, className }: { onClick: () => void; className?: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-label="Search"
       className={cn(
-        "flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm text-subtle transition-colors hover:border-border-strong hover:text-muted-foreground",
+        "flex h-8 w-8 items-center justify-center gap-2 rounded-full text-foreground-lighter transition-colors hover:bg-accent hover:text-foreground sm:h-[30px] sm:w-56 sm:justify-start sm:border sm:border-border-strong sm:bg-surface-75 sm:px-3 sm:hover:border-border-stronger sm:hover:bg-surface-75",
         className,
       )}
     >
-      <Search className="size-4" />
-      <span className="flex-1 text-left">Search…</span>
+      <Search className="size-4 shrink-0" strokeWidth={1.5} />
+      <span className="hidden flex-1 text-left text-xs sm:inline">Search...</span>
       <span className="hidden items-center gap-0.5 sm:flex">
-        <Kbd>⌘</Kbd>
-        <Kbd>K</Kbd>
+        <Kbd className="h-[18px] min-w-[18px] text-[10px]">⌘</Kbd>
+        <Kbd className="h-[18px] min-w-[18px] text-[10px]">K</Kbd>
       </span>
     </button>
   );

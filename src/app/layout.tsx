@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import type { ReactNode } from "react";
 import { PRODUCT_NAME, PRODUCT_TAGLINE } from "@/constants";
 import { AppProviders } from "@/shared/providers/app-providers";
+import { THEME_BOOT_SCRIPT } from "@/shared/theme/theme";
 import "lenis/dist/lenis.css";
 import "@/styles/globals.css";
 
@@ -16,9 +18,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    // `dark`: the app is dark only; the docs theme (Fumadocs) keys its tokens off this class.
-    <html lang="en" className={`dark ${geistSans.variable} ${geistMono.variable}`}>
+    // `dark`: docs (Fumadocs) key their tokens off this class. Dashboard pages also get data-theme (light/dark)
+    // from their boot script before hydration, hence suppressHydrationWarning on <html> only.
+    <html lang="en" suppressHydrationWarning className={`dark ${geistSans.variable} ${geistMono.variable}`}>
       <body className="min-h-dvh">
+        {/* Dashboard theme (light/dark) before first paint; only dashboard tokens read data-theme, docs ignore it. */}
+        <Script id="cb-theme" strategy="beforeInteractive">
+          {THEME_BOOT_SCRIPT}
+        </Script>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

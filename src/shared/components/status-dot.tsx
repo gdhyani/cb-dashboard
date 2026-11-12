@@ -3,7 +3,7 @@ import { cn } from "@/shared/lib/utils";
 export type StatusTone = "ok" | "rejected" | "unknown";
 
 const TONES: Record<StatusTone, string> = {
-  ok: "bg-emerald-400",
+  ok: "bg-success",
   rejected: "bg-destructive",
   // M10: a hollow ring in the text colour — readable on any theme (a white/alpha fill vanished on light backgrounds),
   // and told apart from the filled "checked" dots by shape, not colour alone.

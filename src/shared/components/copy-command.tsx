@@ -22,16 +22,16 @@ export function CopyCommand({
       type="button"
       aria-label={label ?? `Copy ${command}`}
       onClick={() => void copy(command)}
-      className="group flex w-full items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2.5 text-left font-mono text-[13px] text-foreground transition-colors hover:border-border-strong"
+      className="group flex w-full items-center justify-between gap-3 rounded-md border border-border bg-surface-200 px-3 py-2 text-left font-mono text-xs text-foreground transition-colors hover:border-border-strong"
     >
       {/* One line, never cut off with "…": on narrow screens the text scrolls sideways. */}
       <span className="min-w-0 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {prompt && <span className="select-none text-subtle">$ </span>}
+        {prompt && <span className="select-none text-foreground-muted">$ </span>}
         {command}
       </span>
       <span
         className={cn(
-          "inline-flex shrink-0 items-center gap-1.5 font-sans text-xs text-subtle group-hover:text-foreground",
+          "inline-flex shrink-0 items-center gap-1.5 font-sans text-xs text-foreground-lighter group-hover:text-foreground",
           copied && "text-foreground",
         )}
       >

@@ -59,13 +59,18 @@ export function ProjectSwitcher({ orgId, canCreate }: { orgId: string; canCreate
           <button
             type="button"
             aria-label="Switch project"
-            className="flex h-8 min-w-0 items-center gap-2 rounded-md px-2 text-sm font-medium transition-colors hover:bg-white/[0.06]"
+            className="flex h-7 min-w-0 items-center gap-2 rounded-md px-1.5 text-sm text-foreground transition-colors hover:bg-accent data-[state=open]:bg-accent"
           >
             {current && <ProjectMark name={current.name} />}
             <span className="truncate">
-              {current?.name ?? (currentId ? <Skeleton className="h-4 w-24" /> : "All projects")}
+              {current?.name ??
+                (currentId ? (
+                  <Skeleton className="h-4 w-24" />
+                ) : (
+                  <span className="text-foreground-light">Select a project</span>
+                ))}
             </span>
-            <ChevronsUpDown className="size-3.5 shrink-0 text-subtle" />
+            <ChevronsUpDown className="size-3.5 shrink-0 text-foreground-lighter" strokeWidth={1.5} />
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-80 max-w-[calc(100vw-2rem)]">
@@ -78,7 +83,7 @@ export function ProjectSwitcher({ orgId, canCreate }: { orgId: string; canCreate
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Close"
-            className="-mr-1.5 rounded-md p-1.5 text-subtle transition-colors hover:bg-white/[0.06] hover:text-foreground"
+            className="-mr-1.5 rounded-md p-1.5 text-subtle transition-colors hover:bg-accent hover:text-foreground"
           >
             <X className="size-4" />
           </button>,
@@ -151,7 +156,7 @@ function SwitcherBody({
         <button
           type="button"
           onClick={onCreate}
-          className="flex w-full items-center gap-3 border-t border-border px-4 py-3 text-left text-sm transition-colors hover:bg-white/[0.04]"
+          className="flex w-full items-center gap-3 border-t border-border px-4 py-3 text-left text-sm transition-colors hover:bg-muted"
         >
           <Plus className="size-4 shrink-0 text-muted-foreground" />
           <span className="flex min-w-0 flex-col">

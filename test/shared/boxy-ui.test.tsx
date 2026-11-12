@@ -6,12 +6,14 @@ import { logoColor } from "@/shared/components/service-logo";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 
-describe("v1.32 boxy, coloured badges and compact mobile buttons", () => {
-  it("BadgeLabel is boxy (rounded-md) and its states are coloured", () => {
+describe("v1.32 / v1.59 badges and buttons (docs skin + Supabase dashboard skin)", () => {
+  it("BadgeLabel is boxy in docs, a Supabase pill on dashboard surfaces, and its states are coloured", () => {
     const { rerender } = render(<BadgeLabel tone="success">Delivered</BadgeLabel>);
     const badge = screen.getByText("Delivered");
     expect(badge.className).toMatch(/\brounded-md\b/);
-    expect(badge.className).not.toMatch(/rounded-full/);
+    expect(badge.className).toMatch(/\bstudio:rounded-full\b/);
+    expect(badge.className).toMatch(/\bstudio:uppercase\b/);
+    expect(badge.className).toMatch(/\bstudio:text-primary\b/);
     expect(badge.className).toMatch(/emerald/);
     rerender(<BadgeLabel tone="warning">Retrying</BadgeLabel>);
     expect(screen.getByText("Retrying").className).toMatch(/amber/);
@@ -49,8 +51,15 @@ describe("v1.32 boxy, coloured badges and compact mobile buttons", () => {
     expect(onPick).toHaveBeenCalledWith("mongodb", undefined);
   });
 
-  it("buttons are a little shorter on phones and regular from sm up", () => {
-    render(<Button>Save</Button>);
-    expect(screen.getByRole("button", { name: "Save" }).className).toMatch(/\bh-8\b.*\bsm:h-9\b/);
+  it("buttons follow Studio density and only the primary action is green", () => {
+    const { rerender } = render(<Button>Save</Button>);
+    const save = screen.getByRole("button", { name: "Save" });
+    expect(save.className).toMatch(/h-\[28px\]/);
+    expect(save.className).toMatch(/\bbg-primary-solid\b/);
+    rerender(<Button variant="secondary">Cancel</Button>);
+    const cancel = screen.getByRole("button", { name: "Cancel" });
+    expect(cancel.className).not.toMatch(/primary/);
+    rerender(<Button size="lg">Sign in</Button>);
+    expect(screen.getByRole("button", { name: "Sign in" }).className).toMatch(/h-\[34px\]/);
   });
 });

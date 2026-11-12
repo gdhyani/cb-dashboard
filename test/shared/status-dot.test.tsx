@@ -17,7 +17,7 @@ describe("StatusDot", () => {
   });
 
   it("M10 checked dots stay filled so 'not checked' is told apart by shape as well as colour", () => {
-    expect(dot("ok").className).toMatch(/\bbg-emerald-400\b/);
+    expect(dot("ok").className).toMatch(/\bbg-success\b/);
     expect(dot("rejected").className).toMatch(/\bbg-destructive\b/);
   });
 });

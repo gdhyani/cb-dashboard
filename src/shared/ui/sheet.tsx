@@ -9,7 +9,7 @@ const Sheet = SheetPrimitive.Root;
 const SheetTrigger = SheetPrimitive.Trigger;
 const SheetClose = SheetPrimitive.Close;
 
-/** Side panel (shadcn Sheet): slides in from the left on phones; hairline edge, no shadow wash. */
+/** Supabase Sheet: right-hand panels for longer forms (and the phone menu from the left); popover surface. */
 function SheetContent({
   className,
   children,
@@ -19,13 +19,13 @@ function SheetContent({
 }: React.ComponentProps<typeof SheetPrimitive.Content> & { side?: "left" | "right"; showClose?: boolean }) {
   return (
     <SheetPrimitive.Portal>
-      <SheetPrimitive.Overlay className="cb-overlay fixed inset-0 z-50 bg-black/70" />
+      <SheetPrimitive.Overlay className="cb-overlay fixed inset-0 z-50 bg-alternative/80 backdrop-blur-[2px]" />
       <SheetPrimitive.Content
         data-slot="sheet-content"
         data-side={side}
         className={cn(
-          "cb-sheet fixed inset-y-0 z-50 flex w-[18rem] max-w-[85vw] flex-col bg-background outline-none",
-          side === "left" ? "left-0 border-r border-border-strong" : "right-0 border-l border-border-strong",
+          "cb-sheet fixed inset-y-0 z-50 flex w-[18rem] max-w-[85vw] flex-col bg-popover shadow-lg outline-none",
+          side === "left" ? "left-0 border-r border-border" : "right-0 border-l border-border",
           className,
         )}
         {...props}
@@ -33,7 +33,7 @@ function SheetContent({
         {children}
         {showClose && (
           <SheetPrimitive.Close
-            className="absolute top-3.5 right-3 rounded-md p-1.5 text-subtle transition-colors hover:bg-white/[0.06] hover:text-foreground"
+            className="absolute top-3.5 right-3.5 rounded-md p-1 text-foreground opacity-40 transition-opacity hover:opacity-100"
             aria-label="Close menu"
           >
             <X className="size-4" />

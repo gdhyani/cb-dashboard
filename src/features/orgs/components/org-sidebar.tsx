@@ -2,33 +2,30 @@
 
 import {
   Activity,
-  BookOpen,
   FolderKanban,
+  Home,
   KeyRound,
   Laptop,
-  LayoutGrid,
-  LogOut,
   type LucideIcon,
+  PanelLeft,
   ShieldAlert,
+  UserRound,
   Users,
-  X,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { DOCS_PATH, PRODUCT_NAME } from "@/constants";
-import { useLogout, useMe } from "@/features/auth/hooks/use-auth";
-import { BadgeLabel } from "@/shared/components/badge-label";
+import { usePathname } from "next/navigation";
 import { cn } from "@/shared/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
-import { Skeleton } from "@/shared/ui/skeleton";
+import { Separator } from "@/shared/ui/separator";
 import { useOrg } from "../hooks/use-orgs";
+import { SIDEBAR_MODES, type SidebarMode } from "../hooks/use-sidebar-mode";
 
 export interface NavItem {
   href: string;
@@ -37,92 +34,116 @@ export interface NavItem {
   exact?: boolean;
 }
 
-export function orgNav(orgId: string, isAdmin: boolean): NavItem[] {
+/** Global navigation, in groups (Title Case, Supabase). Admin-only pages are left out for developers. */
+export function orgNavGroups(orgId: string, isAdmin: boolean): NavItem[][] {
   const base = `/orgs/${orgId}`;
   return [
-    { href: base, label: "Overview", icon: LayoutGrid, exact: true },
-    { href: `${base}/projects`, label: "Projects", icon: FolderKanban },
-    { href: `${base}/members`, label: "Members", icon: Users },
-    ...(isAdmin
-      ? [
-          { href: `${base}/devices`, label: "Devices & sessions", icon: Laptop },
-          { href: `${base}/audit`, label: "Activity", icon: Activity },
-          { href: `${base}/emergency`, label: "Emergency stop", icon: ShieldAlert },
-        ]
-      : []),
-    { href: `${base}/me`, label: "My access", icon: KeyRound },
+    [{ href: base, label: "Home", icon: Home, exact: true }],
+    [
+      { href: `${base}/projects`, label: "Projects", icon: FolderKanban },
+      { href: `${base}/members`, label: "Members", icon: Users },
+      ...(isAdmin
+        ? [
+            { href: `${base}/devices`, label: "Devices & Sessions", icon: Laptop },
+            { href: `${base}/audit`, label: "Activity", icon: Activity },
+          ]
+        : []),
+    ],
+    [
+      ...(isAdmin ? [{ href: `${base}/emergency`, label: "Emergency Stop", icon: ShieldAlert }] : []),
+      { href: `${base}/me`, label: "My Access", icon: KeyRound },
+      { href: `${base}/account`, label: "Account", icon: UserRound },
+    ],
   ];
 }
 
+/** Flat list, for the command menu. */
+export function orgNav(orgId: string, isAdmin: boolean): NavItem[] {
+  return orgNavGroups(orgId, isAdmin).flat();
+}
+
 // Segment-aware: "/me" must not match "/members".
-const isActive = (pathname: string, href: string, exact?: boolean) =>
+export const isActive = (pathname: string, href: string, exact?: boolean) =>
   pathname === href || (!exact && pathname.startsWith(`${href}/`));
 
-const rowClass = (active: boolean) =>
-  cn(
-    "flex min-w-0 items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors",
-    active ? "bg-white/[0.07] text-foreground" : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground",
-  );
-
-/** Sidebar body, shared by the desktop rail and the mobile sheet. */
-export function OrgSidebar({ orgId, onClose }: { orgId: string; onClose?: () => void }) {
+/**
+ * Studio's icon sidebar. `rail`: 48px of icons that expands to 208px (on hover, or always, per the user's choice).
+ * `sheet`: the same items, always labelled, for the phone menu.
+ */
+export function OrgSidebar({
+  orgId,
+  variant = "rail",
+  expanded = false,
+  mode,
+  onModeChange,
+}: {
+  orgId: string;
+  variant?: "rail" | "sheet";
+  /** Rail only: labels visible. */
+  expanded?: boolean;
+  mode?: SidebarMode;
+  onModeChange?: (mode: SidebarMode) => void;
+}) {
   const pathname = usePathname();
-  const router = useRouter();
-  const me = useMe();
   const org = useOrg(orgId);
-  const logout = useLogout();
+  const showLabels = variant === "sheet" || expanded;
+  const groups = orgNavGroups(orgId, org.isAdmin);
 
   return (
-    <div className="flex h-full flex-col gap-6 p-3">
-      <div className="flex items-center gap-1">
-        {/* One org per user: shown as a label, not a switcher. Projects are switched from the navbar. */}
-        <Link href={`/orgs/${orgId}`} className="flex h-11 min-w-0 flex-1 flex-col justify-center rounded-md px-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">{PRODUCT_NAME}</span>
-          <span className="truncate font-medium">{org.data?.name ?? <Skeleton className="mt-1 h-4 w-28" />}</span>
-        </Link>
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close menu"
-            className="flex size-9 shrink-0 items-center justify-center rounded-md text-subtle transition-colors hover:bg-white/[0.06] hover:text-foreground"
+    <nav aria-label="Organization" className="flex h-full flex-col gap-1 overflow-hidden px-2 py-2">
+      {groups.map((group, gi) => (
+        <div key={group[0]?.href ?? gi} className="flex flex-col gap-0.5">
+          {gi > 0 && <Separator className="mx-auto my-1.5 data-[orientation=horizontal]:w-[calc(100%-0.5rem)]" />}
+          {group.map(({ href, label, icon: Icon, exact }) => {
+            const active = isActive(pathname, href, exact);
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-current={active ? "page" : undefined}
+                title={showLabels ? undefined : label}
+                className={cn(
+                  "flex h-8 min-w-0 items-center gap-2.5 rounded-md px-1.5 text-sm whitespace-nowrap transition-colors",
+                  active
+                    ? "bg-selection font-medium text-foreground"
+                    : "text-foreground-lighter hover:bg-accent hover:text-foreground",
+                )}
+              >
+                <Icon className="size-5 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+                <span
+                  className={cn("truncate transition-opacity duration-150", showLabels ? "opacity-100" : "opacity-0")}
+                >
+                  {label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      ))}
+      {variant === "rail" && mode && onModeChange && (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-label="Sidebar control"
+            title={showLabels ? undefined : "Sidebar control"}
+            className="mt-auto flex h-8 min-w-0 items-center gap-2.5 rounded-md px-1.5 text-sm whitespace-nowrap text-foreground-lighter transition-colors hover:bg-accent hover:text-foreground data-[state=open]:bg-accent"
           >
-            <X className="size-4" />
-          </button>
-        )}
-      </div>
-
-      <nav className="flex flex-col gap-0.5" aria-label="Organization">
-        {orgNav(orgId, org.isAdmin).map(({ href, label, icon: Icon, exact }) => (
-          <Link key={href} href={href} className={rowClass(isActive(pathname, href, exact))}>
-            <Icon className="size-4 shrink-0" />
-            {label}
-          </Link>
-        ))}
-      </nav>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger className="mt-auto flex items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-white/[0.04]">
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-sm">{me.data?.user.name}</span>
-            <span className="truncate font-mono text-xs text-subtle">{me.data?.user.email}</span>
-          </span>
-          {org.data && <BadgeLabel>{org.data.role}</BadgeLabel>}
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-60">
-          <DropdownMenuLabel>{me.data?.user.email}</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {/* FR-DOC-002: Docs sits directly above Log out. */}
-          <DropdownMenuItem asChild>
-            <Link href={DOCS_PATH}>
-              <BookOpen className="size-4" /> Docs
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => logout.mutate(undefined, { onSettled: () => router.replace("/login") })}>
-            <LogOut className="size-4" /> Log out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+            <PanelLeft className="size-5 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+            <span className={cn("truncate transition-opacity duration-150", showLabels ? "opacity-100" : "opacity-0")}>
+              Sidebar control
+            </span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="start" className="w-48">
+            <DropdownMenuLabel>Sidebar control</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={mode} onValueChange={(v) => onModeChange(v as SidebarMode)}>
+              {SIDEBAR_MODES.map((m) => (
+                <DropdownMenuRadioItem key={m.value} value={m.value}>
+                  {m.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+    </nav>
   );
 }

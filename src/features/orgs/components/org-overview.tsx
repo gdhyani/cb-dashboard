@@ -171,7 +171,7 @@ export function OrgOverview({ orgId }: { orgId: string }) {
               <StaggerItem key={e.id} index={i}>
                 <Link
                   href={`/orgs/${orgId}/projects/${e.project.id}/environments/${e.id}`}
-                  className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-white/[0.03]"
+                  className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted"
                 >
                   <span className="min-w-0 truncate">
                     <span className="text-muted-foreground">{e.project.name} / </span>

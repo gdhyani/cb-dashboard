@@ -10,7 +10,7 @@ export interface MapService {
 function Node({ title, detail, strong = false }: { title: string; detail: string; strong?: boolean }) {
   return (
     <div
-      className={`flex min-w-0 flex-col gap-0.5 rounded-md border px-3 py-2 ${strong ? "border-foreground/60 bg-white/[0.04]" : "border-border-strong bg-card"}`}
+      className={`flex min-w-0 flex-col gap-0.5 rounded-md border px-3 py-2 ${strong ? "border-foreground/60 bg-muted" : "border-border-strong bg-card"}`}
     >
       <span className="truncate text-sm font-medium">{title}</span>
       <span className="truncate font-mono text-[11px] text-subtle">{detail}</span>

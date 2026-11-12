@@ -9,22 +9,22 @@ const Dialog = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;
 const DialogClose = DialogPrimitive.Close;
 
-/** Modal: raised surface, roomy header, footer on its own darker band with a hairline above. */
+/** Supabase modal: app-coloured surface, header and footer bands split off by hairlines, 512px by default. */
 function DialogContent({ className, children, ...props }: React.ComponentProps<typeof DialogPrimitive.Content>) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/70 backdrop-blur-[2px]" />
+      <DialogPrimitive.Overlay className="cb-overlay fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 flex max-h-[85dvh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border-strong bg-card shadow-[0_16px_70px_rgba(0,0,0,0.7)] outline-none",
+          "cb-pop fixed top-1/2 left-1/2 z-50 flex max-h-[85dvh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg bg-dialog shadow-floating outline-none",
           className,
         )}
         {...props}
       >
-        <div className="flex flex-col gap-5 overflow-y-auto p-6">{children}</div>
+        <div className="flex flex-col gap-4 overflow-y-auto p-5">{children}</div>
         <DialogPrimitive.Close
-          className="absolute top-4 right-4 rounded-md p-1 text-subtle transition-colors hover:bg-white/[0.06] hover:text-foreground"
+          className="absolute top-3.5 right-3.5 rounded-md p-1 text-foreground opacity-40 transition-opacity hover:opacity-100"
           aria-label="Close"
         >
           <X className="size-4" />
@@ -35,16 +35,22 @@ function DialogContent({ className, children, ...props }: React.ComponentProps<t
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="dialog-header" className={cn("flex flex-col gap-1.5 pr-6", className)} {...props} />;
+  return (
+    <div
+      data-slot="dialog-header"
+      className={cn("-mx-5 -mt-5 flex flex-col gap-1.5 border-b border-border px-5 py-4 pr-12", className)}
+      {...props}
+    />
+  );
 }
 
-/** Sits flush with the dialog edges, on a darker band. */
+/** Sits flush with the dialog edges below a hairline; actions on the right (Cancel, then the confirm action). */
 function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-6 -mb-6 mt-1 flex items-center justify-end gap-2 border-t border-border bg-background/60 px-6 py-4",
+        "-mx-5 -mb-5 mt-1 flex flex-col-reverse gap-2 border-t border-border px-5 py-3 sm:flex-row sm:items-center sm:justify-end",
         className,
       )}
       {...props}
@@ -54,7 +60,11 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
 
 function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
   return (
-    <DialogPrimitive.Title data-slot="dialog-title" className={cn("text-title font-semibold", className)} {...props} />
+    <DialogPrimitive.Title
+      data-slot="dialog-title"
+      className={cn("font-sans text-base leading-snug font-normal text-foreground", className)}
+      {...props}
+    />
   );
 }
 
@@ -62,7 +72,7 @@ function DialogDescription({ className, ...props }: React.ComponentProps<typeof 
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn("text-sm leading-relaxed text-muted-foreground", className)}
+      className={cn("text-sm leading-normal text-foreground-lighter", className)}
       {...props}
     />
   );

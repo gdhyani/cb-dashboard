@@ -109,7 +109,7 @@ export function ServiceLogo({ icon, className = "" }: { icon: string; className?
   return (
     <span
       aria-hidden
-      className={`inline-grid size-5 shrink-0 place-items-center rounded-md text-foreground ${known || glyph ? "" : "bg-white/[0.06]"} ${className}`}
+      className={`inline-grid size-5 shrink-0 place-items-center rounded-md text-foreground ${known || glyph ? "" : "bg-white/[0.06] studio:bg-accent"} ${className}`}
     >
       {known ? (
         <svg

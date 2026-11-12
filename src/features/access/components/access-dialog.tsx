@@ -51,8 +51,8 @@ function CheckRow({
   return (
     <label
       className={cn(
-        "flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-white/[0.03] has-[:focus-visible]:bg-white/[0.06]",
-        checked && "bg-white/[0.04]",
+        "flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-muted has-[:focus-visible]:bg-accent",
+        checked && "bg-muted",
       )}
     >
       <input type="checkbox" className="sr-only" checked={checked} onChange={onToggle} />

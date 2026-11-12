@@ -153,7 +153,7 @@ export function StopAccessDialog({ orgId }: { orgId: string }) {
               key={s.value}
               className={cn(
                 "flex cursor-pointer flex-col gap-0.5 rounded-md border px-3 py-2 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
-                scope === s.value ? "border-foreground bg-white/[0.04]" : "border-border hover:border-border-strong",
+                scope === s.value ? "border-foreground bg-muted" : "border-border hover:border-border-strong",
                 s.value === "org" && "sm:col-span-2",
               )}
             >

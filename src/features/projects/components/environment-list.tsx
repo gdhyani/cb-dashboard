@@ -19,7 +19,7 @@ export function EnvironmentList({ project, isAdmin }: { project: Project; isAdmi
           <StaggerItem key={e.id} index={i}>
             <Link
               href={`/orgs/${project.orgId}/projects/${project.id}/environments/${e.id}`}
-              className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-white/[0.03]"
+              className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted"
             >
               <span className="font-mono">{e.name}</span>
               <span className="flex items-center gap-2">
