@@ -74,7 +74,7 @@ The `cb` CLI and the background agent read these. You rarely need any of them.
 
 | Name | Purpose |
 |---|---|
-| `NODE_OPTIONS` | Extended with `--require` for the [preload](/docs/reference/api#preload-cbenvregister). Any options you already set are kept. |
+| `NODE_OPTIONS` | Extended with `--import` (or `--require`, when you already use `--import`) for the [preload](/docs/reference/api#preload-cbenvregister). Any options you already set are kept. |
 | `CB_SNAPSHOT_PATH` | Path of the snapshot the preload reads. Its presence tells `env.NAME` that it runs under `cb run`. |
 | `CB_LISTEN_FILE` | File where the preload records the port your app listens on, for webhook delivery. Set only while the port is being detected. |
 
