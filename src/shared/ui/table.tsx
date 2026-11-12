@@ -5,7 +5,15 @@ import { cn } from "@/shared/lib/utils";
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
     <div className="relative w-full overflow-x-auto rounded-lg border border-border bg-surface-100 shadow-xs">
-      <table data-slot="table" className={cn("w-full caption-bottom text-sm", className)} {...props} />
+      {/* Phones: the last column (row actions or status) stays pinned while the rest scrolls sideways. */}
+      <table
+        data-slot="table"
+        className={cn(
+          "w-full caption-bottom text-sm max-sm:[&_tr>*:last-child]:sticky max-sm:[&_tr>*:last-child]:right-0 max-sm:[&_tr>*:last-child]:shadow-[-1px_0_0_var(--color-border)] max-sm:[&_tbody_tr>*:last-child]:bg-surface-100 max-sm:[&_thead_tr>*:last-child]:bg-surface-200",
+          className,
+        )}
+        {...props}
+      />
     </div>
   );
 }

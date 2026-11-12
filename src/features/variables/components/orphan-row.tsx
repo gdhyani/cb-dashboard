@@ -21,8 +21,8 @@ export function OrphanRow({
       <TableCell className="max-w-[14rem] py-2.5 sm:max-w-[18rem]">
         <span className="block truncate font-mono text-sm text-foreground-lighter">{resource.name}</span>
       </TableCell>
-      <TableCell className="min-w-[8rem] py-2.5">{note}</TableCell>
-      <TableCell className="max-w-[9rem] py-2.5 sm:max-w-[14rem]">
+      <TableCell className="hidden min-w-[8rem] py-2.5 md:table-cell">{note}</TableCell>
+      <TableCell className="hidden max-w-[14rem] py-2.5 sm:table-cell">
         <span className="flex min-w-0 items-center gap-2 text-xs text-foreground-light">
           <ServiceLogo icon={chip.icon} />
           <span className="truncate">{chip.label}</span>

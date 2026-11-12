@@ -389,20 +389,23 @@ export function EditVariableDialog({
                     {f.name === "caCert" && removeCa && (
                       <p className="text-xs text-foreground-lighter">The CA certificate is removed when you save</p>
                     )}
-                    <FieldInput
-                      idPrefix="edit"
-                      def={
-                        f.name === "caCert" && storedCa
-                          ? { ...f, hint: "Drop a new file (or paste it) to replace the one stored." }
-                          : f
-                      }
-                      value={settings[f.name] ?? ""}
-                      onChange={(v) => setSettings((s) => ({ ...s, [f.name]: v }))}
-                      readOnly={!editing}
-                      error={
-                        editing && settings[f.name]?.trim() ? f.validate?.(settings[f.name]?.trim() ?? "") : undefined
-                      }
-                    />
+                    {/* A stored CA is summarised above; the read-only view has nothing more to show for it. */}
+                    {!(f.name === "caCert" && storedCa && !editing) && (
+                      <FieldInput
+                        idPrefix="edit"
+                        def={
+                          f.name === "caCert" && storedCa
+                            ? { ...f, hint: "Drop a new file (or paste it) to replace the one stored." }
+                            : f
+                        }
+                        value={settings[f.name] ?? ""}
+                        onChange={(v) => setSettings((s) => ({ ...s, [f.name]: v }))}
+                        readOnly={!editing}
+                        error={
+                          editing && settings[f.name]?.trim() ? f.validate?.(settings[f.name]?.trim() ?? "") : undefined
+                        }
+                      />
+                    )}
                   </div>
                 ))}
             </DialogSection>

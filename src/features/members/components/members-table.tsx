@@ -79,12 +79,12 @@ export function MembersTable({
             </Select>
           }
         />
-        <Table className="min-w-[560px]">
+        <Table className="sm:min-w-[560px]">
           <TableHeader>
             <TableRow>
               {sortHead("name", "User")}
               {sortHead("role", "Role", "w-36")}
-              {sortHead("joined", "Joined", "w-36")}
+              {sortHead("joined", "Joined", "hidden w-36 sm:table-cell")}
               {canManage && (
                 <TableHead className="w-12">
                   <span className="sr-only">Actions</span>
@@ -150,7 +150,7 @@ export function MembersTable({
                         </BadgeLabel>
                       )}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-foreground-lighter">
+                    <TableCell className="hidden whitespace-nowrap text-foreground-lighter sm:table-cell">
                       <time dateTime={m.joinedAt} title={new Date(m.joinedAt).toLocaleString()}>
                         {timeAgo(m.joinedAt)}
                       </time>

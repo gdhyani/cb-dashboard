@@ -79,7 +79,7 @@ export function SessionsList({ orgId }: { orgId: string }) {
                 <TableHead>Browser</TableHead>
                 {sortHead("user", "User")}
                 {sortHead("active", "Last active", "w-36")}
-                <TableHead className="w-36">Expires</TableHead>
+                <TableHead className="hidden w-36 sm:table-cell">Expires</TableHead>
                 <TableHead className="w-12">
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -117,7 +117,7 @@ export function SessionsList({ orgId }: { orgId: string }) {
                     <TableCell className="whitespace-nowrap text-foreground-lighter">
                       {timeAgo(s.lastSeenAt ?? s.createdAt)}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-foreground-lighter">
+                    <TableCell className="hidden whitespace-nowrap text-foreground-lighter sm:table-cell">
                       {timeUntil(s.expiresAt)}
                     </TableCell>
                     <TableCell className="py-0 text-right">

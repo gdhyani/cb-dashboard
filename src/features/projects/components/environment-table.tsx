@@ -16,7 +16,8 @@ export interface EnvironmentTableRow {
 /** One status per environment: a stop wins over access. */
 export function environmentStatus(e: EnvironmentSummary): { tone: BadgeTone; label: string } {
   if (e.killed) return { tone: "warning", label: "Suspended" };
-  return e.hasAccess ? { tone: "success", label: "Access granted" } : { tone: "muted", label: "No access" };
+  // Normal state stays neutral (green is rare, Supabase); suspended is the one that needs attention.
+  return e.hasAccess ? { tone: "default", label: "Access granted" } : { tone: "muted", label: "No access" };
 }
 
 /**

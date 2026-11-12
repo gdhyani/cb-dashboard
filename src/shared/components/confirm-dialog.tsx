@@ -53,10 +53,11 @@ export function ConfirmDialog({
     <Dialog open={isOpen} onOpenChange={setOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent>
+        {/* Studio confirmation modal: title in the header band, the consequence in the body. */}
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+        <DialogDescription className="text-foreground-light">{description}</DialogDescription>
         {requireReason && (
           <FormField id="confirm-reason" label="Reason" hint="Shown to developers and recorded in the activity log">
             <Input

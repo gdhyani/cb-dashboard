@@ -45,7 +45,7 @@ export function ProjectLayout({
   ];
   return (
     <div className="flex min-h-full flex-1">
-      <aside className="sticky top-12 hidden h-[calc(100dvh-3rem)] w-64 shrink-0 border-r border-border lg:block">
+      <aside className="sticky top-12 z-10 hidden h-[calc(100dvh-3rem)] w-60 shrink-0 border-r border-border bg-background lg:block">
         <SideMenu label="Project" title={project.data?.name ?? <Skeleton className="h-4 w-32" />} groups={groups} />
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">{children}</div>

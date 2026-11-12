@@ -18,7 +18,7 @@ export function InvitesTable({ orgId, invites }: { orgId: string; invites: Invit
         <TableRow>
           <TableHead>Invited</TableHead>
           <TableHead className="w-36">Role</TableHead>
-          <TableHead className="w-36">Created</TableHead>
+          <TableHead className="hidden w-36 sm:table-cell">Created</TableHead>
           <TableHead className="w-36">Expires</TableHead>
           <TableHead className="w-12">
             <span className="sr-only">Actions</span>
@@ -36,7 +36,9 @@ export function InvitesTable({ orgId, invites }: { orgId: string; invites: Invit
             <TableCell>
               <BadgeLabel tone={inv.role === "developer" ? "default" : "strong"}>{ROLE_LABEL[inv.role]}</BadgeLabel>
             </TableCell>
-            <TableCell className="whitespace-nowrap text-foreground-lighter">{timeAgo(inv.createdAt)}</TableCell>
+            <TableCell className="hidden whitespace-nowrap text-foreground-lighter sm:table-cell">
+              {timeAgo(inv.createdAt)}
+            </TableCell>
             <TableCell className="whitespace-nowrap text-foreground-lighter">{timeUntil(inv.expiresAt)}</TableCell>
             <TableCell className="py-0 text-right">
               <RowActions

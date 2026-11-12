@@ -184,8 +184,8 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
                 <TableHeader>
                   <TableRow>
                     <TableHead>Key</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead className="hidden md:table-cell">Value</TableHead>
+                    <TableHead className="hidden sm:table-cell">Type</TableHead>
                     <TableHead>Status</TableHead>
                     {isAdmin && (
                       <TableHead className="w-10">

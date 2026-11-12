@@ -23,7 +23,16 @@ import type { AuditCategory, AuditEvent } from "../types";
 const COLUMNS = 5;
 const OUTCOME_TONE = { success: "success", denied: "warning", error: "danger" } as const;
 
+/** Studio logs: a normal outcome is quiet text with a small dot; only Denied and Error carry a coloured badge. */
 function Outcome({ outcome }: { outcome: AuditEvent["outcome"] }) {
+  if (outcome === "success") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-foreground-lighter">
+        <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />
+        <span className="max-sm:sr-only">Success</span>
+      </span>
+    );
+  }
   return (
     <BadgeLabel tone={OUTCOME_TONE[outcome]}>
       {OUTCOME_OPTIONS.find((o) => o.value === outcome)?.label ?? outcome}
@@ -55,12 +64,12 @@ function EventRow({ event, nested = false }: { event: AuditEvent; nested?: boole
   const Icon = d.icon;
   return (
     <TableRow className={cn(nested && "bg-surface-75")}>
-      <TableCell className="py-2 font-mono text-xs whitespace-nowrap text-foreground-lighter tabular-nums">
+      <TableCell className="hidden py-2 font-mono text-xs whitespace-nowrap text-foreground-lighter tabular-nums sm:table-cell">
         <time dateTime={event.createdAt} title={new Date(event.createdAt).toLocaleString()}>
           {logTime(event.createdAt)}
         </time>
       </TableCell>
-      <TableCell className="py-2">{!nested && <Actor actor={event.actor} />}</TableCell>
+      <TableCell className="hidden py-2 md:table-cell">{!nested && <Actor actor={event.actor} />}</TableCell>
       <TableCell className={cn("py-2", nested && "pl-10")}>
         <span className="flex items-start gap-2 text-foreground-light">
           <Icon
@@ -68,10 +77,16 @@ function EventRow({ event, nested = false }: { event: AuditEvent; nested?: boole
             strokeWidth={1.5}
             aria-hidden="true"
           />
-          <span className="min-w-0">{d.text}</span>
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span>{d.text}</span>
+            {/* Phones: the time column is hidden, so the time sits under the event. */}
+            <span className="font-mono text-[11px] text-foreground-lighter tabular-nums sm:hidden">
+              {logTime(event.createdAt)}
+            </span>
+          </span>
         </span>
       </TableCell>
-      <TableCell className="py-2">
+      <TableCell className="hidden py-2 lg:table-cell">
         <Where event={event} />
       </TableCell>
       <TableCell className="py-2">
@@ -96,10 +111,10 @@ function SessionRows({ events }: { events: AuditEvent[] }) {
   return (
     <>
       <TableRow>
-        <TableCell className="py-2 font-mono text-xs whitespace-nowrap text-foreground-lighter tabular-nums">
+        <TableCell className="hidden py-2 font-mono text-xs whitespace-nowrap text-foreground-lighter tabular-nums sm:table-cell">
           {logTime(first.createdAt)}–{format(new Date(last.createdAt), "HH:mm:ss")}
         </TableCell>
-        <TableCell className="py-2">
+        <TableCell className="hidden py-2 md:table-cell">
           <Actor actor={first.actor} />
         </TableCell>
         <TableCell className="py-2">
@@ -121,7 +136,7 @@ function SessionRows({ events }: { events: AuditEvent[] }) {
             </span>
           </button>
         </TableCell>
-        <TableCell className="py-2">
+        <TableCell className="hidden py-2 lg:table-cell">
           <Where event={first} />
         </TableCell>
         <TableCell className="py-2">
@@ -204,14 +219,16 @@ export function ActivityLog({ orgId, pageSize = 50 }: { orgId: string; pageSize?
             description="Activity appears as people sign in, change config, get access and run apps"
           />
         ) : (
-          <Table className="min-w-[760px]">
+          <Table className="md:min-w-[760px]">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-44">Time</TableHead>
-                <TableHead className="w-40">Actor</TableHead>
+                <TableHead className="hidden w-44 sm:table-cell">Time</TableHead>
+                <TableHead className="hidden w-40 md:table-cell">Actor</TableHead>
                 <TableHead>Event</TableHead>
-                <TableHead className="w-48">Where</TableHead>
-                <TableHead className="w-24">Status</TableHead>
+                <TableHead className="hidden w-48 lg:table-cell">Where</TableHead>
+                <TableHead className="w-10 sm:w-24">
+                  <span className="max-sm:sr-only">Status</span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

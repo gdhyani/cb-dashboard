@@ -103,6 +103,14 @@ export function FieldInput({
       />
     );
   }
+  // Read-only view of an empty, non-secret field: one quiet line saying so, not an empty box that looks editable.
+  if (readOnly && !def.select && !def.secret && !value) {
+    return (
+      <FormField id={id} label={label}>
+        <Input id={id} value="" readOnly placeholder="Not set" />
+      </FormField>
+    );
+  }
   return (
     <FormField id={id} label={label} hint={def.hint} error={fileError ?? error}>
       {def.file && !readOnly ? (

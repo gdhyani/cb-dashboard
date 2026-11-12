@@ -82,8 +82,8 @@ export function VariableRow({
           )}
         </div>
       </TableCell>
-      <TableCell className="max-w-[16rem] min-w-[8rem] py-2.5">{valueText}</TableCell>
-      <TableCell className="max-w-[9rem] py-2.5 sm:max-w-[14rem]">
+      <TableCell className="hidden max-w-[16rem] min-w-[8rem] py-2.5 md:table-cell">{valueText}</TableCell>
+      <TableCell className="hidden max-w-[14rem] py-2.5 sm:table-cell">
         {parentKey ? (
           <span className="block truncate text-xs text-foreground-lighter">with {parentKey}</span>
         ) : variable.type === "visible" ? (

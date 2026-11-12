@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Menu } from "lucide-react";
+import { BookOpen, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
@@ -8,7 +8,7 @@ import { DOCS_PATH, PRODUCT_NAME } from "@/constants";
 import { EnvironmentSwitcher, ProjectSwitcher } from "@/features/projects";
 import { CommandMenu, SearchButton, useCommandShortcut } from "@/features/search/components/command-menu";
 import { cn } from "@/shared/lib/utils";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/shared/ui/sheet";
+import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/shared/ui/sheet";
 import { useOrg } from "../hooks/use-orgs";
 import { useSidebarMode } from "../hooks/use-sidebar-mode";
 import { OrgSidebar } from "./org-sidebar";
@@ -71,9 +71,15 @@ export function OrgShell({ orgId, children }: { orgId: string; children: ReactNo
           </SheetTrigger>
           <SheetContent showClose={false}>
             <SheetTitle>Navigation</SheetTitle>
-            <div className="flex h-12 items-center gap-2 border-b border-border px-4">
+            <div className="flex h-12 items-center gap-2 border-b border-border pr-2 pl-4">
               <ProductMark />
-              <span className="truncate text-sm text-foreground">{org.data?.name}</span>
+              <span className="min-w-0 flex-1 truncate text-sm text-foreground">{org.data?.name}</span>
+              <SheetClose
+                aria-label="Close menu"
+                className="flex size-8 items-center justify-center rounded-md text-foreground-lighter hover:bg-accent hover:text-foreground"
+              >
+                <X className="size-4" />
+              </SheetClose>
             </div>
             <OrgSidebar orgId={orgId} variant="sheet" />
           </SheetContent>
@@ -114,7 +120,7 @@ export function OrgShell({ orgId, children }: { orgId: string; children: ReactNo
       <div className="flex min-h-0 flex-1">
         <aside
           className={cn(
-            "sticky top-12 hidden h-[calc(100dvh-3rem)] shrink-0 transition-[width] duration-200 md:block",
+            "sticky top-12 z-30 hidden h-[calc(100dvh-3rem)] shrink-0 transition-[width] duration-200 md:block",
             mode === "expanded" ? "w-52" : "w-12",
           )}
         >
