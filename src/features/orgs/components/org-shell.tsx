@@ -63,30 +63,8 @@ export function OrgShell({ orgId, children }: { orgId: string; children: ReactNo
       >
         Skip to content
       </a>
-      <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-1.5 border-b border-border bg-background pr-3 pl-2 md:pl-3">
-        <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-          <SheetTrigger
-            className="flex size-8 items-center justify-center rounded-md text-foreground-lighter hover:bg-accent hover:text-foreground md:hidden"
-            aria-label="Open menu"
-          >
-            <Menu className="size-5" strokeWidth={1.5} />
-          </SheetTrigger>
-          <SheetContent showClose={false}>
-            <SheetTitle>Navigation</SheetTitle>
-            <div className="flex h-12 items-center gap-2 border-b border-border pr-2 pl-4">
-              <ProductMark />
-              <span className="min-w-0 flex-1 truncate text-sm text-foreground">{org.data?.name}</span>
-              <SheetClose
-                aria-label="Close menu"
-                className="flex size-8 items-center justify-center rounded-md text-foreground-lighter hover:bg-accent hover:text-foreground"
-              >
-                <X className="size-4" />
-              </SheetClose>
-            </div>
-            <OrgSidebar orgId={orgId} variant="sheet" />
-          </SheetContent>
-        </Sheet>
-        <Link href={`/orgs/${orgId}`} aria-label={`${PRODUCT_NAME} home`} className="hidden shrink-0 md:block">
+      <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-1.5 border-b border-border bg-background pr-3 pl-3">
+        <Link href={`/orgs/${orgId}`} aria-label={`${PRODUCT_NAME} home`} className="shrink-0">
           <ProductMark />
         </Link>
         <Divider className="hidden md:inline" />
@@ -128,6 +106,29 @@ export function OrgShell({ orgId, children }: { orgId: string; children: ReactNo
             </Link>
           </Hint>
           <UserMenu orgId={orgId} />
+          {/* Phones: the menu button sits at the right end and the menu slides in from the right. */}
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger
+              className="-mr-1 flex size-8 items-center justify-center rounded-md text-foreground-lighter hover:bg-accent hover:text-foreground md:hidden"
+              aria-label="Open menu"
+            >
+              <Menu className="size-5" strokeWidth={1.5} />
+            </SheetTrigger>
+            <SheetContent side="right" showClose={false}>
+              <SheetTitle>Navigation</SheetTitle>
+              <div className="flex h-12 items-center gap-2 border-b border-border pr-2 pl-4">
+                <ProductMark />
+                <span className="min-w-0 flex-1 truncate text-sm text-foreground">{org.data?.name}</span>
+                <SheetClose
+                  aria-label="Close menu"
+                  className="flex size-8 items-center justify-center rounded-md text-foreground-lighter hover:bg-accent hover:text-foreground"
+                >
+                  <X className="size-4" />
+                </SheetClose>
+              </div>
+              <OrgSidebar orgId={orgId} variant="sheet" />
+            </SheetContent>
+          </Sheet>
         </div>
       </header>
       <div className="flex min-h-0 flex-1">
