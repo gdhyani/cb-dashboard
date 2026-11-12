@@ -1,10 +1,12 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { FormField } from "@/shared/components/form-field";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -26,30 +28,43 @@ export function CreateProjectDialog({
   open: controlledOpen,
   onOpenChange,
   onCreated,
+  size = "default",
 }: {
   orgId: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   onCreated?: (project: Project) => void;
+  /** Trigger size: `sm` in toolbars. */
+  size?: "default" | "sm";
 }) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const controlled = controlledOpen !== undefined;
   const open = controlled ? controlledOpen : uncontrolledOpen;
-  const setOpen = (next: boolean) => (controlled ? onOpenChange?.(next) : setUncontrolledOpen(next));
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const setOpen = (next: boolean) => {
+    if (controlled) onOpenChange?.(next);
+    else setUncontrolledOpen(next);
+    if (!next) {
+      setName("");
+      setDescription("");
+    }
+  };
   const { create } = useProjectMutations(orgId);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {!controlled && (
         <DialogTrigger asChild>
-          <Button>New project</Button>
+          <Button size={size}>
+            <Plus strokeWidth={1.5} />
+            New project
+          </Button>
         </DialogTrigger>
       )}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New project</DialogTitle>
-          <DialogDescription>Starts with development and staging environments.</DialogDescription>
+          <DialogTitle>Create project</DialogTitle>
+          <DialogDescription>Starts with development and staging environments</DialogDescription>
         </DialogHeader>
         <form
           method="post"
@@ -61,15 +76,13 @@ export function CreateProjectDialog({
               {
                 onSuccess: (project) => {
                   setOpen(false);
-                  setName("");
-                  setDescription("");
                   onCreated?.(project);
                 },
               },
             );
           }}
         >
-          <FormField id="project-name" label="Name">
+          <FormField id="project-name" label="Name" hint="Shown across the dashboard and the CLI">
             <Input
               id="project-name"
               value={name}
@@ -78,7 +91,7 @@ export function CreateProjectDialog({
               autoFocus
             />
           </FormField>
-          <FormField id="project-description" label="Description (optional)">
+          <FormField id="project-description" label="Description" aside="Optional">
             <Textarea
               id="project-description"
               value={description}
@@ -87,8 +100,13 @@ export function CreateProjectDialog({
             />
           </FormField>
           <DialogFooter>
-            <Button type="submit" disabled={!name.trim() || create.isPending}>
-              Create
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="submit" disabled={!name.trim()} loading={create.isPending}>
+              Create project
             </Button>
           </DialogFooter>
         </form>

@@ -1,16 +1,20 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, X } from "lucide-react";
+import { Check, TriangleAlert, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ApiError } from "@/shared/api/api-error";
+import { Admonition } from "@/shared/components/admonition";
 import { FormField } from "@/shared/components/form-field";
+import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { fieldClasses } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
 import * as api from "../api/variables.api";
 import { variableKeys } from "../api/variables.keys";
 import { buildCreateRequest, KEY_PATTERN } from "../lib/catalog";
+import { STICKY_FOOTER, STICKY_HEADER } from "../lib/dialog-bands";
 import { type DotenvEntry, guessType, IMPORTABLE, parseDotenv } from "../lib/dotenv";
 import type { CreateVariableInput } from "../types";
 
@@ -123,8 +127,8 @@ export function ImportEnvDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-h-[90dvh] max-w-2xl">
+        <DialogHeader className={STICKY_HEADER}>
           <DialogTitle>Import .env</DialogTitle>
           <DialogDescription>
             Paste the file once. Pick what each key is; protected values are tested, encrypted on cb's server and never
@@ -132,7 +136,7 @@ export function ImportEnvDialog({
           </DialogDescription>
         </DialogHeader>
         {rows === null ? (
-          <FormField id="import-env" label="Your .env" hint="KEY=value per line; comments and export are fine.">
+          <FormField id="import-env" label="Your .env" hint="KEY=value per line; comments and export are fine">
             <Textarea
               id="import-env"
               value={text}
@@ -144,24 +148,32 @@ export function ImportEnvDialog({
             />
           </FormField>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             {skippedLines > 0 && (
-              <p className="text-xs text-subtle">
-                {skippedLines} line{skippedLines > 1 ? "s" : ""} weren't KEY=value and are left out.
+              <p className="text-sm text-foreground-lighter">
+                {skippedLines} line{skippedLines > 1 ? "s" : ""} weren't KEY=value and are left out
               </p>
             )}
-            <ul className="divide-y divide-border rounded-lg border border-border">
+            <div className="flex items-center justify-between gap-3 px-3">
+              <span className="heading-meta text-foreground-lighter">Key</span>
+              <span className="heading-meta text-foreground-lighter">What it is</span>
+            </div>
+            <ul className="-mt-1 divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface-100">
               {rows.map((r, i) => (
                 <li
                   key={r.key}
-                  className="flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 py-2 transition-colors hover:bg-surface-200"
                 >
-                  <span className="font-mono text-sm">{r.key}</span>
+                  <span className="min-w-0 truncate font-mono text-sm text-foreground">{r.key}</span>
                   {r.exists ? (
-                    <span className="text-xs text-subtle">already exists — left as is</span>
+                    <span className="text-xs text-foreground-lighter">already exists — left as is</span>
                   ) : r.result ? (
-                    <span className="flex items-center gap-1.5 text-xs">
-                      {r.result.ok ? <Check className="size-3.5" /> : <X className="size-3.5 text-destructive" />}
+                    <span className="flex items-center gap-1.5 text-xs text-foreground-light">
+                      {r.result.ok ? (
+                        <Check className="size-3.5 text-primary" />
+                      ) : (
+                        <X className="size-3.5 text-destructive" />
+                      )}
                       {r.result.ok ? "Added" : r.result.message}
                     </span>
                   ) : (
@@ -172,7 +184,7 @@ export function ImportEnvDialog({
                       onChange={(e) =>
                         setRows((all) => all?.map((x, j) => (j === i ? { ...x, choice: e.target.value } : x)) ?? null)
                       }
-                      className="h-8 rounded-md border border-border bg-background px-2 text-sm"
+                      className={cn(fieldClasses, "h-[30px] w-full py-0 text-xs sm:w-56")}
                     >
                       {!r.choice && (
                         <option value="" disabled>
@@ -187,7 +199,8 @@ export function ImportEnvDialog({
                     </select>
                   )}
                   {r.secretLooking && !r.exists && !r.result && (!r.choice || r.choice === "plain") && (
-                    <p className="basis-full text-xs text-destructive">
+                    <p className="flex basis-full items-start gap-1.5 text-xs text-warning">
+                      <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" strokeWidth={1.5} />
                       This looks like a secret. Plain shows it to every developer — choose a protected type, Random
                       secret, or Secret shown as-is.
                     </p>
@@ -196,14 +209,16 @@ export function ImportEnvDialog({
               ))}
             </ul>
             {done && (
-              <p role="status" className="text-sm">
-                {added} added{failed > 0 ? `, ${failed} not added — fix those with Add variable` : ""}.
-              </p>
+              <div role="status">
+                <Admonition type={failed > 0 ? "warning" : "success"}>
+                  {added} added{failed > 0 ? `, ${failed} not added — fix those with Add variable` : ""}
+                </Admonition>
+              </div>
             )}
           </div>
         )}
-        <DialogFooter>
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+        <DialogFooter className={STICKY_FOOTER}>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             {done ? "Done" : "Cancel"}
           </Button>
           {rows === null ? (

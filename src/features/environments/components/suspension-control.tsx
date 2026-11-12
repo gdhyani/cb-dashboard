@@ -1,56 +1,65 @@
 "use client";
 
-import { Copy, PauseCircle } from "lucide-react";
+import { useState } from "react";
+import { BadgeLabel } from "@/shared/components/badge-label";
 import { ConfirmDialog } from "@/shared/components/confirm-dialog";
-import { RowActions } from "@/shared/components/row-actions";
-import { useCopy } from "@/shared/hooks/use-copy";
-import { Button } from "@/shared/ui/button";
+import { Card, CardContent } from "@/shared/ui/card";
+import { Label } from "@/shared/ui/label";
+import { Switch } from "@/shared/ui/switch";
 import { useEnvironmentMutations } from "../hooks/use-environment";
 import type { Environment } from "../types";
 
 /**
- * Environment header actions. Suspension is destructive, so it lives in the "…" menu with a required reason
- * (FR-UI-002); resuming is a plain button shown only while suspended.
+ * Environment Settings › Suspension: one card row with the current status and an "Accept connections" switch.
+ * Turning it off suspends the environment (typed reason, FR-UI-002); turning it on resumes it. Both confirm first.
  */
 export function SuspensionControl({ env }: { env: Environment }) {
   const { kill, revive } = useEnvironmentMutations(env.id);
-  const { copy } = useCopy("Environment ID copied");
+  const [pending, setPending] = useState<"suspend" | "resume" | null>(null);
+  const switchId = `accept-connections-${env.id}`;
   return (
-    <div className="flex items-center gap-2">
-      {env.killed && (
-        <ConfirmDialog
-          trigger={<Button variant="secondary">Resume environment</Button>}
-          title={`Resume ${env.name}?`}
-          description="Members with access can connect again. Running applications reconnect automatically."
-          confirmLabel="Resume environment"
-          destructive={false}
-          onConfirm={() => revive.mutateAsync()}
+    <Card>
+      <CardContent className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
+        <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Label htmlFor={switchId} className="leading-normal">
+              Accept connections
+            </Label>
+            <BadgeLabel tone={env.killed ? "warning" : "success"} dot>
+              {env.killed ? "Suspended" : "Active"}
+            </BadgeLabel>
+          </div>
+          <p className="text-sm leading-normal text-foreground-lighter">
+            {env.killed
+              ? `Suspended: ${env.killedReason ?? "no reason given"}. Apps cannot reach its services until it is resumed`
+              : "Apps and members with access can connect. Turn off to end every connection within seconds"}
+          </p>
+        </div>
+        <Switch
+          id={switchId}
+          checked={!env.killed}
+          disabled={kill.isPending || revive.isPending}
+          onCheckedChange={(checked) => setPending(checked ? "resume" : "suspend")}
         />
-      )}
-      <RowActions
-        prominent
-        label={`Actions for ${env.name}`}
-        actions={[
-          { label: "Copy environment ID", icon: Copy, onSelect: () => void copy(env.id) },
-          ...(env.killed
-            ? []
-            : [
-                {
-                  label: "Suspend environment",
-                  icon: PauseCircle,
-                  destructive: true,
-                  confirm: {
-                    title: `Suspend ${env.name}?`,
-                    description:
-                      "All active connections to this environment are terminated within seconds, and new sessions are refused until it is resumed.",
-                    confirmLabel: "Suspend environment",
-                    requireReason: true,
-                    onConfirm: (reason: string) => kill.mutateAsync(reason),
-                  },
-                },
-              ]),
-        ]}
+      </CardContent>
+      <ConfirmDialog
+        open={pending === "suspend"}
+        onOpenChange={(open) => !open && setPending(null)}
+        title={`Suspend ${env.name}?`}
+        description="All active connections to this environment are terminated within seconds, and new sessions are refused until it is resumed."
+        confirmLabel="Suspend environment"
+        requireReason
+        onConfirm={(reason) => kill.mutateAsync(reason)}
       />
-    </div>
+      <ConfirmDialog
+        open={pending === "resume"}
+        onOpenChange={(open) => !open && setPending(null)}
+        title={`Resume ${env.name}?`}
+        description="Members with access can connect again. Running applications reconnect automatically."
+        confirmLabel="Resume environment"
+        destructive={false}
+        onConfirm={() => revive.mutateAsync()}
+      />
+    </Card>
   );
 }

@@ -22,7 +22,7 @@ export function serviceIcon(group: Pick<ServiceGroup, "type" | "provider">): str
 export function ServiceRows({
   envId,
   group,
-  startIndex,
+  visibleIds,
   isAdmin,
   onRemoveVariable,
   onEdit,
@@ -32,7 +32,8 @@ export function ServiceRows({
 }: {
   envId: string;
   group: ServiceGroup;
-  startIndex: number;
+  /** Search narrows a service to its matching keys; the main key always stays as the parent. */
+  visibleIds?: Set<string>;
   isAdmin: boolean;
   onRemoveVariable: (id: string) => Promise<unknown>;
   onEdit: (variable: Variable, group: ServiceGroup, replace?: boolean) => void;
@@ -75,7 +76,6 @@ export function ServiceRows({
     return (
       <OrphanRow
         resource={group.resource}
-        index={startIndex}
         chip={chip}
         actions={
           isAdmin
@@ -91,7 +91,8 @@ export function ServiceRows({
 
   return (
     <>
-      {group.rows.map((row, i) => {
+      {group.rows.map((row) => {
+        if (visibleIds && row.extra && !visibleIds.has(row.variable.id)) return null;
         const copyKey: RowAction = { label: "Copy key", icon: Copy, onSelect: () => void copy(row.variable.key) };
         const editAction: RowAction = { label: "Edit", icon: Pencil, onSelect: () => onEdit(row.variable, group) };
         const actions: RowAction[] = row.extra
@@ -130,7 +131,6 @@ export function ServiceRows({
         return (
           <VariableRow
             key={row.variable.id}
-            index={startIndex + i}
             variable={row.variable}
             isMain={!row.extra}
             parentKey={row.extra ? row.parentKey : undefined}

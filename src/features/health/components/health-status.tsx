@@ -1,39 +1,56 @@
 "use client";
 
 import { motion } from "motion/react";
+import { StatusDot } from "@/shared/components/status-dot";
 import { formatDuration } from "@/shared/lib/format-duration";
 import { useHealth } from "../hooks/use-health";
 
+/** Small Studio-style status line: a dot, "Backend healthy", each check, uptime and the mono version. */
 export function HealthStatus() {
   const { data, error, isPending } = useHealth();
 
   return (
     <section
       aria-label="Backend status"
-      className="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono text-sm text-muted-foreground"
+      className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-foreground-lighter"
     >
-      <span className="text-subtle">backend</span>
-      {isPending && <span>checking…</span>}
+      {isPending && (
+        <>
+          <StatusDot tone="unknown" label="Checking" />
+          <span>Checking backend…</span>
+        </>
+      )}
       {data && (
         <motion.span
           key={data.status}
           initial={{ y: 2 }}
           animate={{ y: 0 }}
-          className="flex flex-wrap items-baseline gap-x-3"
+          className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
         >
-          <span className="text-foreground">{data.status}</span>
+          <StatusDot
+            tone={data.status === "ok" ? "ok" : "rejected"}
+            label={data.status === "ok" ? "Healthy" : "Degraded"}
+          />
+          <span className="text-foreground">{data.status === "ok" ? "Backend healthy" : "Backend degraded"}</span>
           {Object.entries(data.checks).map(([name, state]) => (
-            <span key={name}>{`${name} ${state}`}</span>
+            <span key={name} className="flex items-center gap-x-2">
+              <span aria-hidden="true">·</span>
+              <span className={state === "down" ? "text-destructive" : undefined}>{`${name} ${state}`}</span>
+            </span>
           ))}
-          <span>{formatDuration(data.uptimeSec)}</span>
-          <span className="text-subtle">{`v${data.version}`}</span>
+          <span aria-hidden="true">·</span>
+          <span>{`Up ${formatDuration(data.uptimeSec)}`}</span>
+          <span aria-hidden="true">·</span>
+          <span className="font-mono">{`v${data.version}`}</span>
         </motion.span>
       )}
       {error && (
-        <span role="alert" className="flex flex-wrap items-baseline gap-x-3">
-          <span className="text-destructive">{error.code}</span>
+        <span role="alert" className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <StatusDot tone="rejected" label="Unreachable" />
+          <span className="text-foreground">Backend unreachable</span>
+          <span className="font-mono text-destructive">{error.code}</span>
           <span>{error.message}</span>
-          <span className="text-subtle">{`correlation id ${error.correlationId}`}</span>
+          <span className="font-mono">{`correlation id ${error.correlationId}`}</span>
         </span>
       )}
     </section>

@@ -57,30 +57,31 @@ export function LoginForm() {
 
   return (
     <AuthCard
-      title="Log in"
-      description="Manage projects, environments and who can reach them."
+      title="Welcome back"
+      description="Sign in to your account"
       footer={
-        <>
-          No account?{" "}
-          <Link
-            className="text-foreground underline underline-offset-4"
-            href={`/signup${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`}
-          >
-            Create one
-          </Link>
-          <span className="mt-3 flex justify-center">
-            <DocsLink href={DOCS_PATH}>Read the docs</DocsLink>
+        <div className="flex flex-col items-center gap-4">
+          <span>
+            Don&apos;t have an account?{" "}
+            <Link
+              className="text-foreground underline underline-offset-4 hover:text-foreground-light"
+              href={`/signup${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`}
+            >
+              Sign up
+            </Link>
           </span>
-        </>
+          <DocsLink href={DOCS_PATH}>Read the docs</DocsLink>
+        </div>
       }
     >
-      <form method="post" className="flex flex-col gap-4" noValidate onSubmit={submit}>
+      <form method="post" className="flex flex-col gap-5" noValidate onSubmit={submit}>
         <FormField id="email" label="Email" error={errors.email?.message}>
           <Input
             id="email"
             type="email"
             autoComplete="email"
             autoFocus
+            placeholder="you@example.com"
             aria-invalid={Boolean(errors.email)}
             {...form.register("email")}
           />
@@ -89,13 +90,14 @@ export function LoginForm() {
           <PasswordInput
             id="password"
             autoComplete="current-password"
+            placeholder="••••••••"
             aria-invalid={Boolean(errors.password)}
             {...form.register("password")}
           />
         </FormField>
         <FormError error={login.error} />
-        <Button type="submit" disabled={login.isPending}>
-          {login.isPending ? "Logging in…" : "Log in"}
+        <Button type="submit" size="lg" block loading={login.isPending}>
+          Sign in
         </Button>
       </form>
     </AuthCard>

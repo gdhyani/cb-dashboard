@@ -44,8 +44,18 @@ function SheetContent({
   );
 }
 
-function SheetTitle({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Title>) {
-  return <SheetPrimitive.Title className={cn("sr-only", className)} {...props} />;
+/** Screen-reader only by default (the phone menu); `visible` renders Supabase's sheet title (text-lg). */
+function SheetTitle({
+  className,
+  visible = false,
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Title> & { visible?: boolean }) {
+  return (
+    <SheetPrimitive.Title
+      className={cn(visible ? "font-sans text-lg leading-snug font-normal text-foreground" : "sr-only", className)}
+      {...props}
+    />
+  );
 }
 
 export { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger };

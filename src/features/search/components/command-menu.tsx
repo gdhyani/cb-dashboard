@@ -1,6 +1,19 @@
 "use client";
 
-import { BookOpen, Copy, FolderKanban, Layers, LogOut, Search, User } from "lucide-react";
+import {
+  BookOpen,
+  Check,
+  Copy,
+  FolderKanban,
+  Layers,
+  LogOut,
+  Monitor,
+  Moon,
+  Search,
+  Settings,
+  Sun,
+  User,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { CLI_COMMANDS, DOCS_PATH } from "@/constants";
@@ -11,6 +24,8 @@ import { useOrg } from "@/features/orgs/hooks/use-orgs";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { notifySuccess } from "@/shared/lib/notify";
 import { cn } from "@/shared/lib/utils";
+import type { ThemeChoice } from "@/shared/theme/theme";
+import { useTheme } from "@/shared/theme/use-theme";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/shared/ui/command";
 import { Kbd } from "@/shared/ui/kbd";
 
@@ -50,7 +65,16 @@ export function SearchButton({ onClick, className }: { onClick: () => void; clas
   );
 }
 
-/** Jump to any page, project, environment or member. */
+/** Studio palette density: 12px-tall padding and 20px icons inside the dialog. */
+const ITEM = "py-3 [&_svg]:size-5";
+
+const THEMES: { value: ThemeChoice; label: string; icon: typeof Sun }[] = [
+  { value: "dark", label: "Use dark theme", icon: Moon },
+  { value: "light", label: "Use light theme", icon: Sun },
+  { value: "system", label: "Use system theme", icon: Monitor },
+];
+
+/** Jump to any page, project, environment or member; account and theme actions. */
 export function CommandMenu({
   orgId,
   open,
@@ -65,6 +89,8 @@ export function CommandMenu({
   const projects = useProjects(orgId);
   const members = useMembers(orgId);
   const logout = useLogout();
+  const theme = useTheme();
+  const accountHref = `/orgs/${orgId}/account`;
   const go = (href: string) => {
     onOpenChange(false);
     router.push(href);
@@ -75,26 +101,29 @@ export function CommandMenu({
     <CommandDialog open={open} onOpenChange={onOpenChange} title="Search">
       <CommandInput placeholder="Search projects, environments, people…" />
       <CommandList>
-        <CommandEmpty>No results.</CommandEmpty>
+        <CommandEmpty>No results found</CommandEmpty>
         <CommandGroup heading="Go to">
-          {orgNav(orgId, org.isAdmin).map(({ href, label, icon: Icon }) => (
-            <CommandItem key={href} value={`page ${label}`} onSelect={() => go(href)}>
-              <Icon />
-              {label}
-            </CommandItem>
-          ))}
+          {orgNav(orgId, org.isAdmin)
+            .filter(({ href }) => href !== accountHref)
+            .map(({ href, label, icon: Icon }) => (
+              <CommandItem key={href} className={ITEM} value={`page ${label}`} onSelect={() => go(href)}>
+                <Icon strokeWidth={1.5} />
+                {label}
+              </CommandItem>
+            ))}
         </CommandGroup>
         {projects.data && projects.data.length > 0 && (
           <CommandGroup heading="Projects">
             {projects.data.map((p) => (
               <CommandItem
                 key={p.id}
+                className={ITEM}
                 value={`project ${p.name} ${p.slug}`}
                 onSelect={() => go(`/orgs/${orgId}/projects/${p.id}`)}
               >
-                <FolderKanban />
+                <FolderKanban strokeWidth={1.5} />
                 <span className="truncate">{p.name}</span>
-                <span className="ml-auto font-mono text-xs text-subtle">{p.environments.length} env</span>
+                <span className="ml-auto font-mono text-xs text-foreground-lighter">{p.environments.length} env</span>
               </CommandItem>
             ))}
           </CommandGroup>
@@ -104,14 +133,16 @@ export function CommandMenu({
             {envs.map((e) => (
               <CommandItem
                 key={e.id}
+                className={ITEM}
                 value={`env ${e.project.name} ${e.name}`}
                 onSelect={() => go(`/orgs/${orgId}/projects/${e.project.id}/environments/${e.id}`)}
               >
-                <Layers />
+                <Layers strokeWidth={1.5} />
                 <span className="truncate">
-                  {e.project.name} <span className="text-subtle">/</span> <span className="font-mono">{e.name}</span>
+                  {e.project.name} <span className="text-foreground-lighter">/</span>{" "}
+                  <span className="font-mono">{e.name}</span>
                 </span>
-                {e.killed && <span className="ml-auto font-mono text-xs text-subtle">suspended</span>}
+                {e.killed && <span className="ml-auto font-mono text-xs text-foreground-lighter">suspended</span>}
               </CommandItem>
             ))}
           </CommandGroup>
@@ -121,18 +152,20 @@ export function CommandMenu({
             {members.data.map((m) => (
               <CommandItem
                 key={m.userId}
+                className={ITEM}
                 value={`person ${m.name} ${m.email}`}
                 onSelect={() => go(`/orgs/${orgId}/members`)}
               >
-                <User />
+                <User strokeWidth={1.5} />
                 <span className="truncate">{m.name}</span>
-                <span className="ml-auto truncate font-mono text-xs text-subtle">{m.email}</span>
+                <span className="ml-auto truncate font-mono text-xs text-foreground-lighter">{m.email}</span>
               </CommandItem>
             ))}
           </CommandGroup>
         )}
         <CommandGroup heading="Actions">
           <CommandItem
+            className={ITEM}
             value="copy login command cli"
             onSelect={() => {
               void navigator.clipboard.writeText(CLI_COMMANDS.login);
@@ -140,20 +173,42 @@ export function CommandMenu({
               onOpenChange(false);
             }}
           >
-            <Copy />
-            Copy CLI login command
+            <Copy strokeWidth={1.5} />
+            Copy CLI sign-in command
           </CommandItem>
           {/* FR-DOC-003 */}
-          <CommandItem value="documentation docs help guides" onSelect={() => go(DOCS_PATH)}>
-            <BookOpen />
+          <CommandItem className={ITEM} value="documentation docs help guides" onSelect={() => go(DOCS_PATH)}>
+            <BookOpen strokeWidth={1.5} />
             Documentation
           </CommandItem>
+        </CommandGroup>
+        <CommandGroup heading="Account">
+          <CommandItem className={ITEM} value="account preferences settings profile" onSelect={() => go(accountHref)}>
+            <Settings strokeWidth={1.5} />
+            Account preferences
+          </CommandItem>
+          {THEMES.map(({ value, label, icon: Icon }) => (
+            <CommandItem
+              key={value}
+              className={ITEM}
+              value={`theme ${value} appearance ${label}`}
+              onSelect={() => {
+                theme.setChoice(value);
+                onOpenChange(false);
+              }}
+            >
+              <Icon strokeWidth={1.5} />
+              {label}
+              {theme.choice === value && <Check className="ml-auto" strokeWidth={1.5} aria-label="Current theme" />}
+            </CommandItem>
+          ))}
           <CommandItem
-            value="log out sign out"
+            className={ITEM}
+            value="sign out log out"
             onSelect={() => logout.mutate(undefined, { onSettled: () => router.replace("/login") })}
           >
-            <LogOut />
-            Log out
+            <LogOut strokeWidth={1.5} />
+            Sign out
           </CommandItem>
         </CommandGroup>
       </CommandList>

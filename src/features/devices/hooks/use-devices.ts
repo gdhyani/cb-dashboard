@@ -19,7 +19,7 @@ export function useRevokeSession(orgId: string) {
   return useMutation({
     mutationFn: api.revokeSession,
     onSuccess: () => {
-      notifySuccess("Signed out — that browser must log in again");
+      notifySuccess("Signed out of that browser");
       return client.invalidateQueries({ queryKey: deviceKeys.sessions(orgId) });
     },
     onError: (e) => notifyError(e),

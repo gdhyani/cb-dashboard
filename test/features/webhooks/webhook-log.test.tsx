@@ -68,6 +68,14 @@ describe("FR-WH-003 webhook deliveries in the dashboard", () => {
     expect(screen.getByText(/bob@example.com/)).toBeInTheDocument();
     expect(screen.getByText(/Delivered · 200/)).toBeInTheDocument();
     expect(screen.getByText(/No one on the team caused this/)).toBeInTheDocument();
+    // Studio table: one row per event under mono column heads.
+    expect(screen.getAllByRole("columnheader").map((h) => h.textContent)).toEqual([
+      "Event",
+      "Delivered to",
+      "Received",
+      "Actions",
+    ]);
+    expect(screen.getByText("Delivered · 200").closest("tr")).toHaveTextContent("payment_intent.succeeded");
   });
 
   it("Replay re-queues the event", async () => {

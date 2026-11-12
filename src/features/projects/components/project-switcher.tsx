@@ -14,7 +14,7 @@ import type { Project } from "../types";
 import { CreateProjectDialog } from "./create-project-dialog";
 import { ProjectMark } from "./project-mark";
 
-const CREATE_HINT = "Starts with development and staging environments.";
+const CREATE_HINT = "Starts with development and staging environments";
 
 /**
  * Navbar project switcher. Desktop: a dropdown anchored under the trigger. Phones: the same list in a
@@ -83,7 +83,7 @@ export function ProjectSwitcher({ orgId, canCreate }: { orgId: string; canCreate
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Close"
-            className="-mr-1.5 rounded-md p-1.5 text-subtle transition-colors hover:bg-accent hover:text-foreground"
+            className="-mr-1.5 rounded-md p-1.5 text-foreground-lighter transition-colors hover:bg-accent hover:text-foreground"
           >
             <X className="size-4" />
           </button>,
@@ -122,16 +122,12 @@ function SwitcherBody({
       <CommandList>
         {!projects && [0, 1, 2].map((i) => <Skeleton key={i} className="mx-2.5 my-2.5 h-5 w-40" />)}
         {projects?.length === 0 ? (
-          <div className="flex flex-col items-center gap-4 px-6 py-10 text-center">
-            <span className="flex size-10 items-center justify-center rounded-lg border border-border-strong">
-              <FolderKanban className="size-4 text-muted-foreground" />
-            </span>
-            <p className="max-w-60 text-sm text-muted-foreground">
-              Projects you create appear here for quick switching.
-            </p>
+          <div className="flex flex-col items-center gap-3 px-6 py-8 text-center">
+            <FolderKanban className="size-5 text-foreground-muted" strokeWidth={1.5} aria-hidden="true" />
+            <p className="max-w-60 text-sm text-foreground-lighter">No projects yet</p>
           </div>
         ) : (
-          <CommandEmpty>No projects match.</CommandEmpty>
+          <CommandEmpty>No projects match your search</CommandEmpty>
         )}
         {projects?.map((p) => (
           <CommandItem
@@ -144,11 +140,15 @@ function SwitcherBody({
             <span className="min-w-0 flex-1 truncate">{p.name}</span>
             {p.environments.some((e) => e.killed) && (
               <span
-                className="size-1.5 shrink-0 rounded-full bg-muted-foreground"
+                role="img"
+                aria-label="Has a suspended environment"
                 title="Has a suspended environment"
+                className="size-1.5 shrink-0 rounded-full bg-warning"
               />
             )}
-            {p.id === currentId && <Check className="!text-foreground" aria-label="Current project" />}
+            {p.id === currentId && (
+              <Check className="!text-foreground" strokeWidth={1.5} aria-label="Current project" />
+            )}
           </CommandItem>
         ))}
       </CommandList>
@@ -156,12 +156,12 @@ function SwitcherBody({
         <button
           type="button"
           onClick={onCreate}
-          className="flex w-full items-center gap-3 border-t border-border px-4 py-3 text-left text-sm transition-colors hover:bg-muted"
+          className="flex w-full items-center gap-2 border-t border-border px-3 py-2.5 text-left text-sm text-foreground-light transition-colors hover:bg-overlay-hover hover:text-foreground"
         >
-          <Plus className="size-4 shrink-0 text-muted-foreground" />
+          <Plus className="size-3.5 shrink-0 text-foreground-lighter" strokeWidth={1.5} />
           <span className="flex min-w-0 flex-col">
-            <span className="font-medium">Create project</span>
-            {showHint && <span className="text-xs text-subtle">{CREATE_HINT}</span>}
+            <span>Create project</span>
+            {showHint && <span className="text-xs text-foreground-lighter">{CREATE_HINT}</span>}
           </span>
         </button>
       )}

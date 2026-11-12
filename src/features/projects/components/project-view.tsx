@@ -20,7 +20,9 @@ export function ProjectView({ orgId, projectId }: { orgId: string; projectId: st
       skeleton={
         <>
           <SkeletonHeader />
-          <SkeletonRows rows={2} />
+          <div className="pt-10">
+            <SkeletonRows rows={2} />
+          </div>
         </>
       }
     >
@@ -28,7 +30,12 @@ export function ProjectView({ orgId, projectId }: { orgId: string; projectId: st
         <>
           <PageHeader
             title={project.data.name}
-            description={project.data.description || <span className="font-mono text-sm">{project.data.slug}</span>}
+            description={
+              <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                <span className="font-mono text-sm text-foreground-lighter">{project.data.slug}</span>
+                {project.data.description && <span className="min-w-0">{project.data.description}</span>}
+              </span>
+            }
             nav={<ProjectNav orgId={orgId} projectId={projectId} isAdmin={org.isAdmin} />}
           />
           <Section title="Environments" description="Each has its own variables, services and access">

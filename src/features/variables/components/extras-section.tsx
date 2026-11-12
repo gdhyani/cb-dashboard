@@ -2,6 +2,7 @@
 
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { cn } from "@/shared/lib/utils";
 import { Input } from "@/shared/ui/input";
 import { type DraftExtra, type ExtraDef, normalizeKey } from "../lib/catalog";
 
@@ -26,20 +27,24 @@ export function ExtrasSection({
   const set = (i: number, patch: Partial<DraftExtra>) =>
     onChange(extras.map((e, j) => (j === i ? { ...e, ...patch } : e)));
   return (
-    <section className="flex flex-col gap-2 border-t border-border pt-3">
+    <section className="-mx-5 flex flex-col gap-3 border-t border-border px-5 pt-4">
       <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 text-left text-[13px] font-medium"
+        className="flex items-center gap-1.5 self-start rounded-md text-left text-sm text-foreground"
       >
-        <ChevronRight aria-hidden className={`size-4 transition-transform ${open ? "rotate-90" : ""}`} />
+        <ChevronRight
+          aria-hidden
+          strokeWidth={1.5}
+          className={cn("size-4 text-foreground-lighter transition-transform", open && "rotate-90")}
+        />
         Suggested extra keys
-        <span className="font-normal text-subtle">· optional{ticked ? ` · ${ticked} selected` : ""}</span>
+        <span className="text-foreground-lighter">· optional{ticked ? ` · ${ticked} selected` : ""}</span>
       </button>
       {open && (
         <div className="flex flex-col gap-2.5 pl-5">
-          <p className="text-xs text-subtle">
+          <p className="text-sm text-foreground-lighter">
             Add these only if your code reads them. Rename them to match your code — now or any time later.
           </p>
           {extras.map((e, i) => {
@@ -53,15 +58,15 @@ export function ExtrasSection({
                     checked={e.on}
                     onChange={(ev) => set(i, { on: ev.target.checked })}
                     aria-label={`Add ${def.what}`}
-                    className="size-4 accent-foreground"
+                    className="size-4 accent-primary-solid"
                   />
                   <Input
                     value={e.key}
                     aria-label={`Key name for ${def.what}`}
                     onChange={(ev) => set(i, { key: normalizeKey(ev.target.value) })}
-                    className="h-8 min-w-0 flex-1 basis-48 font-mono text-xs"
+                    className="h-[30px] min-w-0 flex-1 basis-48 font-mono text-xs"
                   />
-                  <span className="text-xs text-subtle">{def.what}</span>
+                  <span className="text-xs text-foreground-lighter">{def.what}</span>
                 </div>
                 {e.on && !def.field && (
                   <div className="pl-6">
@@ -70,7 +75,7 @@ export function ExtrasSection({
                       aria-label={def.what}
                       placeholder={defaultOf(def) || def.placeholder}
                       onChange={(ev) => set(i, { value: ev.target.value })}
-                      className="h-8 font-mono text-xs"
+                      className="h-[30px] font-mono text-xs"
                     />
                   </div>
                 )}

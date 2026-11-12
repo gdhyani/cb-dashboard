@@ -41,7 +41,7 @@ export function AcceptInvite({ token }: { token: string }) {
       description={
         preview.data && (
           <span className="flex items-center gap-2">
-            You were invited as <BadgeLabel tone="strong">{preview.data.role}</BadgeLabel>
+            You are invited as <BadgeLabel tone="strong">{preview.data.role}</BadgeLabel>
           </span>
         )
       }
@@ -49,12 +49,14 @@ export function AcceptInvite({ token }: { token: string }) {
       <QueryState isPending={preview.isPending} error={preview.error} skeleton={<SkeletonRows rows={1} />}>
         {me.data ? (
           <div className="flex flex-col gap-4">
-            <p className="text-sm text-muted-foreground">
-              Signed in as <span className="text-foreground">{me.data.user.email}</span>.
+            <p className="text-sm text-foreground-light">
+              Signed in as <span className="text-foreground">{me.data.user.email}</span>
             </p>
             <FormError error={accept.error} />
             <Button
-              disabled={accept.isPending}
+              size="lg"
+              block
+              loading={accept.isPending}
               onClick={() => accept.mutate({ token }, { onSuccess: (r) => goToOrg(r.orgId) })}
             >
               Accept invite
@@ -63,7 +65,8 @@ export function AcceptInvite({ token }: { token: string }) {
         ) : (
           <form
             method="post"
-            className="flex flex-col gap-4"
+            className="flex flex-col gap-5"
+            noValidate
             onSubmit={form.handleSubmit((v) => accept.mutate({ token, ...v }, { onSuccess: (r) => goToOrg(r.orgId) }))}
           >
             <FormField id="name" label="Your name" error={errors.name?.message}>
@@ -78,20 +81,20 @@ export function AcceptInvite({ token }: { token: string }) {
                 {...form.register("email")}
               />
             </FormField>
-            <FormField id="password" label="Password" error={errors.password?.message} hint="At least 8 characters.">
+            <FormField id="password" label="Password" error={errors.password?.message} hint="At least 8 characters">
               <PasswordInput id="password" autoComplete="new-password" {...form.register("password")} />
             </FormField>
             <FormError error={accept.error} />
-            <Button type="submit" disabled={accept.isPending}>
-              {accept.isPending ? "Joining…" : "Create account and join"}
+            <Button type="submit" size="lg" block loading={accept.isPending}>
+              Sign up and join
             </Button>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-center text-sm text-foreground-light">
               Already have an account?{" "}
               <Link
-                className="text-foreground underline underline-offset-4"
+                className="text-foreground underline underline-offset-4 hover:text-foreground-light"
                 href={`/login?next=${encodeURIComponent(`/invite/${token}`)}`}
               >
-                Log in first
+                Sign in first
               </Link>
             </p>
           </form>

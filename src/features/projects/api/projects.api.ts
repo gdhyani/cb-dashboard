@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPost } from "@/shared/api/http";
+import { apiDelete, apiGet, apiPatch, apiPost } from "@/shared/api/http";
 import type { Project } from "../types";
 
 export const listProjects = (orgId: string) => apiGet<Project[]>(`/orgs/${orgId}/projects`);
@@ -8,3 +8,5 @@ export const createProject = (orgId: string, body: { name: string; description?:
 export const deleteProject = (projectId: string) => apiDelete<{ deleted: true }>(`/projects/${projectId}`);
 export const createEnvironment = (projectId: string, name: string) =>
   apiPost<unknown>(`/projects/${projectId}/environments`, { name });
+export const updateProject = (projectId: string, body: { name?: string; description?: string }) =>
+  apiPatch<Project>(`/projects/${projectId}`, body);

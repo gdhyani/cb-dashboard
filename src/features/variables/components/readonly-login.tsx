@@ -39,25 +39,25 @@ export function ReadonlyLogin({
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border border-border p-3">
+    <div className="flex flex-col gap-3 rounded-md border border-border bg-surface-75 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-col">
-          <span className="text-[13px] font-medium">{label}</span>
-          <span className="text-xs text-subtle">
+          <span className="text-sm text-foreground">{label}</span>
+          <span className="text-sm text-foreground-lighter">
             {existing
               ? `Set ${timeAgo(existing.rotatedAt)} · choose who gets it in "Who can use it"`
-              : "Optional: a second login with fewer rights for some people."}
+              : "Optional: a second login with fewer rights for some people"}
           </span>
         </div>
         {!editing && (
           <div className="flex gap-2">
-            <Button type="button" size="sm" variant="outline" onClick={() => setEditing(true)}>
+            <Button type="button" size="sm" variant="secondary" onClick={() => setEditing(true)}>
               {existing ? "Replace" : "Add"}
             </Button>
             {existing && (
               <ConfirmDialog
                 trigger={
-                  <Button type="button" size="sm" variant="ghost" disabled={pending}>
+                  <Button type="button" size="sm" variant="destructive-ghost" disabled={pending}>
                     Remove
                   </Button>
                 }
@@ -83,7 +83,7 @@ export function ReadonlyLogin({
             <Button
               type="button"
               size="sm"
-              variant="ghost"
+              variant="secondary"
               onClick={() => {
                 setValue("");
                 setEditing(false);
@@ -94,6 +94,7 @@ export function ReadonlyLogin({
             <Button
               type="button"
               size="sm"
+              variant="secondary"
               disabled={!value.trim() || pending}
               onClick={() => save().catch(() => undefined)}
             >

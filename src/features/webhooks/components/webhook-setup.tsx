@@ -3,6 +3,7 @@
 import { CheckCircle2, ChevronDown, ExternalLink, Link2, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { type Resource, useResources } from "@/features/resources";
+import { Admonition } from "@/shared/components/admonition";
 import { ChoiceCards } from "@/shared/components/choice-cards";
 import { CopyCommand } from "@/shared/components/copy-command";
 import { cn } from "@/shared/lib/utils";
@@ -60,11 +61,11 @@ function ConnectedRow({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="flex flex-col gap-1 rounded-md border border-border px-3 py-2.5">
+    <div className="flex flex-col gap-1 rounded-md border border-border bg-surface-75 px-3 py-2.5">
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-        <CheckCircle2 aria-hidden className="size-4 text-success" />
-        <span className="font-medium text-foreground">{title}</span>
-        <span className="text-xs text-subtle">
+        <CheckCircle2 aria-hidden className="size-4 text-primary" strokeWidth={1.5} />
+        <span className="text-foreground">{title}</span>
+        <span className="text-xs text-foreground-lighter">
           {allEvents ? "all events, including ones Stripe adds later" : `${events.length} events`}
         </span>
       </p>
@@ -74,15 +75,15 @@ function ConnectedRow({
             type="button"
             aria-expanded={open}
             onClick={() => setOpen((o) => !o)}
-            className="inline-flex items-center gap-1 self-start text-xs text-subtle hover:text-foreground"
+            className="inline-flex items-center gap-1 self-start text-xs text-foreground-lighter hover:text-foreground"
           >
             Show events
             <ChevronDown className={cn("size-3 transition-transform", open && "rotate-180")} />
           </button>
-          {open && <p className="font-mono text-[11px] leading-5 text-muted-foreground">{events.join(", ")}</p>}
+          {open && <p className="font-mono text-[11px] leading-5 text-foreground-light">{events.join(", ")}</p>}
         </>
       )}
-      <p className="flex flex-wrap items-center gap-x-2 text-xs text-subtle">
+      <p className="flex flex-wrap items-center gap-x-2 text-xs text-foreground-lighter">
         To add or remove events, change them in {where}:<ProviderLink href={href}>Open in {where}</ProviderLink>
       </p>
     </div>
@@ -113,9 +114,9 @@ function Disclosure({ label, children }: { label: string; children: React.ReactN
 function GeneratedSecret({ secret }: { secret: string }) {
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <span className="text-[13px] font-medium">Signing secret · paste into Razorpay</span>
+      <span className="text-sm text-foreground">Signing secret · paste into Razorpay</span>
       <CopyCommand command={secret} prompt={false} label="Copy signing secret" toastLabel="Signing secret copied" />
-      <p className="text-xs text-subtle">
+      <p className="text-xs text-foreground-lighter">
         Shown only now. In Razorpay, open Account &amp; Settings → Webhooks → Add new webhook, paste the URL and this
         secret, pick your events and save.
       </p>
@@ -128,17 +129,17 @@ const hasKey = (resources: Resource[] | undefined, provider: string) =>
 
 function StaleWarning({ name }: { name: string }) {
   return (
-    <p role="alert" className="text-sm text-warning">
+    <Admonition type="warning">
       {name} still sends to an old address of this cb server. Reconnect to point it here.
-    </p>
+    </Admonition>
   );
 }
 
 function UnreachableWarning({ name }: { name: string }) {
   return (
-    <p role="alert" className="text-xs text-destructive">
+    <Admonition type="destructive">
       {name} can't reach this address. Set PUBLIC_URL on the backend to its public https address first.
-    </p>
+    </Admonition>
   );
 }
 
@@ -198,12 +199,13 @@ function StripeSetup({ envId, resource }: { envId: string; resource: Resource })
               onChange={setMode}
               columns={3}
             />
-            <p className="text-xs text-subtle">
+            <p className="text-xs text-foreground-lighter">
               A type you turn off is removed in Stripe too. Both arrive at the same URL and the same key.
             </p>
             <Button
               type="button"
               size="sm"
+              variant="secondary"
               className="self-start"
               disabled={!reachable || mode === currentMode}
               loading={connect.isPending}
@@ -217,12 +219,13 @@ function StripeSetup({ envId, resource }: { envId: string; resource: Resource })
           <Button
             type="button"
             size="sm"
+            variant="secondary"
             className="self-start"
             disabled={!reachable}
             loading={connect.isPending}
             onClick={() => run(currentMode)}
           >
-            <RefreshCw className="size-3.5" />
+            <RefreshCw />
             Reconnect
           </Button>
         )}
@@ -236,7 +239,7 @@ function StripeSetup({ envId, resource }: { envId: string; resource: Resource })
       <div className="flex flex-col gap-2">
         <WebhookEndpoint url={url} provider="stripe" />
         {!secretsSet.snapshot && !secretsSet.thin && !resources.isPending && (
-          <p className="text-xs text-subtle">
+          <p className="text-xs text-foreground-lighter">
             Add your Stripe secret key in this environment and cb can create the webhook in Stripe for you.
           </p>
         )}
@@ -245,7 +248,7 @@ function StripeSetup({ envId, resource }: { envId: string; resource: Resource })
 
   return (
     <div className="flex flex-col gap-3">
-      <span className="text-[13px] font-medium">Your app's webhook code uses</span>
+      <span className="text-sm text-foreground">Your app's webhook code uses</span>
       <ChoiceCards
         name={`stripe-mode-${resource.id}`}
         legend="Your app's webhook code uses"
@@ -254,7 +257,7 @@ function StripeSetup({ envId, resource }: { envId: string; resource: Resource })
         onChange={setMode}
         columns={3}
       />
-      <p className="text-xs text-subtle">
+      <p className="text-xs text-foreground-lighter">
         {mode === "thin"
           ? "cb subscribes the thin destination to 12 payment, checkout, subscription and invoice events."
           : mode === "both"
@@ -270,7 +273,7 @@ function StripeSetup({ envId, resource }: { envId: string; resource: Resource })
         loading={connect.isPending}
         onClick={() => run(mode)}
       >
-        <Link2 className="size-4" />
+        <Link2 />
         Connect Stripe
       </Button>
       <Disclosure label="Set it up yourself">
@@ -317,12 +320,13 @@ function RazorpaySetup({
           <Button
             type="button"
             size="sm"
+            variant="secondary"
             className="self-start"
             disabled={!reachable}
             loading={connect.isPending}
             onClick={run}
           >
-            <RefreshCw className="size-3.5" />
+            <RefreshCw />
             Reconnect
           </Button>
         )}
@@ -335,18 +339,18 @@ function RazorpaySetup({
       {secret ? (
         <GeneratedSecret secret={secret} />
       ) : config.secretOrigin !== "generated" ? null : (
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-subtle">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-foreground-lighter">
           <span>The signing secret was shown once when this key was added.</span>
           <Button
             type="button"
             size="sm"
-            variant="outline"
+            variant="secondary"
             loading={regenerate.isPending}
             onClick={() =>
               regenerate.mutate(resource.id, { onSuccess: (r) => r.generatedSecret && setSecret(r.generatedSecret) })
             }
           >
-            <RefreshCw className="size-3.5" />
+            <RefreshCw />
             New secret
           </Button>
         </div>
@@ -359,7 +363,7 @@ function RazorpaySetup({
       <div className="flex flex-col gap-2">
         {manual}
         {!resources.isPending && (
-          <p className="text-xs text-subtle">
+          <p className="text-xs text-foreground-lighter">
             Add your Razorpay key in this environment and cb can create the webhook in Razorpay for you.
           </p>
         )}
@@ -368,13 +372,13 @@ function RazorpaySetup({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs text-subtle">
+      <p className="text-xs text-foreground-lighter">
         cb creates the webhook in your Razorpay account with the Razorpay key saved here, for payment, order and refund
         events, and keeps its secret. Nothing to copy. You can add or remove events in Razorpay any time.
       </p>
       {!reachable && <UnreachableWarning name="Razorpay" />}
       <Button type="button" className="self-start" disabled={!reachable} loading={connect.isPending} onClick={run}>
-        <Link2 className="size-4" />
+        <Link2 />
         Connect Razorpay
       </Button>
       <Disclosure label="Set it up yourself">{manual}</Disclosure>

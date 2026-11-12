@@ -5,11 +5,12 @@ import { useOrgDevices } from "@/features/devices/hooks/use-devices";
 import { useMembers } from "@/features/members/hooks/use-members";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { KINDS, useResources } from "@/features/resources";
+import { ChoiceCards } from "@/shared/components/choice-cards";
 import { FormField } from "@/shared/components/form-field";
-import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -22,10 +23,10 @@ import { Textarea } from "@/shared/ui/textarea";
 import { useStopMutations } from "../hooks/use-emergency-stop";
 import type { StopScope } from "../types";
 
-const SCOPES: { value: StopScope; label: string; hint: string }[] = [
+export const SCOPES: readonly { value: StopScope; label: string; hint: string }[] = [
   { value: "user", label: "A person", hint: "Every device of one member" },
-  { value: "device", label: "A device", hint: "One laptop, e.g. lost or stolen" },
-  { value: "resource", label: "A resource", hint: "One database or API" },
+  { value: "device", label: "A device", hint: "One laptop, for example lost or stolen" },
+  { value: "resource", label: "A service", hint: "One database or API" },
   { value: "environment", label: "An environment", hint: "Everything in it" },
   { value: "org", label: "Everyone", hint: "The whole organization, admins too" },
 ];
@@ -117,10 +118,14 @@ function TargetPicker({
   );
 }
 
-/** J7 / FR-UI-002: stop access at a scope with a typed reason; live connections close within seconds. */
-export function StopAccessDialog({ orgId }: { orgId: string }) {
+/**
+ * J7 / FR-UI-002: stop access at a scope with a typed reason; live connections close within seconds.
+ * `scope` preselects what to stop (the Stop access card has one trigger per scope); it can still be changed inside.
+ */
+export function StopAccessDialog({ orgId, scope: initialScope = "user" }: { orgId: string; scope?: StopScope }) {
   const [open, setOpen] = useState(false);
-  const [scope, setScope] = useState<StopScope>("user");
+  const [scope, setScope] = useState<StopScope>(initialScope);
+  const initialLabel = SCOPES.find((s) => s.value === initialScope)?.label.toLowerCase() ?? "access";
   const [targetId, setTargetId] = useState("");
   const [reason, setReason] = useState("");
   const { activate } = useStopMutations(orgId);
@@ -128,7 +133,7 @@ export function StopAccessDialog({ orgId }: { orgId: string }) {
   const close = (next: boolean) => {
     setOpen(next);
     if (!next) {
-      setScope("user");
+      setScope(initialScope);
       setTargetId("");
       setReason("");
     }
@@ -137,52 +142,46 @@ export function StopAccessDialog({ orgId }: { orgId: string }) {
     <Dialog open={open} onOpenChange={close}>
       <DialogTrigger asChild>
         {/* Opens the form only; the destructive step is the confirm button inside (repo guide rule). */}
-        <Button variant="outline">Stop access</Button>
+        <Button variant="secondary" size="sm" aria-label={`Stop access for ${initialLabel}`}>
+          Stop access
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Stop access</DialogTitle>
           <DialogDescription>
-            Live database and API connections close within seconds and new ones are refused until you restore access.
+            Live database and API connections close within seconds and new ones are refused until you restore access
           </DialogDescription>
         </DialogHeader>
-        <fieldset className="grid gap-2 sm:grid-cols-2">
-          <legend className="mb-2 text-[13px] font-medium">What to stop</legend>
-          {SCOPES.map((s) => (
-            <label
-              key={s.value}
-              className={cn(
-                "flex cursor-pointer flex-col gap-0.5 rounded-md border px-3 py-2 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
-                scope === s.value ? "border-foreground bg-muted" : "border-border hover:border-border-strong",
-                s.value === "org" && "sm:col-span-2",
-              )}
-            >
-              <input
-                type="radio"
-                name="stop-scope"
-                className="sr-only"
-                checked={scope === s.value}
-                onChange={() => {
-                  setScope(s.value);
-                  setTargetId("");
-                }}
-              />
-              <span className="text-sm font-medium">{s.label}</span>
-              <span className="text-xs text-subtle">{s.hint}</span>
-            </label>
-          ))}
-        </fieldset>
+        <div className="flex flex-col gap-2">
+          <span className="text-sm text-foreground">What to stop</span>
+          <ChoiceCards
+            name="stop-scope"
+            legend="What to stop"
+            choices={SCOPES.map((c) => ({ value: c.value, title: c.label, hint: c.hint }))}
+            value={scope}
+            onChange={(next) => {
+              setScope(next);
+              setTargetId("");
+            }}
+          />
+        </div>
         <TargetPicker orgId={orgId} scope={scope} value={targetId} onChange={setTargetId} />
-        <FormField id="stop-reason" label="Reason" hint="Shown to admins and recorded in Activity.">
+        <FormField id="stop-reason" label="Reason" hint="Shown to admins and recorded in Activity">
           <Textarea
             id="stop-reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="e.g. laptop reported stolen"
+            placeholder="Laptop reported stolen"
             rows={2}
           />
         </FormField>
         <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" variant="secondary">
+              Cancel
+            </Button>
+          </DialogClose>
           <Button
             variant="destructive"
             disabled={!valid}

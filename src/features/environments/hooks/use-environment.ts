@@ -15,6 +15,15 @@ export function useEnvironmentMutations(envId: string) {
       client.invalidateQueries({ queryKey: ["orgs"] }),
     ]);
   return {
+    rename: useMutation({
+      mutationFn: (name: string) => api.updateEnvironment(envId, { name }),
+      onSuccess: (env) => {
+        client.setQueryData(environmentKeys.detail(envId), env);
+        notifySuccess("Environment renamed");
+        return refresh();
+      },
+      onError: (e) => notifyError(e),
+    }),
     kill: useMutation({
       mutationFn: (reason: string) => api.updateEnvironment(envId, { killed: true, reason }),
       onSuccess: () => {
@@ -33,7 +42,14 @@ export function useEnvironmentMutations(envId: string) {
     }),
     remove: useMutation({
       mutationFn: () => api.deleteEnvironment(envId),
-      onSuccess: refresh,
+      onSuccess: () => {
+        notifySuccess("Environment deleted");
+        // The environment is gone: leave its own query alone (a refetch would 404 before the redirect).
+        return Promise.all([
+          client.invalidateQueries({ queryKey: ["projects"] }),
+          client.invalidateQueries({ queryKey: ["orgs"] }),
+        ]);
+      },
       onError: (e) => notifyError(e),
     }),
   };

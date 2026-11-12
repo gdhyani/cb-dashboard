@@ -58,7 +58,7 @@ export function ConfirmDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         {requireReason && (
-          <FormField id="confirm-reason" label="Reason" hint="Shown to developers and recorded in the activity log.">
+          <FormField id="confirm-reason" label="Reason" hint="Shown to developers and recorded in the activity log">
             <Input
               id="confirm-reason"
               value={reason}
@@ -69,7 +69,7 @@ export function ConfirmDialog({
           </FormField>
         )}
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>
+          <Button variant="secondary" onClick={() => setOpen(false)}>
             Cancel
           </Button>
           <Button

@@ -1,6 +1,7 @@
 export { CreateProjectDialog } from "./components/create-project-dialog";
 export { EnvironmentList } from "./components/environment-list";
 export { EnvironmentSwitcher } from "./components/environment-switcher";
+export { EnvironmentTable, type EnvironmentTableRow, environmentStatus } from "./components/environment-table";
 export { ProjectAccessPage } from "./components/project-access-page";
 export { ProjectLayout } from "./components/project-layout";
 export { ProjectList } from "./components/project-list";

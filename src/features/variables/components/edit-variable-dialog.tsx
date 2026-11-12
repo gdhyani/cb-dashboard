@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useServiceMutations } from "@/features/resources";
 import { WebhookSetup } from "@/features/webhooks";
 import { ApiError } from "@/shared/api/api-error";
+import { Admonition } from "@/shared/components/admonition";
 import { FormError } from "@/shared/components/form-error";
 import { FormField } from "@/shared/components/form-field";
 import { ServiceLogo } from "@/shared/components/service-logo";
@@ -24,8 +25,10 @@ import {
   TYPES,
   type TypeId,
 } from "../lib/catalog";
+import { STICKY_FOOTER, STICKY_HEADER } from "../lib/dialog-bands";
 import type { ServiceGroup } from "../lib/group";
 import { GENERATED_FORMATS, type Variable } from "../types";
+import { DialogSection } from "./dialog-section";
 import { FieldInput } from "./field-input";
 import { ReadonlyLogin } from "./readonly-login";
 
@@ -251,7 +254,7 @@ export function EditVariableDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-h-[90dvh] max-w-lg overflow-y-auto"
+        className="max-h-[90dvh] max-w-2xl"
         onOpenAutoFocus={(e) => {
           // Read-only: focus Edit, not a field that only looks typeable.
           if (editing) return;
@@ -259,7 +262,7 @@ export function EditVariableDialog({
           editButton.current?.focus();
         }}
       >
-        <DialogHeader>
+        <DialogHeader className={STICKY_HEADER}>
           <DialogTitle className="flex items-center gap-2">
             {type !== "plain" && <ServiceLogo icon={def.icon} />}
             {variable
@@ -305,9 +308,9 @@ export function EditVariableDialog({
             </FormField>
           )}
           {variable && (
-            <p className="flex items-center gap-2 text-xs text-subtle">
+            <p className="flex items-center gap-2 text-sm text-foreground-lighter">
               <ServiceLogo icon={def.icon} />
-              {def.name} — to change the type, add a new variable and remove this one.
+              {def.name} — to change the type, add a new variable and remove this one
             </p>
           )}
 
@@ -327,19 +330,19 @@ export function EditVariableDialog({
           )}
 
           {(isMain || variable?.type === "visible") && (
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
-                <span className="text-xs text-subtle">
+            <DialogSection>
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface-200 px-3 py-2">
+                <span className="font-mono text-xs text-foreground-lighter">
                   ●●●●●●●● · set {timeAgo(group?.resource.rotatedAt ?? variable?.updatedAt)} · can't be viewed
                 </span>
                 {editing && !replacingNow && (
-                  <Button type="button" size="sm" variant="outline" onClick={() => setReplacing(true)}>
+                  <Button type="button" size="sm" variant="secondary" onClick={() => setReplacing(true)}>
                     Replace value
                   </Button>
                 )}
               </div>
               {editing && isMain && moved && !replacing && (
-                <p className="text-xs text-subtle">A new address needs the key again, so it isn't sent anywhere new.</p>
+                <Admonition type="note">A new address needs the key again, so it isn't sent anywhere new.</Admonition>
               )}
               {replacingNow &&
                 (isMain ? secretDefs : [visibleSecretDef]).map((f) => (
@@ -351,75 +354,86 @@ export function EditVariableDialog({
                     onChange={(v) => setSecrets((s) => ({ ...s, [f.name]: v }))}
                   />
                 ))}
-            </div>
+            </DialogSection>
           )}
 
-          {isMain && group?.resource.webhookUrl && <WebhookSetup envId={envId} resource={group.resource} />}
+          {isMain && group?.resource.webhookUrl && (
+            <DialogSection title="Webhook">
+              <WebhookSetup envId={envId} resource={group.resource} />
+            </DialogSection>
+          )}
 
-          {settingsDefs
-            .filter((f) => !f.showWhen || (settings[f.showWhen.field] ?? "") === f.showWhen.equals)
-            .map((f) => (
-              <div key={f.name} className="flex flex-col gap-1.5">
-                {f.name === "caCert" && storedCa && !removeCa && (
-                  <p className="flex flex-wrap items-center gap-x-2 text-xs text-subtle">
-                    <span>
-                      Set · <span className="font-mono text-foreground">{storedCa.subject}</span> · valid until{" "}
-                      {new Date(storedCa.notAfter).toLocaleDateString()}
-                    </span>
-                    {editing && (
-                      <button
-                        type="button"
-                        onClick={() => setRemoveCa(true)}
-                        className="text-destructive underline underline-offset-2"
-                      >
-                        Remove CA certificate
-                      </button>
+          {settingsDefs.length > 0 && (
+            <DialogSection title="Settings">
+              {settingsDefs
+                .filter((f) => !f.showWhen || (settings[f.showWhen.field] ?? "") === f.showWhen.equals)
+                .map((f) => (
+                  <div key={f.name} className="flex flex-col gap-1.5">
+                    {f.name === "caCert" && storedCa && !removeCa && (
+                      <p className="flex flex-wrap items-center gap-x-2 text-xs text-foreground-lighter">
+                        <span>
+                          Set · <span className="font-mono text-foreground">{storedCa.subject}</span> · valid until{" "}
+                          {new Date(storedCa.notAfter).toLocaleDateString()}
+                        </span>
+                        {editing && (
+                          <button
+                            type="button"
+                            onClick={() => setRemoveCa(true)}
+                            className="rounded-sm text-destructive underline-offset-4 hover:underline"
+                          >
+                            Remove CA certificate
+                          </button>
+                        )}
+                      </p>
                     )}
-                  </p>
-                )}
-                {f.name === "caCert" && removeCa && (
-                  <p className="text-xs text-subtle">The CA certificate is removed when you save.</p>
-                )}
-                <FieldInput
-                  idPrefix="edit"
-                  def={
-                    f.name === "caCert" && storedCa
-                      ? { ...f, hint: "Drop a new file (or paste it) to replace the one stored." }
-                      : f
-                  }
-                  value={settings[f.name] ?? ""}
-                  onChange={(v) => setSettings((s) => ({ ...s, [f.name]: v }))}
-                  readOnly={!editing}
-                  error={editing && settings[f.name]?.trim() ? f.validate?.(settings[f.name]?.trim() ?? "") : undefined}
-                />
-              </div>
-            ))}
+                    {f.name === "caCert" && removeCa && (
+                      <p className="text-xs text-foreground-lighter">The CA certificate is removed when you save</p>
+                    )}
+                    <FieldInput
+                      idPrefix="edit"
+                      def={
+                        f.name === "caCert" && storedCa
+                          ? { ...f, hint: "Drop a new file (or paste it) to replace the one stored." }
+                          : f
+                      }
+                      value={settings[f.name] ?? ""}
+                      onChange={(v) => setSettings((s) => ({ ...s, [f.name]: v }))}
+                      readOnly={!editing}
+                      error={
+                        editing && settings[f.name]?.trim() ? f.validate?.(settings[f.name]?.trim() ?? "") : undefined
+                      }
+                    />
+                  </div>
+                ))}
+            </DialogSection>
+          )}
 
           {extras.length > 0 && (
-            <section className="flex flex-col gap-2 border-t border-border pt-3">
-              <span className="text-[13px] font-medium">Extra keys of this service</span>
+            <DialogSection title="Extra keys of this service" className="gap-2">
               {extras.map((x) => (
                 <Input
                   key={x.id}
                   aria-label={`Key name (was ${x.key})`}
                   value={extraKeys[x.id] ?? x.key}
                   readOnly={!editing}
-                  className="h-8 font-mono text-xs"
+                  className="h-[30px] font-mono text-xs"
                   onChange={(e) => setExtraKeys((k) => ({ ...k, [x.id]: normalizeKey(e.target.value) }))}
                 />
               ))}
-            </section>
+            </DialogSection>
           )}
 
           {editing && isMain && group && READONLY_TYPES[type] && def.value && (
-            <ReadonlyLogin resourceId={group.resource.id} valueField={def.value} label={READONLY_TYPES[type] ?? ""} />
+            <DialogSection>
+              <ReadonlyLogin resourceId={group.resource.id} valueField={def.value} label={READONLY_TYPES[type] ?? ""} />
+            </DialogSection>
           )}
 
           <FormError error={error} />
           {/* Separate keys: React must not turn the clicked Edit button into the submit button (it would save). */}
           {editing ? (
-            <DialogFooter key="edit">
-              <Button type="button" variant="ghost" disabled={pending} onClick={() => toView(true)}>
+            <DialogFooter key="edit" className={STICKY_FOOTER}>
+              <Button type="button" variant="secondary" disabled={pending} onClick={() => toView(true)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={!canSave} loading={pending}>
@@ -427,8 +441,8 @@ export function EditVariableDialog({
               </Button>
             </DialogFooter>
           ) : (
-            <DialogFooter key="view">
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+            <DialogFooter key="view" className={STICKY_FOOTER}>
+              <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
                 Close
               </Button>
               <Button ref={editButton} type="button" onClick={() => setMode("edit")}>

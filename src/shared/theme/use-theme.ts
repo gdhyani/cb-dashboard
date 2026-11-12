@@ -1,20 +1,44 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { THEME_STORAGE_KEY } from "@/constants";
 import { applyTheme, readThemeChoice, resolveTheme, type ThemeChoice } from "./theme";
 
 const LIGHT_QUERY = "(prefers-color-scheme: light)";
 
+// One store for the whole page: every useTheme() (account menu, command menu, Account preferences) shows the same
+// choice. `null` until read from storage, so nothing applies a default first and flashes the wrong theme.
+let current: ThemeChoice | null = null;
+const listeners = new Set<() => void>();
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  // Another tab changed the theme.
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === THEME_STORAGE_KEY) {
+      current = readThemeChoice();
+      listener();
+    }
+  };
+  window.addEventListener("storage", onStorage);
+  return () => {
+    listeners.delete(listener);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+function getSnapshot(): ThemeChoice {
+  if (current === null) current = readThemeChoice();
+  return current;
+}
+
+const getServerSnapshot = (): ThemeChoice => "dark";
+
 /** Theme choice for the dashboard: persisted per browser; "system" follows the OS live. */
 export function useTheme() {
-  // null until the stored choice is read: applying a default first would flash the wrong theme.
-  const [choice, setChoiceState] = useState<ThemeChoice | null>(null);
-
-  useEffect(() => setChoiceState(readThemeChoice()), []);
+  const choice = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   useEffect(() => {
-    if (!choice) return;
     const query = window.matchMedia(LIGHT_QUERY);
     const update = () => applyTheme(resolveTheme(choice, query.matches));
     update();
@@ -29,8 +53,9 @@ export function useTheme() {
     } catch {
       // Storage blocked (private window): the choice still applies for this visit.
     }
-    setChoiceState(next);
+    current = next;
+    for (const l of listeners) l();
   }, []);
 
-  return { choice: choice ?? "dark", setChoice };
+  return { choice, setChoice };
 }

@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { VariableRow } from "@/features/variables/components/variable-row";
 import type { Variable } from "@/features/variables/types";
+import { Table, TableBody } from "@/shared/ui/table";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 
 const v: Variable = {
@@ -23,7 +24,11 @@ const row = (
 ) =>
   render(
     <TooltipProvider>
-      <VariableRow variable={v} index={0} isMain={isMain} chip={{ icon: "stripe", label: "Stripe" }} health={health} />
+      <Table>
+        <TableBody>
+          <VariableRow variable={v} isMain={isMain} chip={{ icon: "stripe", label: "Stripe" }} health={health} />
+        </TableBody>
+      </Table>
     </TooltipProvider>,
   );
 

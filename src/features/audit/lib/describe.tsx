@@ -53,7 +53,8 @@ export function describe(e: AuditEvent): Described {
   const env = e.environment ? <B>{e.environment.name}</B> : "an environment";
   const resource = e.resource ? (
     <>
-      <B>{e.resource.name}</B> <span className="text-subtle">({KIND_LABEL[e.resource.kind] ?? e.resource.kind})</span>
+      <B>{e.resource.name}</B>{" "}
+      <span className="text-foreground-lighter">({KIND_LABEL[e.resource.kind] ?? e.resource.kind})</span>
     </>
   ) : (
     "a service"

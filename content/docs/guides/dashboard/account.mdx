@@ -1,0 +1,37 @@
+---
+title: Account preferences
+description: Your profile, the dashboard theme and where you are signed in.
+---
+
+**Account preferences** shows who you are signed in as, lets you pick the dashboard's theme and lists where your
+account is signed in. Open it from the account menu (your initials, top right) or the person icon in the left rail.
+Every member has this page, whatever their role.
+
+## Profile
+
+Your name and email, read-only. They can't be changed from the dashboard yet.
+
+## Appearance
+
+Choose **Dark**, **Light** or **System**. System follows your computer's setting and switches when it does. The
+choice is kept in this browser and applies to the dashboard only; these docs stay dark. You can also switch from
+**Theme** in the account menu, or from search (<kbd>⌘</kbd> <kbd>K</kbd>).
+
+## Sessions
+
+- **Dashboard** lists the browsers signed in to your account. **This browser** marks the one you are using. Choose
+  **Revoke** on any other to sign it out; it has to sign in again. Owners and admins see this list; developers see a
+  note, because only admins can list sessions.
+- **CLI devices** lists the laptops where you ran `npx cb login`, with the agent status. **Revoke** ends that laptop's
+  access at once. See [Revoke a device](/docs/guides/admin/revoke-device).
+
+**Sign out** in the section header signs out this browser.
+
+## Find your way around
+
+| Where | What it does |
+|---|---|
+| Top bar | Your organization, the **project switcher** and, inside an environment, the **environment switcher**; search (<kbd>⌘</kbd> <kbd>K</kbd>), Docs and the account menu on the right |
+| Left rail | Home, Projects, Members, Devices & Sessions, Activity, Emergency Stop, My Access, Account. It widens to show labels when you point at it; **Sidebar control** at the bottom keeps it **Expanded**, **Collapsed** or **Expand on hover** |
+| Project menu | Inside a project: Overview, Access, Settings and the project's environments (tabs under the title on narrow screens) |
+| Phones | The menu button at the top left opens the same list |

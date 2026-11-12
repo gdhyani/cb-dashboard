@@ -75,7 +75,7 @@ describe("ProjectSwitcher (navbar)", () => {
     expect(await screen.findByText("Shop API")).toBeInTheDocument();
 
     fireEvent.change(input, { target: { value: "zzz" } });
-    expect(await screen.findByText("No projects match.")).toBeInTheDocument();
+    expect(await screen.findByText("No projects match your search")).toBeInTheDocument();
 
     fireEvent.change(input, { target: { value: "shop" } });
     fireEvent.click(await screen.findByText("Shop API"));
