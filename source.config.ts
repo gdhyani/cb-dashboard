@@ -18,6 +18,9 @@ export const blog = defineCollections({
   schema: frontmatterSchema.extend({
     date: z.union([z.string(), z.date()]).transform((d) => (typeof d === "string" ? d : d.toISOString().slice(0, 10))),
     author: z.string(),
+    /** Cover image under public/blog/covers, shown on the blog index. */
+    image: z.string(),
+    imageAlt: z.string(),
   }),
   postprocess: { includeProcessedMarkdown: true },
 });

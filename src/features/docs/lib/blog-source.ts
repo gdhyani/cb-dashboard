@@ -15,6 +15,8 @@ export type BlogPostSummary = {
   date: string;
   author: string;
   minutes: number;
+  image: string;
+  imageAlt: string;
 };
 
 export async function summarize(page: ReturnType<typeof blogSource.getPages>[number]): Promise<BlogPostSummary> {
@@ -26,6 +28,8 @@ export async function summarize(page: ReturnType<typeof blogSource.getPages>[num
     date: page.data.date,
     author: page.data.author,
     minutes: readingMinutes(await page.data.getText("processed")),
+    image: page.data.image,
+    imageAlt: page.data.imageAlt,
   };
 }
 

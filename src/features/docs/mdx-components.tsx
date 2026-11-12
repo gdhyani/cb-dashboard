@@ -4,7 +4,12 @@ import defaultMdxComponents from "fumadocs-ui/mdx";
 import type { MDXComponents } from "mdx/types";
 import { ArchitectureDiagram } from "./components/architecture-diagram";
 import { CoverageChart } from "./components/blog/coverage-chart";
+import { EnvCompositionChart } from "./components/blog/env-composition-chart";
+import { EnvPrecedenceDiagram } from "./components/blog/env-precedence-diagram";
+import { EnvVisibilityDiagram } from "./components/blog/env-visibility-diagram";
+import { HttpsPathSequence, PostgresLoginSequence } from "./components/blog/gateway-sequences";
 import { LeakMapDiagram } from "./components/blog/leak-map-diagram";
+import { LeakScanChart } from "./components/blog/leak-scan-chart";
 import { SecurePassageDiagram } from "./components/blog/secure-passage-diagram";
 import { StandInDiagram } from "./components/blog/stand-in-diagram";
 import { ValueTypesMatrix } from "./components/blog/value-types-matrix";
@@ -41,6 +46,12 @@ export function getMDXComponents(overrides?: MDXComponents): MDXComponents {
     RoutingLayersDiagram,
     WebhookFlowDiagram,
     CoverageChart,
+    EnvCompositionChart,
+    EnvPrecedenceDiagram,
+    EnvVisibilityDiagram,
+    HttpsPathSequence,
+    LeakScanChart,
+    PostgresLoginSequence,
     LeakMapDiagram,
     SecurePassageDiagram,
     StandInDiagram,

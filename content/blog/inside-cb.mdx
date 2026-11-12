@@ -1,0 +1,203 @@
+---
+title: "Inside cb: the technology, layer by layer"
+description: The engineering behind keeping real keys off laptops. The npm package, the Node preload, the agent and its tunnel, the gateway's protocol adapters, the cryptography, redaction, revocation and how we test it.
+date: 2026-11-13
+image: /blog/covers/inside-cb.svg
+imageAlt: Three stacked layers labelled @cb/env, gateway and vault
+author: The cb team
+---
+
+[How a key travels](/blog/how-a-key-travels) gave the shape of cb's secure path. This post opens each box: what
+runs where, which protocols are involved, which libraries we use and why, and how each part is tested. It is
+written for engineers who want to check our reasoning.
+
+<SecurePassageDiagram />
+
+## The pieces and the one rule
+
+cb is three programs in three open-source repositories. The rule that shapes all of them: **real secrets exist
+only in the backend, and everything protocol-aware lives there too.** The laptop side is kept as small and as
+ignorant as possible.
+
+| Piece | Runs | Built with |
+|---|---|---|
+| `@cb/env` (CLI, agent, preload) | On each developer's laptop | Node.js 22+, TypeScript, `commander`, `@clack/prompts`, `ws`, `zod`, the OS keychain through `@napi-rs/keyring` |
+| cb backend (API + gateway) | On the cb server | Express 5, MongoDB with Mongoose, `ws`, `undici`, `jose`, `@peculiar/x509`, argon2, `winston` |
+| Dashboard and docs | In the browser | Next.js 16, TanStack Query, Tailwind and shadcn/ui, Fumadocs |
+
+Every boundary (HTTP bodies, IPC messages, WebSocket parameters, files on disk, environment parsing) is validated
+with zod, in all three.
+
+## 1. `cb run`: starting the app
+
+`cb login` uses a device code: the terminal shows a code, an admin-approved browser session confirms it, and the
+CLI receives a refresh token that goes straight into the operating system's keychain (macOS Keychain, Windows
+Credential Manager, the Secret Service on Linux), never into a file.
+
+`cb run -- npm run dev` then does four things:
+
+1. Asks the backend for this project environment's **bootstrap**: the stand-in for every protected key, the
+   plain values, the hosts to redirect and the organisation's CA certificate. No real secret is in it.
+2. Writes that as a **snapshot file** readable only by the user (mode 0600).
+3. Makes sure the background **agent** is running and attaches this project to it.
+4. Starts your command with two extra variables:
+
+```bash
+NODE_OPTIONS="--require /…/node_modules/@cb/env/dist/register/index.js"
+CB_SNAPSHOT_PATH="/…/.cb/run/<project>.<environment>.json"
+```
+
+Because it is `NODE_OPTIONS`, every Node process under the command inherits it: `next dev` and its workers,
+Prisma, test runners. Non-Node programs are not touched.
+
+## 2. The preload: steering connections without changing the app
+
+The preload runs before any of your code, reads the snapshot synchronously and never touches the network. It does
+two jobs.
+
+**It fills `process.env`** with the snapshot's values for names your shell has not already set. Database URLs
+point at `127.0.0.1` on a port the agent owns (7400–7999, fixed per project), with the stand-in as the password.
+This is **Layer 1**: the app connects to localhost because the URL says so.
+
+**It patches `tls.connect`, `net.Socket#connect` and `http2.connect`** for **Layer 2**: HTTPS APIs whose
+hostname cannot change, because SDKs hard-code `api.stripe.com` or `api.openai.com`. When a connection targets a
+host in the redirect table, the preload sends it to the agent's local port instead. Everything else passes
+through untouched.
+
+TLS verification stays **on**. The connection keeps the real hostname for SNI and certificate checks, and the
+organisation's CA is added to the trusted list **for that one connection only**. Nothing is installed in the
+system trust store, the browser is unaffected, and an app that is not under `cb run` never trusts cb's CA. Node's
+built-in `fetch` goes through the same `tls` module, which is how SDKs built on it, such as OpenAI's, work
+unchanged.
+
+## 3. The agent: a byte pipe with an identity
+
+The agent is a detached background process, one per user. The CLI talks to it over a local control socket
+(`~/.cb/agent.sock`, a named pipe on Windows) using newline-delimited JSON, every message validated by a schema.
+It reads the refresh token from the keychain itself, so the token never crosses that socket.
+
+For each accepted local connection the agent opens a **WebSocket over TLS** to the backend's `/tunnel`
+endpoint, authenticated with a 15-minute access token, and copies bytes both ways. It never parses Postgres,
+HTTP or any other protocol: it does not know what a password is. Alongside the tunnels it keeps one
+server-sent-events stream open for changes (access granted or removed, a key replaced), with a 45-second
+watchdog that survives sleep and network changes.
+
+Hardening on the laptop side: the agent starts with `--disable-sigusr1` so a debugger cannot be attached with a
+signal, ignores an inherited `NODE_OPTIONS`, writes its logs and lock files with private permissions, redacts
+tokens from its own logs, and stops after eight idle hours.
+
+## 4. The gateway: where the real key is used
+
+The gateway runs inside the backend and receives each tunnel. It looks up which project, environment and service
+the connection is for, checks that this device still has access, and hands the connection to the right adapter.
+
+### HTTPS APIs (Layer 2)
+
+The app's TLS connection ends at the gateway. The backend keeps one CA per organisation (made with
+`@peculiar/x509`) and issues a leaf certificate for `api.stripe.com`, which the app accepts because its preload
+trusts that CA for this connection. The gateway then reads the plain HTTP request, checks the stand-in, swaps in
+the real key and sends the request to the real host over a **separate, fully verified TLS connection** made with
+`undici`.
+
+<HttpsPathSequence />
+
+Which header holds the key, and in what form, is data rather than code: each provider is a **preset** (JSON)
+naming its hosts and how the key is sent (`Authorization: Bearer`, Basic auth, an `x-api-key` or `apikey`
+header). Supabase's SDK sends the key twice, so the preset swaps both and lets the public publishable key through
+unchanged.
+
+### Databases and mail (Layer 1)
+
+Database protocols carry the password inside their own handshake, so the gateway speaks each one. Postgres is a
+good example:
+
+<PostgresLoginSequence />
+
+The gateway asks the driver for a **cleartext password**. That is safe here because it travels only over
+loopback and inside the encrypted tunnel, and what it carries is the stand-in. Once the stand-in checks out, the
+gateway signs in to the real database with the real password using whatever the server asks for (SCRAM-SHA-256,
+MD5 or cleartext over TLS), forwards `AuthenticationOk`, and from then on simply copies bytes.
+
+| Adapter | What the client sends | What the gateway does upstream |
+|---|---|---|
+| Postgres | Stand-in as a cleartext password | SCRAM-SHA-256 (or MD5) over verified TLS |
+| MySQL | Stand-in with `mysql_native_password` | `caching_sha2_password`, with full authentication over TLS or an RSA key exchange |
+| MongoDB | SCRAM with the stand-in (the gateway acts as a SCRAM server) | Its own SCRAM-SHA-256 or SHA-1 login, chosen after asking the server |
+| Redis | `AUTH` or `HELLO` with the stand-in | `AUTH` with the real user and password, then a raw pipe |
+| SMTP | `AUTH PLAIN` / `LOGIN` with the stand-in | STARTTLS, then the real login |
+
+### Signed requests
+
+Some services never see the key at all. They check a signature made with it.
+
+- **AWS (S3, SES)**: the app signs requests with SigV4 using a stand-in key pair. The gateway checks that
+  signature with the stand-in, then signs the request again with the real key. Presigned S3 links point at the
+  local listener, so they work in your browser on the same machine and nowhere else.
+- **Google service accounts (Firebase, FCM)**: each device gets its own RSA key in a stand-in service-account
+  file. When the SDK trades a signed assertion for an access token, the gateway answers with a stand-in token
+  (`ya29.cb_…`) and keeps the real token on the server, swapping it in on every API call.
+- **Apple Push**: each device gets its own P-256 `.p8` stand-in key; the gateway replaces the app's provider token
+  with one signed by the real key, over HTTP/2.
+- **Sign-in client secrets**: on the token endpoint call, the stand-in `client_secret` (in the form body or in
+  Basic auth) is replaced with the real one.
+
+### Webhooks
+
+Webhooks come from the provider, not from the laptop. Stripe and Razorpay send them to cb's public address. The
+backend verifies the provider's signature with the real secret, works out which developer's test created the
+object, and delivers the event over that developer's event stream. The agent posts it unchanged to the app's real
+port, signed again with that device's stand-in secret, so the official SDK's verification passes in the app.
+
+## 5. The cryptography
+
+- **At rest**: envelope encryption. Each secret is sealed with its own random 256-bit data key using AES-256-GCM,
+  and the data key is sealed with the server's master key. The interface is shaped so a cloud KMS can replace the
+  master key later.
+- **Stand-ins**: `HMAC-SHA256(server secret, device ‖ environment ‖ service)`, formatted to look like the
+  provider's key so SDKs accept it, and compared in constant time. The real key is not an input, so a stand-in
+  says nothing about it.
+- **Stand-in key material**: Apple `.p8` stand-ins are derived deterministically per device; Google stand-in RSA
+  keys are generated once per device and stored encrypted.
+- **Passwords and tokens**: dashboard passwords are hashed with argon2; access tokens are 15-minute ES256 JWTs
+  (made with `jose`); refresh tokens rotate on every use, and a reused one is detected.
+
+## 6. Nothing comes back
+
+Before a response leaves the gateway, it is searched for every real value that request used, in plain,
+URL-encoded, base64, base64url and JSON-escaped forms, in the body and in headers such as redirect `Location`s.
+cb asks providers not to compress responses and decodes any that are compressed, so nothing hides inside gzip.
+Error bodies that quote an AWS access key ID are cleaned the same way. Server logs go through a redacting logger;
+no API ever returns a stored secret.
+
+## 7. Taking access away
+
+Grants, revocations and the emergency stop go through an internal event bus. Every tunnel for the affected
+device or environment is closed within five seconds, with an error the app's driver understands (a Postgres
+`ErrorResponse`, an HTTP 403, a Redis error) rather than a hang, and the agent's event stream tells `cb run` to
+show why. Stand-ins stop working at once because the gateway re-checks access on every connection.
+
+## 8. How we test it
+
+- **Unit and integration tests** in all three repositories (Vitest), named after the requirement they prove.
+- **Real services in Docker** for every adapter: Postgres, MySQL, MongoDB, Redis, Mailpit, an S3-compatible
+  store, including TLS-only servers with their own CAs.
+- **Mock providers that check both directions**: they assert they received the real secret, and never a
+  stand-in.
+- **Real accounts**: every connector marked as verified was tested end to end against the real provider.
+- **The leak scan**: after a full run, every file a developer can read (app output, `.next` builds, agent files
+  and logs, heap snapshots, the CLI's home, API answers) is searched for every real secret.
+
+<LeakScanChart />
+
+Every scan so far has found zero real secrets, with the number of files growing as we added checks for debuggers,
+crash dumps, malicious install scripts and coding-agent style commands.
+
+## What is next
+
+The same design extends to the one kind of secret cb does not cover yet: keys your app uses to sign or encrypt
+by itself, such as a `JWT_SECRET` shared with another service. The plan is to move that signing to the gateway,
+just as AWS re-signing works today, so a JWT-based sign-in keeps working end to end without the key ever
+reaching the laptop.
+
+The code is open source under Apache-2.0. The [architecture page](/docs/overview/how-it-works) and the
+[security overview](/docs/overview/security) are the reference versions of this post.
