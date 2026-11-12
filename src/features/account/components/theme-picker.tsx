@@ -9,8 +9,8 @@ import { useTheme } from "@/shared/theme/use-theme";
  * cannot use the theme tokens (they follow the active theme). Values match styles/studio.css.
  */
 const PREVIEW = {
-  dark: { bg: "#121212", panel: "#1c1c1c", line: "#2e2e2e", text: "#ededed", muted: "#707070" },
-  light: { bg: "#fcfcfc", panel: "#f8f8f8", line: "#e6e6e6", text: "#171717", muted: "#8f8f8f" },
+  dark: { bg: "#131413", panel: "#181a19", line: "#2a2c2b", text: "#edefee", muted: "#6f716f" },
+  light: { bg: "#fcfcfc", panel: "#ffffff", line: "#e6e6e6", text: "#161616", muted: "#9a9a9a" },
 } as const;
 const BRAND = "#3ecf8e";
 
@@ -70,7 +70,7 @@ export function ThemePicker() {
               onChange={() => setChoice(t.value)}
               className="sr-only"
             />
-            <div className="h-24 border-b border-border">
+            <div className="h-[72px] border-b border-border">
               {t.value === "system" ? (
                 <div className="relative h-full w-full">
                   <Preview theme="dark" />
@@ -82,7 +82,7 @@ export function ThemePicker() {
                 <Preview theme={t.value} />
               )}
             </div>
-            <div className="flex items-start gap-2 px-3 py-2.5">
+            <div className="flex items-start gap-2 px-3 py-2">
               <span
                 aria-hidden="true"
                 className={cn(

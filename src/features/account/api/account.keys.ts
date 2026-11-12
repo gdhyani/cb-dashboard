@@ -2,4 +2,5 @@
 export const accountKeys = {
   sessions: (orgId: string) => ["orgs", orgId, "sessions"] as const,
   devices: ["me", "devices"] as const,
+  deletion: ["me", "deletion"] as const,
 };

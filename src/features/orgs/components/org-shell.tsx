@@ -7,6 +7,7 @@ import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { DOCS_PATH, PRODUCT_NAME } from "@/constants";
 import { EnvironmentSwitcher, ProjectSwitcher } from "@/features/projects";
 import { CommandMenu, SearchButton, useCommandShortcut } from "@/features/search/components/command-menu";
+import { ThemeToggle } from "@/shared/components/theme-toggle";
 import { cn } from "@/shared/lib/utils";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/shared/ui/sheet";
 import { useOrg } from "../hooks/use-orgs";
@@ -106,6 +107,8 @@ export function OrgShell({ orgId, children }: { orgId: string; children: ReactNo
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
           <SearchButton onClick={openSearch} />
+          {/* Phones keep it in the account menu, where there is room. */}
+          <ThemeToggle className="hidden sm:flex" />
           <Link
             href={DOCS_PATH}
             aria-label="Docs"

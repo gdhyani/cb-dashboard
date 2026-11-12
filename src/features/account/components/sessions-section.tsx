@@ -1,10 +1,9 @@
 "use client";
 
 import { Laptop, Monitor } from "lucide-react";
-import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { CLI_COMMANDS, LOGIN_PATH } from "@/constants";
-import { useLogout, useMe } from "@/features/auth";
+import { CLI_COMMANDS } from "@/constants";
+import { useMe } from "@/features/auth";
 import { describeBrowser } from "@/features/devices";
 import { useOrg } from "@/features/orgs";
 import { BadgeLabel } from "@/shared/components/badge-label";
@@ -48,26 +47,31 @@ function Row({
   );
 }
 
-/** Dashboard sessions (admins can list them) and CLI devices of the signed-in user, with revoke and Sign out. */
+/** Where you are signed in: dashboard sessions (admins can list them) and CLI devices, in one card. */
 export function SessionsSection({ orgId }: { orgId: string }) {
-  const router = useRouter();
   const me = useMe();
   const org = useOrg(orgId);
-  const logout = useLogout();
-  const signOut = () => logout.mutate(undefined, { onSettled: () => router.replace(LOGIN_PATH) });
   return (
     <Section
+      layout="horizontal"
       title="Sessions"
-      description="Browsers and CLI logins signed in as you"
-      actions={
-        <Button variant="secondary" size="sm" loading={logout.isPending} onClick={signOut}>
-          Sign out
-        </Button>
-      }
+      description="Browsers and laptops signed in as you. Revoking one signs it out at once"
     >
-      <DashboardSessions orgId={orgId} userId={me.data?.user.id} canList={org.isAdmin} orgLoaded={!org.isPending} />
-      <CliDevices />
+      <Card>
+        <DashboardSessions orgId={orgId} userId={me.data?.user.id} canList={org.isAdmin} orgLoaded={!org.isPending} />
+        <CliDevices />
+      </Card>
     </Section>
+  );
+}
+
+/** Group heading inside the sessions card. */
+function GroupHeader({ title, description }: { title: string; description: string }) {
+  return (
+    <CardHeader className="gap-0.5 bg-surface-75 py-2.5">
+      <CardTitle className="text-foreground-lighter">{title}</CardTitle>
+      <CardDescription className="text-xs">{description}</CardDescription>
+    </CardHeader>
   );
 }
 
@@ -85,11 +89,8 @@ function DashboardSessions({
   const sessions = useMySessions(orgId, userId, canList);
   const revoke = useRevokeMySession(orgId);
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Dashboard</CardTitle>
-        <CardDescription>Browsers signed in to this dashboard</CardDescription>
-      </CardHeader>
+    <>
+      <GroupHeader title="Dashboard" description="Browsers signed in to this dashboard" />
       {!orgLoaded ? (
         <CardContent>
           <SkeletonRows rows={1} />
@@ -120,13 +121,13 @@ function DashboardSessions({
                 key={s.id}
                 icon={<Monitor strokeWidth={1.5} />}
                 title={describeBrowser(s.userAgent)}
-                badge={s.current && <BadgeLabel tone="success">This browser</BadgeLabel>}
+                badge={s.current && <BadgeLabel>This browser</BadgeLabel>}
                 meta={`Active ${timeAgo(s.lastSeenAt ?? s.createdAt)} · signed in ${timeAgo(s.createdAt)}`}
                 action={
                   !s.current && (
                     <ConfirmDialog
                       trigger={
-                        <Button variant="secondary" size="sm">
+                        <Button variant="destructive-ghost" size="sm">
                           Revoke
                         </Button>
                       }
@@ -142,7 +143,7 @@ function DashboardSessions({
           )}
         </QueryState>
       )}
-    </Card>
+    </>
   );
 }
 
@@ -150,11 +151,8 @@ function CliDevices() {
   const devices = useMyDevices();
   const revoke = useRevokeMyDevice();
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>CLI devices</CardTitle>
-        <CardDescription>Laptops signed in with {CLI_COMMANDS.login}</CardDescription>
-      </CardHeader>
+    <>
+      <GroupHeader title="CLI devices" description={`Laptops signed in with ${CLI_COMMANDS.login}`} />
       <QueryState
         isPending={devices.isPending}
         error={devices.error}
@@ -177,14 +175,14 @@ function CliDevices() {
               title={d.name}
               badge={
                 <BadgeLabel tone={d.agent.online ? "success" : "muted"} dot>
-                  {d.agent.online ? "Agent online" : "Agent offline"}
+                  {d.agent.online ? "Running" : "Stopped"}
                 </BadgeLabel>
               }
               meta={`${d.os} · last seen ${timeAgo(d.lastSeenAt)}`}
               action={
                 <ConfirmDialog
                   trigger={
-                    <Button variant="secondary" size="sm">
+                    <Button variant="destructive-ghost" size="sm">
                       Revoke
                     </Button>
                   }
@@ -198,6 +196,6 @@ function CliDevices() {
           ))
         )}
       </QueryState>
-    </Card>
+    </>
   );
 }

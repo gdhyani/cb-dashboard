@@ -41,3 +41,35 @@ export function useRevokeMyDevice() {
     onError: (e) => notifyError(e),
   });
 }
+
+export const useDeletionPreview = (enabled: boolean) =>
+  useQuery({ queryKey: accountKeys.deletion, queryFn: api.getDeletionPreview, enabled, staleTime: 0 });
+
+/**
+ * After the account or an organization is gone, start over from a clean page: every cached query belongs to data that
+ * no longer exists. "/" sends a signed-in user to their next organization, everyone else to sign in.
+ */
+function startOver(path: string) {
+  window.location.replace(path);
+}
+
+export function useDeleteAccount() {
+  return useMutation({
+    mutationFn: api.deleteAccount,
+    onSuccess: () => startOver("/login"),
+  });
+}
+
+export function useDeleteOrganization(orgId: string) {
+  return useMutation({
+    mutationFn: (body: { password: string; confirm: string }) => api.deleteOrganization(orgId, body),
+    onSuccess: () => startOver("/"),
+  });
+}
+
+export function useLeaveOrganization(orgId: string) {
+  return useMutation({
+    mutationFn: (userId: string) => api.leaveOrganization(orgId, userId),
+    onSuccess: () => startOver("/"),
+  });
+}

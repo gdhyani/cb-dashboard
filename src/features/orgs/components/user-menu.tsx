@@ -1,12 +1,13 @@
 "use client";
 
-import { BookOpen, LogOut, Monitor, Moon, Sun, UserRound } from "lucide-react";
+import { BookOpen, LogOut, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DOCS_PATH } from "@/constants";
 import { useLogout, useMe } from "@/features/auth/hooks/use-auth";
 import { AvatarInitials } from "@/shared/components/avatar-initials";
 import { BadgeLabel } from "@/shared/components/badge-label";
+import { THEME_ICONS } from "@/shared/components/theme-toggle";
 import { THEME_CHOICES, type ThemeChoice } from "@/shared/theme/theme";
 import { useTheme } from "@/shared/theme/use-theme";
 import {
@@ -20,8 +21,6 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { useOrg } from "../hooks/use-orgs";
-
-const THEME_ICONS = { dark: Moon, light: Sun, system: Monitor } as const;
 
 /** Avatar menu at the right of the top bar: who you are, Account, Theme, Docs, Sign out. */
 export function UserMenu({ orgId }: { orgId: string }) {
@@ -72,7 +71,10 @@ export function UserMenu({ orgId }: { orgId: string }) {
           })}
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => logout.mutate(undefined, { onSettled: () => router.replace("/login") })}>
+        <DropdownMenuItem
+          variant="destructive"
+          onSelect={() => logout.mutate(undefined, { onSettled: () => router.replace("/login") })}
+        >
           <LogOut /> Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>

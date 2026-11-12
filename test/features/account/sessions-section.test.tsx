@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import MockAdapter from "axios-mock-adapter";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionsSection } from "@/features/account/components/sessions-section";
+import { SignOutSection } from "@/features/account/components/sign-out-section";
 import { http } from "@/shared/api/http";
 import { makeQueryClient } from "@/shared/api/query-client";
 
@@ -78,7 +79,11 @@ describe("FR-UI-002 Account › Sessions", () => {
   it("Sign out ends this session and goes to the sign-in page", async () => {
     mock.onGet("/orgs/o1/sessions").reply(...ok([]));
     mock.onPost("/auth/logout").reply(...ok({ loggedOut: true }));
-    renderSessions();
+    render(
+      <QueryClientProvider client={makeQueryClient()}>
+        <SignOutSection />
+      </QueryClientProvider>,
+    );
     fireEvent.click(await screen.findByRole("button", { name: "Sign out" }));
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/login"));
   });
