@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     // `dark`: docs (Fumadocs) key their tokens off this class. Dashboard pages also get data-theme (light/dark)
     // from their boot script before hydration, hence suppressHydrationWarning on <html> only.
-    <html lang="en" suppressHydrationWarning className={`dark ${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={`dark ${geistSans.variable} ${geistMono.variable}`}>
       <body className="min-h-dvh">
         {/* Dashboard theme (light/dark) before first paint; only dashboard tokens read data-theme, docs ignore it. */}
         <Script id="cb-theme" strategy="beforeInteractive">
