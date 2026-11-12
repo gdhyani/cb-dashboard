@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/shared/ui/sheet
 import { useOrg } from "../hooks/use-orgs";
 import { useSidebarMode } from "../hooks/use-sidebar-mode";
 import { OrgSidebar } from "./org-sidebar";
+import { OrgUnavailable } from "./org-unavailable";
 import { UserMenu } from "./user-menu";
 
 /** The `/` between breadcrumb switchers in the top bar. */
@@ -134,7 +135,7 @@ export function OrgShell({ orgId, children }: { orgId: string; children: ReactNo
           </div>
         </aside>
         <main id="main" className="flex min-w-0 flex-1 flex-col">
-          {children}
+          {org.error ? <OrgUnavailable error={org.error} /> : children}
         </main>
       </div>
       <CommandMenu orgId={orgId} open={searchOpen} onOpenChange={setSearchOpen} />
