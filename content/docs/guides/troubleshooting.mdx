@@ -143,6 +143,11 @@ example `NOT_FOUND · correlation id 3f6c…`. The same id appears on every back
 the backend yourself, search its log for the id to see what went wrong; otherwise include it when you report the
 problem.
 
+### `Too many failed logins. Try again in N minute(s).`
+
+**Cause:** 10 wrong passwords for this email, or 30 failed logins from your address, within 15 minutes (`RATE_LIMITED`).
+**Fix:** wait the time shown; the right password is refused until then. If you forgot the password, ask an admin.
+
 ## Port conflicts
 
 | Port | Used by | If it is taken |

@@ -75,7 +75,7 @@ Admins can filter it in **Activity**. See [Audit](/docs/guides/dashboard/audit).
 
 ## Accounts and tokens
 
-- Passwords are hashed with argon2id, and login attempts are rate-limited.
+- Passwords are hashed with argon2id. After 10 failed logins for one email, or 30 from one address, within 15 minutes, cb refuses logins for that email or address until the 15 minutes pass (`429`, with `Retry-After`). A correct password resets the count for that email.
 - The CLI never sees your password. It logs in with a short code you approve in the dashboard, then keeps its
   token in the operating system keychain.
 - Access tokens last 15 minutes. Refresh tokens rotate on every use, and reusing an old one ends the whole session.
