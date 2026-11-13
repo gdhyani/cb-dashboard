@@ -1,6 +1,13 @@
 export { CreateProjectDialog } from "./components/create-project-dialog";
 export { EnvironmentList } from "./components/environment-list";
+export { EnvironmentSwitcher } from "./components/environment-switcher";
+export { EnvironmentTable, type EnvironmentTableRow, environmentStatus } from "./components/environment-table";
+export { ProjectAccessPage } from "./components/project-access-page";
+export { ProjectLayout } from "./components/project-layout";
 export { ProjectList } from "./components/project-list";
+export { ProjectMark } from "./components/project-mark";
+export { ProjectNav } from "./components/project-nav";
+export { ProjectSettings } from "./components/project-settings";
 export { ProjectSwitcher } from "./components/project-switcher";
 export { ProjectView } from "./components/project-view";
 export { useProject, useProjects } from "./hooks/use-projects";

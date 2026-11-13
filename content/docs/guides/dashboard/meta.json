@@ -1,1 +1,4 @@
-{ "title": "Dashboard", "pages": ["projects", "variables", "access", "members", "devices", "audit", "emergency-stop", "my-access"] }
+{
+  "title": "Dashboard",
+  "pages": ["projects", "variables", "access", "members", "devices", "audit", "emergency-stop", "my-access", "account"]
+}

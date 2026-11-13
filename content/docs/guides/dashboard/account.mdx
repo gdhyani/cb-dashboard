@@ -1,0 +1,59 @@
+---
+title: Account preferences
+description: Your profile, the dashboard theme, where you are signed in, and leaving or deleting your account or organization.
+---
+
+**Account preferences** shows who you are signed in as, lets you pick the dashboard's theme, lists where your
+account is signed in, and holds the irreversible actions: leaving or deleting the organization and deleting your
+account. Open it from the account menu (your initials, top right) or the person icon in the left rail.
+Every member has this page, whatever their role.
+
+## Profile
+
+Your name, role, email and organization, read-only. Name, email and password can't be changed from the dashboard yet.
+
+## Appearance
+
+Choose **Dark**, **Light** or **System**. System follows your computer's setting and switches when it does. The
+choice is kept in this browser and applies to the dashboard only; these docs stay dark. You can also switch from the
+theme icon in the top bar, **Theme** in the account menu, or search (<kbd>⌘</kbd> <kbd>K</kbd>).
+
+## Sessions
+
+- **Dashboard** lists the browsers signed in to your account. **This browser** marks the one you are using. Choose
+  **Revoke** on any other to sign it out; it has to sign in again. Owners and admins see this list; developers see a
+  note, because only admins can list sessions.
+- **CLI devices** lists the laptops where you ran `npx cb login`, with the agent status. **Revoke** ends that laptop's
+  access at once. See [Revoke a device](/docs/guides/admin/revoke-device).
+
+## Sign out
+
+**Sign out** ends the session in this browser only. Other browsers and CLI devices stay signed in; revoke them under
+**Sessions**.
+
+## Danger zone
+
+Each of these actions is permanent. Deleting asks you to type a confirmation and your password.
+
+| Action | Who | What happens |
+|---|---|---|
+| **Leave organization** | Any member except the last owner | Your membership and access end at once; running apps lose their connections. Your account stays, and an admin can invite you again. The last owner must make someone else owner first, or delete the organization. |
+| **Delete organization** | Owners | Type the organization name and your password. Every project, environment, variable, stored credential, webhook, access grant, invite and the activity log are deleted, and every member loses access at once. Members keep their own accounts. |
+| **Delete account** | Everyone | Type your email and your password. Your account, sessions and CLI devices are deleted and every live connection closes. If you are the **only owner** of an organization, that organization is deleted too, with everything in it; the dialog names it first. In other organizations you simply leave, and your past activity shows as "Deleted user". |
+
+If you leave or delete your last organization, signing in shows **You're not in an organization**: open an invite link
+from an owner or admin to join one, or delete your account from there.
+
+<Callout type="danger" title="There is no undo">
+Deleted organizations, credentials and accounts can't be restored. If you only want to stop someone's access for a
+while, use [Emergency Stop](/docs/guides/dashboard/emergency-stop) or remove their access instead.
+</Callout>
+
+## Find your way around
+
+| Where | What it does |
+|---|---|
+| Top bar | Your organization, the **project switcher** and, inside an environment, the **environment switcher**; search (<kbd>⌘</kbd> <kbd>K</kbd>), the theme switcher, Docs and the account menu on the right |
+| Left rail | Home, Projects, Members, Devices & Sessions, Activity, Emergency Stop, My Access, Account. It widens to show labels when you point at it; **Sidebar control** at the bottom keeps it **Expanded**, **Collapsed** or **Expand on hover** |
+| Project menu | Inside a project: Overview, Access, Settings and the project's environments (tabs under the title on narrow screens) |
+| Phones | The menu button at the top left opens the same list |

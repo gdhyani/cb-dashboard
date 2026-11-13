@@ -36,3 +36,20 @@ export function useProjectMutations(orgId: string) {
     }),
   };
 }
+
+/** Project Settings › General: rename and describe (admins; the backend enforces it too). */
+export function useUpdateProject(orgId: string, projectId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { name: string; description: string }) => api.updateProject(projectId, body),
+    onSuccess: (project) => {
+      client.setQueryData(projectKeys.detail(projectId), project);
+      notifySuccess("Project updated");
+      return Promise.all([
+        client.invalidateQueries({ queryKey: ["orgs", orgId] }),
+        client.invalidateQueries({ queryKey: ["projects"] }),
+      ]);
+    },
+    onError: (e) => notifyError(e),
+  });
+}

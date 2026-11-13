@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Resource } from "@/features/resources";
 import { WebhookEndpoint, WebhooksTab } from "@/features/webhooks";
@@ -127,7 +127,10 @@ describe("FR-WH-003 the Webhooks tab shows setup; the delivery log is one click 
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
-    expect(await screen.findByText("payment_intent.succeeded")).toBeInTheDocument();
+    // The log opens in a right-hand sheet with header and footer bands.
+    const sheet = await screen.findByRole("dialog", { name: "Delivery log" });
+    expect(await within(sheet).findByText("payment_intent.succeeded")).toBeInTheDocument();
+    expect(within(sheet).getByRole("button", { name: "Close" })).toBeInTheDocument();
   });
 
   it("with no webhook services it explains how to add one, and has no log button", async () => {

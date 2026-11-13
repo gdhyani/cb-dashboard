@@ -20,7 +20,7 @@ export function TypeSelect({ id, value, onChange }: { id: string; value: TypeId;
       <SelectContent className="max-h-80">
         {TYPE_GROUPS.map(({ group, ids }) => (
           <SelectGroup key={group}>
-            <div aria-hidden className="px-2 pt-2 pb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">
+            <div aria-hidden className="heading-meta px-2 pt-2 pb-1 text-foreground-lighter">
               {group}
             </div>
             {ids.map((t) => (
@@ -28,7 +28,7 @@ export function TypeSelect({ id, value, onChange }: { id: string; value: TypeId;
                 <span className="flex items-center gap-2">
                   <ServiceLogo icon={TYPES[t].icon} />
                   <span>{TYPES[t].name}</span>
-                  <span className="text-xs text-subtle">{TYPES[t].desc}</span>
+                  <span className="text-xs text-foreground-lighter">{TYPES[t].desc}</span>
                 </span>
               </SelectItem>
             ))}

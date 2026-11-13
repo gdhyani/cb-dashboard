@@ -1,8 +1,9 @@
 import type * as React from "react";
 import { cn } from "@/shared/lib/utils";
 
+/** Supabase field: dark inset fill, control border that brightens on hover/focus, green focus ring. */
 export const fieldClasses =
-  "w-full min-w-0 rounded-md border border-input bg-card px-3 text-sm text-foreground transition-[border-color,box-shadow] outline-none placeholder:text-subtle hover:border-border-strong focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-white/[0.06] disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive/70 [&[readonly]]:resize-none [&[readonly]]:border-transparent [&[readonly]]:bg-white/[0.03] [&[readonly]]:focus-visible:ring-0";
+  "w-full min-w-0 rounded-md border border-border-control bg-field px-3 text-sm text-foreground shadow-none transition-[border-color,background-color] duration-200 outline-none placeholder:text-foreground-muted hover:border-border-control-hover focus-visible:border-border-control-hover focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-ring disabled:cursor-not-allowed disabled:text-foreground-muted aria-invalid:border-destructive/60 aria-invalid:bg-destructive/5 [&[readonly]]:resize-none [&[readonly]]:border-border [&[readonly]]:bg-muted [&[readonly]]:text-foreground-light";
 
 // suppressHydrationWarning: some browsers (e.g. cmux) tag a focused input with their own data
 // attributes before hydration, which made the autofocused login field log a mismatch. It only
@@ -13,7 +14,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       type={type}
       data-slot="input"
       suppressHydrationWarning
-      className={cn(fieldClasses, "h-9 py-1", className)}
+      className={cn(fieldClasses, "h-[34px] py-1", className)}
       {...props}
     />
   );

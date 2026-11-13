@@ -3,10 +3,10 @@ title: Activity
 description: Read the audit log of connections, API calls, access changes and admin actions, and filter it by category.
 ---
 
-The **Activity** page (under **Security** in the sidebar) is the audit log of your organization: who did what, and
+The **Activity** page (pulse icon in the left rail) is the audit log of your organization: who did what, and
 when. It covers access changes, configuration, logins and app usage. Owners and admins see this page.
 
-<Frame src="/docs/images/guides/audit.png" alt="Activity page with filters, day headers and an expanded app session" caption="Activity page with filters, day headers and an expanded app session" />
+<Frame src="/docs/images/guides/audit.png" alt="Activity page with search, filters and an expanded app session" caption="Activity page with search, filters and an expanded app session" />
 
 ## What is recorded
 
@@ -32,18 +32,22 @@ with the services involved and the time span. Select the line to expand every ev
 
 ## Filter
 
-Use the tabs above the feed to show one category:
+The toolbar above the table narrows the log. Pick a category:
 
-| Filter | Shows |
+| Category | Shows |
 |---|---|
-| **All** | Everything |
+| **All categories** | Everything |
 | **Access** | Grants, revocations and expiries |
 | **Team** | Invites, joins, role changes and removals |
 | **Config** | Projects, environments, services and variables |
 | **Devices** | Device approvals and revocations |
 | **Usage** | App starts, connections and HTTP requests |
 
-The feed is paginated; use the controls at the bottom to go back in time.
+Next to it, **Any outcome** filters by **Success**, **Denied** or **Error**, and the search box matches the person,
+the action, the target, the project, the environment or the service. The category applies to the whole log; search and
+outcome apply to the page of events loaded. **Clear filters** resets all three.
+
+The table is paginated; use the arrows at the bottom right to go back in time.
 
 ## Correlation ids
 
@@ -52,7 +56,7 @@ shows the error message with its code and correlation id, and the CLI prints `co
 Quote that id when you report a problem: it finds the matching entries in the cb server logs.
 
 <Callout type="tip" title="Where to look first">
-If a developer says their app can't connect, filter by **Usage** and look for a refused connection or a blocked
+If a developer says their app can't connect, pick the **Usage** category and look for a refused connection or a blocked
 start on their name. The reason usually tells you whether it is missing access, an expired grant or an emergency
 stop.
 </Callout>

@@ -1,11 +1,14 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
 import type * as React from "react";
-import { BADGE_TONES } from "@/shared/lib/badge-tones";
+import { BADGE_SHAPE, BADGE_TONES } from "@/shared/lib/badge-tones";
 import { cn } from "@/shared/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3",
+  cn(
+    BADGE_SHAPE,
+    "w-fit shrink-0 justify-center overflow-hidden transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [&>svg]:pointer-events-none [&>svg]:size-3",
+  ),
   {
     variants: {
       variant: {
@@ -16,7 +19,7 @@ const badgeVariants = cva(
         warning: BADGE_TONES.warning,
         destructive: BADGE_TONES.danger,
         muted: BADGE_TONES.muted,
-        outline: "border-border text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+        outline: "border-border-strong text-foreground [a&]:hover:bg-accent",
         ghost: "[a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
         link: "text-primary underline-offset-4 [a&]:hover:underline",
       },

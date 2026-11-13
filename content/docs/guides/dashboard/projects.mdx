@@ -9,16 +9,21 @@ access. This page covers the project switcher, creating projects and environment
 
 ## Switch projects
 
-Your organization is shown as a label in the sidebar. You belong to exactly one organization, so there is nothing to
-switch there. Projects are the main context, and you switch them from the **project switcher** at the left of the
-top navbar.
+The top bar shows where you are: your organization, then the project, then (inside an environment) the environment.
+You belong to exactly one organization, so the organization is a label with nothing to switch. Projects are the main
+context, and you switch them from the **project switcher** next to it.
 
 - On desktop it opens as a dropdown; on phones it opens as a panel from the top.
 - Type in **Find project…** to filter by name or slug.
 - The current project has a check mark. A small dot next to a project means it has a suspended environment.
 - Press <kbd>Esc</kbd> to close it.
 
-The **Projects** page in the sidebar lists every project too.
+Inside an environment, an **environment switcher** follows the project switcher. Switching keeps the page you are on:
+from staging's **Access** you land on development's **Access**.
+
+The **Projects** page (folder icon in the left rail) lists every project as cards, with a search box. Inside a project,
+a menu on the left (wide screens) or tabs under the title (narrow screens) lead to **Overview**, **Access** and
+**Settings**, and list the project's environments.
 
 ## Create a project
 
@@ -44,7 +49,7 @@ opens it.
 </Steps>
 
 The project page shows its slug under the title. You need the slug when you link a folder with `cb init`; use
-**Copy project slug** in the project's "…" menu to copy it.
+The slug is shown under the project name and on the project's **Settings** page, with a copy button.
 
 ## Environments
 
@@ -58,16 +63,17 @@ The **Environments** section of a project lists each environment with its state:
 
 ### Create an environment
 
-Owners and admins see a field under the list. Type a name in lower case, such as `preview`, and select
-**Create environment**. The new environment starts empty: add its variables on the
+Owners and admins select **New environment** under the list. Type a name in lower case, such as `preview`, and
+select **Create environment**. The new environment starts empty: add its variables on the
 [Variables tab](/docs/guides/dashboard/variables).
 
 ### Open an environment
 
-Select an environment to open it. The page has three tabs for owners and admins: **Variables**, **Access** and
-**Webhooks**. Developers see only **Variables**, read-only.
+Select an environment to open it. The page has four tabs for owners and admins: **Variables**, **Access**,
+**Webhooks** and **Settings**. Developers see only **Variables**, read-only. Each tab has its own address, so you
+can bookmark or share it.
 
-If you have access, the page also shows a **Local development** command you can copy, for example:
+If you have access, the header also shows the command to set up this environment locally, ready to copy:
 
 ```bash
 npx cb init --project shop-api --env development
@@ -75,9 +81,13 @@ npx cb init --project shop-api --env development
 
 ### Suspend an environment
 
-The environment's "…" menu has **Suspend environment**. Suspending terminates all active connections to that
-environment within seconds and refuses new sessions until you select **Resume environment**. You must type a
-reason, which developers see and the activity log records.
+Open the environment's **Settings** tab. Under **Suspension**, turn off **Accept connections**. Suspending terminates
+all active connections to that environment within seconds and refuses new sessions until you turn it back on. You
+must type a reason, which developers see and the activity log records. While suspended, every tab of the environment
+shows a warning with the reason.
+
+The same **Settings** tab renames the environment (lower case, as when you create it) and, under **Danger zone**,
+deletes it.
 
 <Callout type="warning" title="Suspending stops everyone">
 Suspending an environment cuts off every developer who uses it, not one person. To stop a single person or laptop,
@@ -86,7 +96,11 @@ use the [Emergency stop](/docs/guides/dashboard/emergency-stop) page with a narr
 
 ## Delete a project
 
-The project's "…" menu (top right of the project page) has **Delete project**. You must type a reason to confirm.
+Open the project's **Settings** page. Under **Danger zone**, select **Delete project**. You must type a reason to
+confirm.
+
+The same page changes the project's **Project name** and **Description**, and shows the **Project slug** (used by
+`npx cb init`) with a copy button. **Save** stays disabled until you change something.
 
 <Callout type="danger" title="Deleting a project can't be undone">
 All environments, variables, services and grants of the project are deleted, and running apps lose access at once.
@@ -108,8 +122,8 @@ everything; developers use the environments they are granted.
 | Set up webhooks (Webhooks tab) | Yes | Yes | No |
 | Invite members and change roles | Yes | Yes, except owners | No |
 | Invite or promote someone to owner | Yes | No | No |
-| Devices & sessions, Activity, Emergency stop pages | Yes | Yes | No |
-| My access page | Yes | Yes | Yes |
+| Devices & Sessions, Activity, Emergency Stop pages | Yes | Yes | No |
+| My Access and Account preferences pages | Yes | Yes | Yes |
 
-Developers revoke their own devices from [My access](/docs/guides/dashboard/my-access). Manage roles on the
+Developers revoke their own devices from [My Access](/docs/guides/dashboard/my-access). Manage roles on the
 [Members](/docs/guides/dashboard/members) page.

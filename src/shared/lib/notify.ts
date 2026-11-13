@@ -13,6 +13,7 @@ export function notifyError(error: unknown, fallback = "Something went wrong."):
   toast.error(fallback);
 }
 
-export function notifySuccess(message: string): void {
-  toast.success(message);
+/** Short past-tense confirmation (Supabase copy rules); `description` adds one quiet line. */
+export function notifySuccess(message: string, description?: string): void {
+  toast.success(message, description ? { description } : undefined);
 }

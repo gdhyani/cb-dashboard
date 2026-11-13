@@ -1,19 +1,37 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
+import { CornerDownRight, TriangleAlert } from "lucide-react";
 import { BadgeLabel } from "@/shared/components/badge-label";
 import { type RowAction, RowActions } from "@/shared/components/row-actions";
 import { ServiceLogo } from "@/shared/components/service-logo";
-import { StaggerItem } from "@/shared/components/stagger";
 import { StatusDot } from "@/shared/components/status-dot";
+import { cn } from "@/shared/lib/utils";
+import { TableCell, TableRow } from "@/shared/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { describeValue } from "../lib/display";
 import type { Variable } from "../types";
 
-/** One key in the table: key · value · type chip (or "with MAIN_KEY") · "…" menu (admins). */
+export type KeyHealth = { status: "ok" | "rejected" | "unknown"; reason: string | null; checkedAt: string | null };
+
+/** B11: what a main key's status dot and label say (never the key itself). */
+export function healthStatus(health: KeyHealth) {
+  return {
+    ok: { tone: "ok" as const, short: "Working", label: "Working — the provider accepts this key" },
+    rejected: {
+      tone: "rejected" as const,
+      short: "Expired",
+      label: `Expired — ${health.reason ?? "the provider refused this key"}`,
+    },
+    unknown: { tone: "unknown" as const, short: "Not checked", label: "Not checked yet — Test connection checks it" },
+  }[health.status];
+}
+
+/**
+ * One key in the Studio table: Key · Value · Type · Status · "…" menu (admins). Extra keys of a service sit under
+ * their main key with a tree hint and say which key they come with.
+ */
 export function VariableRow({
   variable,
-  index,
   isMain,
   parentKey,
   chip,
@@ -22,94 +40,102 @@ export function VariableRow({
   health,
 }: {
   variable: Variable;
-  index: number;
   isMain: boolean;
   parentKey?: string;
   chip?: { icon: string; label: string };
   actions?: RowAction[];
-  /** Admins: clicking the key opens Edit. */
+  /** Admins: clicking the key opens it read-only. */
   onOpen?: () => void;
   /** B11: a service's main key shows whether the provider still accepts the key (never the key). */
-  health?: { status: "ok" | "rejected" | "unknown"; reason: string | null; checkedAt: string | null };
+  health?: KeyHealth;
 }) {
   const value = describeValue(variable, isMain);
-  const status =
-    health && isMain && !parentKey
-      ? {
-          ok: { tone: "ok" as const, label: "Working — the provider accepts this key" },
-          rejected: {
-            tone: "rejected" as const,
-            label: `Expired — ${health.reason ?? "the provider refused this key"}`,
-          },
-          unknown: { tone: "unknown" as const, label: "Not checked yet — Test connection checks it" },
-        }[health.status]
-      : undefined;
-  return (
-    <StaggerItem
-      index={index}
-      className={`flex items-center gap-3 px-3 py-2.5 sm:px-4 ${parentKey ? "pl-7 sm:pl-9" : ""}`}
+  const status = health && isMain && !parentKey ? healthStatus(health) : undefined;
+  const valueText = (
+    <span
+      className={cn(
+        "block truncate text-xs",
+        value.mono ? "font-mono text-foreground-light" : "text-foreground-lighter",
+      )}
     >
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-4">
-        <span className="flex min-w-0 items-center gap-2 truncate font-mono text-sm sm:w-[38%] sm:shrink-0">
-          {status && <StatusDot tone={status.tone} label={status.label} />}
+      {value.text}
+    </span>
+  );
+  return (
+    <TableRow>
+      <TableCell className={cn("max-w-[14rem] py-2.5 sm:max-w-[18rem]", parentKey && "pl-8")}>
+        <div className="flex min-w-0 items-center gap-2">
           {parentKey && (
-            <span aria-hidden className="text-subtle">
-              ↳{" "}
-            </span>
+            <CornerDownRight aria-hidden className="size-3.5 shrink-0 text-foreground-muted" strokeWidth={1.5} />
           )}
           {onOpen ? (
             <button
               type="button"
               aria-label={`Open ${variable.key}`}
               onClick={onOpen}
-              className="underline-offset-4 hover:underline"
+              className="min-w-0 truncate font-mono text-sm text-foreground underline-offset-4 hover:underline"
             >
               {variable.key}
             </button>
           ) : (
-            variable.key
+            <span className="min-w-0 truncate font-mono text-sm text-foreground">{variable.key}</span>
           )}
-        </span>
-        <span className={`truncate text-xs ${value.mono ? "font-mono text-foreground" : "text-subtle"}`}>
-          {value.text}
-        </span>
-      </div>
-      <span
-        className={`max-w-[40%] shrink-0 items-center gap-1.5 truncate text-xs text-subtle ${
-          // On phones the ↳ indent already links an extra key to its main key; keep its name visible.
-          parentKey ? "hidden sm:flex" : "flex"
-        }`}
-      >
-        {variable.type === "visible" && (
-          <Tooltip>
-            <TooltipTrigger aria-label="Why this is flagged">
-              <AlertTriangle className="size-3.5 text-destructive" />
-            </TooltipTrigger>
-            <TooltipContent>Real value delivered to developers (FR-UI-003).</TooltipContent>
-          </Tooltip>
-        )}
-        {status?.tone === "rejected" && (
-          <Tooltip>
-            <TooltipTrigger aria-label={status.label}>
-              <BadgeLabel tone="danger" dot>
-                Expired
-              </BadgeLabel>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">{status.label}</TooltipContent>
-          </Tooltip>
-        )}
+        </div>
+      </TableCell>
+      <TableCell className="hidden max-w-[16rem] min-w-[8rem] py-2.5 md:table-cell">{valueText}</TableCell>
+      <TableCell className="hidden max-w-[14rem] py-2.5 sm:table-cell">
         {parentKey ? (
-          <span>with {parentKey}</span>
+          <span className="block truncate text-xs text-foreground-lighter">with {parentKey}</span>
+        ) : variable.type === "visible" ? (
+          // FR-UI-003: a persistent warning — the real value reaches developers.
+          <Tooltip>
+            <TooltipTrigger className="inline-flex items-center gap-1.5">
+              <TriangleAlert aria-hidden className="size-3.5 text-warning" strokeWidth={1.5} />
+              <BadgeLabel tone="warning">Shown as-is</BadgeLabel>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              The real value is delivered to every developer with access. Use a protected type when the app only passes
+              the key on.
+            </TooltipContent>
+          </Tooltip>
         ) : (
           chip && (
-            <>
+            <span className="flex min-w-0 items-center gap-2 text-xs text-foreground-light">
               <ServiceLogo icon={chip.icon} />
-              {chip.label}
-            </>
+              <span className="truncate">{chip.label}</span>
+            </span>
           )
         )}
-      </span>
-      {actions && <RowActions label={`Actions for ${variable.key}`} actions={actions} />}
-    </StaggerItem>
+      </TableCell>
+      <TableCell className="py-2.5">
+        {status && (
+          <span className="flex items-center gap-2 text-xs">
+            <StatusDot tone={status.tone} label={status.label} className="text-foreground-lighter" />
+            {status.tone === "rejected" ? (
+              <Tooltip>
+                <TooltipTrigger aria-label={status.label} className="hidden text-destructive sm:inline">
+                  Expired
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">{status.label}</TooltipContent>
+              </Tooltip>
+            ) : (
+              <span
+                className={cn(
+                  "hidden whitespace-nowrap sm:inline",
+                  status.tone === "ok" ? "text-foreground-light" : "text-foreground-lighter",
+                )}
+              >
+                {status.short}
+              </span>
+            )}
+          </span>
+        )}
+      </TableCell>
+      {actions && (
+        <TableCell className="w-10 py-1.5 pr-2 pl-0 text-right">
+          <RowActions label={`Actions for ${variable.key}`} actions={actions} />
+        </TableCell>
+      )}
+    </TableRow>
   );
 }

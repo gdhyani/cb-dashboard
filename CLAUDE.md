@@ -53,9 +53,11 @@ members, sessions/devices, audit and kill switches; developer `/me` page; CLI de
 cb-dashboard/
 ├─ src/
 │  ├─ app/                         # Next.js App Router — routes/layouts ONLY; thin pages that compose features
-│  │  ├─ (auth)/login/page.tsx  (auth)/signup/page.tsx  invite/[token]/page.tsx
-│  │  ├─ device/page.tsx  me/page.tsx
-│  │  └─ orgs/[orgId]/…            # members, sessions, audit, killswitch, projects/[projectId]/environments/[envId]/{resources,variables,access}
+│  │  ├─ (studio)/                 # EVERY dashboard route (scopes the Supabase design system, see "Design system")
+│  │  │  ├─ layout.tsx             # [data-studio] marker + dashboard fonts
+│  │  │  ├─ (auth)/login  (auth)/signup  invite/[token]  device
+│  │  │  └─ orgs/[orgId]/…         # home, projects, members, devices, audit, emergency, me, account,
+│  │  │                            # projects/[projectId]/{access,settings,environments/[envId]/{access,webhooks,settings}}
 │  ├─ features/                    # one folder per domain; each is self-contained
 │  │  └─ <feature>/                # auth, device, orgs, projects, environments, resources, variables,
 │  │     │                         # access, members, sessions, audit, killswitch, me
@@ -101,7 +103,7 @@ cb-dashboard/
   rows or scroll horizontally, forms stack, actions stay reachable. Check phone width in the browser for every change.
 - **Destructive actions are never primary buttons on a page.** Delete project, suspend environment, remove member,
   revoke device… live in a row's "…" menu or a Settings section/tab, always behind a confirmation.
-- Keep the design system simple; correctness and the npm package come first.
+- Correctness and the npm package come first; the design system above is the only UI vocabulary.
 
 ## Browser testing (required)
 
@@ -117,7 +119,7 @@ cb-dashboard/
   docs in `node_modules/next/dist/docs/` before using an API you are unsure about.
 - `agentRules: false` in `next.config.ts` stops `next dev` from writing its own block into this file.
 - shadcn components are generated into `src/shared/ui/` (see `components.json`); check generated imports
-  resolve to `@/shared/lib/utils` and keep tokens monochrome in `src/styles/globals.css`.
+  resolve to `@/shared/lib/utils` and restyle them with the dashboard tokens (see "Design system").
 
 ## Data fetching: TanStack Query + one axios instance
 
@@ -143,23 +145,39 @@ type ApiPaginated<T> = { success: true; data: T[]; meta: { correlationId: string
 type ApiErrorBody = { success: false; error: { code: string; message: string; statusCode: number; details?: { path: string; message: string }[]; correlationId: string } };
 ```
 
-## Design direction (detailed design comes later — keep it minimal now)
+## Design system — Supabase Studio (PRD §11.5, v1.59)
 
-- Use the **`taste`** design skill for UI work when it is installed. Until then use
-  `frontend-design:frontend-design` for layout/typography and `dataviz` for any chart.
-- Elegant and simple: **typographic hierarchy** carries the design (size, weight, spacing), not colour.
-- **Colour is for meaning only, never decoration.** Badges use the shared palette in
-  `src/shared/lib/badge-tones.ts` (default sky, strong violet, success green, warning amber, danger red, muted grey) —
-  never ad-hoc badge colours. Service logos use brand colours (switch: `BRAND_COLORS` in `service-logo.tsx`).
-  Badges and chips are boxy (`rounded-md`), not pills.
-- **Black background**, white/grey text, no accent colour on layout or text. Only basic action colours on buttons
-  (primary = white on black / inverted, destructive = red). No gradients, no decorative colour.
-  **Exception (PRD v1.36):** docs screenshots are framed on one gradient (baked in by `scripts/frame-images.mjs`)
-  and docs diagrams use the `--docs-frame-gradient` token. Nowhere else.
-- Modern data visuals where they help: activity/audit timelines, **git-graph style** history views,
-  sparklines — monochrome.
-- Subtle, purposeful animation (enter/exit, layout transitions); respect `prefers-reduced-motion`.
-- Don't spend effort on visual polish yet; structure, data flow and reuse come first.
+The dashboard is a port of the **Supabase design system** (supabase.com/design-system) with cb's own colours: a teal
+accent and a deep slate background (PRD v1.62). It applies to dashboard routes only.
+
+- **Scope.** Dashboard routes live in `src/app/(studio)/`; its layout renders `[data-studio]`, and `src/styles/studio.css`
+  applies the tokens to `:root` only while that marker is on the page (portals included). Docs (`src/app/docs*`), the blog
+  and marketing pages must never render inside `(studio)` and keep their own look. A shared part that docs also use gets its
+  dashboard skin through the `studio:` Tailwind variant (see `shared/lib/badge-tones.ts`), never by forking the component.
+- **Tokens, never raw colours.** Surfaces `bg-background`, `bg-surface-75/100/200/300`, `bg-overlay`, `bg-dialog`, washes
+  `bg-muted`/`bg-accent`/`bg-selection`, fields `bg-field`; text `text-foreground` › `-light` › `-lighter` › `-muted`;
+  borders `border-border` (+ `-muted`, `-strong`, `-stronger`, `-control`). Colour carries meaning only: `primary`
+  (cb teal — the one primary action per view, links, focus, switches, charts), `success` (green), `warning`
+  (orange), `destructive`, `info`. No `white/[x]`,
+  no hex, no Tailwind palette colours in dashboard code: the light theme must keep working.
+- **Type roles:** `heading-title` (page), `heading-section`, `heading-default`, `heading-meta` (mono uppercase micro-label:
+  table heads, card titles, menu groups). Body `text-sm` = 13 px. Inter / Manrope / Source Code Pro are loaded by the
+  `(studio)` layout only.
+- **Page anatomy:** `PageContainer` (`size="small"` for settings) › `PageHeader` (title, description fragment, actions,
+  optional `nav`) › `Section`s (Cards, tables). Settings forms: `Card` + `FormItemLayout` rows + `CardFooter` with Cancel/Save
+  (disabled until dirty). Callouts: `Admonition`. Tables: `Table` + `TableToolbar` + `useTableQuery`.
+- **Navigation:** shell in `features/orgs/components/org-shell.tsx` (top bar switchers, icon rail with Sidebar control,
+  account menu with Theme); project product menu `features/projects/components/project-layout.tsx` (`SideMenu`);
+  environment sub-pages are routes with a `PageNav`.
+- **Badges:** `BadgeLabel` / `Badge` from `shared/lib/badge-tones.ts` — Supabase pills on the dashboard, boxy in docs.
+  Service logos use brand colours (`BRAND_COLORS` in `service-logo.tsx`).
+- **Copy (Supabase):** Title Case page titles and nav; sentence case for buttons, labels, section titles; descriptions are
+  fragments without a trailing period; buttons are verbs ("Delete project"); Sign in / Sign out; no "Oops", no exclamation marks.
+- **Docs exception (PRD v1.36):** docs screenshots are framed on one gradient (`scripts/frame-images.mjs`) and docs diagrams use
+  `--docs-frame-gradient`. Nowhere in the dashboard.
+- Subtle, purposeful animation (`cb-enter`, `StaggerItem`, `cb-pop`); respect `prefers-reduced-motion`. Charts in
+  `shared/components/charts` use the teal single-series ramp (`charts/shades.ts`); use `dataviz` for new charts.
+- UI work: follow this section and the Supabase research in PRD §11.5; `frontend-design:frontend-design` for anything new.
 
 ## Configuration (env)
 

@@ -1,58 +1,179 @@
 "use client";
 
-import { Menu } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { BookOpen, Menu } from "lucide-react";
+import Link from "next/link";
+import { useParams, usePathname } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { ProjectSwitcher } from "@/features/projects";
+import { DOCS_PATH, PRODUCT_NAME } from "@/constants";
+import { EnvironmentSwitcher, ProjectMark, ProjectSwitcher, useProject } from "@/features/projects";
 import { CommandMenu, SearchButton, useCommandShortcut } from "@/features/search/components/command-menu";
+import { Hint } from "@/shared/components/hint";
+import { ThemeToggle } from "@/shared/components/theme-toggle";
+import { cn } from "@/shared/lib/utils";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/shared/ui/sheet";
 import { useOrg } from "../hooks/use-orgs";
+import { useSidebarMode } from "../hooks/use-sidebar-mode";
+import { MobileNav } from "./mobile-nav";
 import { OrgSidebar } from "./org-sidebar";
+import { OrgUnavailable } from "./org-unavailable";
+import { UserMenu } from "./user-menu";
 
+/** The `/` between breadcrumb switchers in the top bar. */
+function Divider({ className }: { className?: string }) {
+  return (
+    <span aria-hidden="true" className={cn("shrink-0 text-lg font-light text-border-stronger select-none", className)}>
+      /
+    </span>
+  );
+}
+
+/** Phones: a 28px box with the current project's initial (or the product mark outside a project). */
+function MobileContextMark({ orgId, projectId }: { orgId: string; projectId?: string }) {
+  return (
+    <Link href={projectId ? `/orgs/${orgId}/projects/${projectId}` : `/orgs/${orgId}`} className="shrink-0 md:hidden">
+      {projectId ? <ProjectBox projectId={projectId} /> : <ProductMark />}
+    </Link>
+  );
+}
+
+function ProjectBox({ projectId }: { projectId: string }) {
+  const project = useProject(projectId);
+  return (
+    <ProjectMark
+      name={project.data?.name ?? " "}
+      className="size-7 rounded-md border-border-strong bg-surface-75 text-xs"
+    />
+  );
+}
+
+/** Product mark: the only place the brand teal appears as decoration. */
+function ProductMark() {
+  return (
+    <span className="flex size-6 items-center justify-center rounded-md bg-brand font-mono text-[11px] font-semibold text-brand-foreground">
+      {PRODUCT_NAME.slice(0, 2)}
+    </span>
+  );
+}
+
+/**
+ * Supabase Studio shell: a 48px top bar (product mark / org / project / environment, then search, docs and the
+ * account menu), a left icon rail (48px, expands to 208px), and the page area. Phones get a menu sheet instead of
+ * the rail; the project switcher stays in the top bar on every size (FR-UI-007).
+ */
 export function OrgShell({ orgId, children }: { orgId: string; children: ReactNode }) {
   const pathname = usePathname();
+  const params = useParams<{ projectId?: string; envId?: string }>();
   const org = useOrg(orgId);
+  const { mode, setMode } = useSidebarMode();
+  const [hovered, setHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const openSearch = useCallback(() => setSearchOpen(true), []);
   useCommandShortcut(openSearch);
-  // Navigating from the mobile menu closes it.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: close on every route change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: close the phone menu on every route change
   useEffect(() => setMenuOpen(false), [pathname]);
 
+  const expanded = mode === "expanded" || (mode === "hover" && hovered);
+
   return (
-    <div className="flex min-h-dvh">
-      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 border-r border-border md:block">
-        <OrgSidebar orgId={orgId} />
-      </aside>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/85 px-4 backdrop-blur md:px-8">
-          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-            <SheetTrigger
-              className="-ml-1.5 rounded-md p-1.5 text-muted-foreground hover:bg-white/[0.06] hover:text-foreground md:hidden"
-              aria-label="Open menu"
+    <div className="flex min-h-dvh flex-col">
+      <a
+        href="#main"
+        className="sr-only z-50 rounded-md bg-overlay px-3 py-2 text-sm focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+      >
+        Skip to content
+      </a>
+      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-4 md:h-12 md:gap-1.5 md:pr-3 md:pl-3">
+        {/* Phones: the menu button on the left; the menu slides in from the left. */}
+        <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+          <SheetTrigger
+            className="flex size-8 items-center justify-center rounded-md border border-border-strong bg-surface-75 text-foreground-light hover:bg-accent hover:text-foreground md:hidden"
+            aria-label="Open menu"
+          >
+            <Menu className="size-4" strokeWidth={1.5} />
+          </SheetTrigger>
+          {/* Darker than other panels (the app background), and no focus ring jumping onto Close when it opens. */}
+          <SheetContent
+            side="left"
+            showClose={false}
+            className="w-[19rem] bg-background"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
+            <SheetTitle>Navigation</SheetTitle>
+            <MobileNav orgId={orgId} />
+          </SheetContent>
+        </Sheet>
+        <Link href={`/orgs/${orgId}`} aria-label={`${PRODUCT_NAME} home`} className="hidden shrink-0 md:block">
+          <ProductMark />
+        </Link>
+        {/* Phones (Studio): the project's box, then its name with the environment underneath. */}
+        <MobileContextMark orgId={orgId} projectId={params.projectId} />
+        <Divider className="hidden md:inline" />
+        <Link
+          href={`/orgs/${orgId}`}
+          className="hidden max-w-40 truncate rounded-md px-1.5 py-1 text-sm text-foreground-light transition-colors hover:text-foreground md:block"
+        >
+          {org.data?.name}
+        </Link>
+        <Divider className="hidden md:inline" />
+        <div className="flex min-w-0 items-center gap-1.5 max-md:flex-col max-md:items-start max-md:gap-0">
+          <ProjectSwitcher orgId={orgId} canCreate={org.isAdmin} />
+          {params.projectId && params.envId && (
+            <>
+              <Divider className="max-md:hidden" />
+              <EnvironmentSwitcher orgId={orgId} projectId={params.projectId} envId={params.envId} />
+            </>
+          )}
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+          <Hint
+            label={
+              <span className="flex items-center gap-1.5">
+                Search <span className="text-foreground-lighter">⌘K</span>
+              </span>
+            }
+          >
+            <SearchButton onClick={openSearch} />
+          </Hint>
+          {/* Phones keep it in the account menu, where there is room. */}
+          <ThemeToggle className="hidden sm:flex" />
+          <Hint label="Docs">
+            <Link
+              href={DOCS_PATH}
+              aria-label="Docs"
+              className="hidden size-8 items-center justify-center rounded-md text-foreground-lighter transition-colors hover:bg-accent hover:text-foreground sm:flex"
             >
-              <Menu className="size-5" />
-            </SheetTrigger>
-            <SheetContent showClose={false}>
-              <SheetTitle>Navigation</SheetTitle>
-              <OrgSidebar orgId={orgId} onClose={() => setMenuOpen(false)} />
-            </SheetContent>
-          </Sheet>
-          <div className="flex min-w-0 flex-1 flex-col items-start md:-ml-2">
-            {/* Phones have no sidebar rail, so the org name sits above the switcher. */}
-            <span className="max-w-full truncate px-2 font-mono text-[10px] leading-none uppercase tracking-[0.2em] text-subtle md:hidden">
-              {org.data?.name}
-            </span>
-            <ProjectSwitcher orgId={orgId} canCreate={org.isAdmin} />
+              <BookOpen className="size-4" strokeWidth={1.5} />
+            </Link>
+          </Hint>
+          <UserMenu orgId={orgId} />
+        </div>
+      </header>
+      <div className="flex min-h-0 flex-1">
+        <aside
+          className={cn(
+            "sticky top-12 z-30 hidden h-[calc(100dvh-3rem)] shrink-0 transition-[width] duration-200 md:block",
+            mode === "expanded" ? "w-52" : "w-12",
+          )}
+        >
+          {/* In "Expand on hover" the panel grows over the page instead of pushing it. Keyboard focus expands it too. */}
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: hover/focus only widen the panel; the links inside are the controls */}
+          <div
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            onFocus={() => setHovered(true)}
+            onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setHovered(false)}
+            className={cn(
+              "absolute inset-y-0 left-0 z-30 border-r border-border bg-background transition-[width,box-shadow] duration-200",
+              expanded ? "w-52" : "w-12",
+              mode === "hover" && hovered && "shadow-floating",
+            )}
+          >
+            <OrgSidebar orgId={orgId} expanded={expanded} mode={mode} onModeChange={setMode} />
           </div>
-          <SearchButton
-            onClick={openSearch}
-            className="w-10 shrink-0 justify-center px-0 sm:w-64 sm:justify-start sm:px-3 [&>span:first-of-type]:hidden sm:[&>span:first-of-type]:inline"
-          />
-        </header>
-        <main className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-10 px-4 py-8 sm:px-6 md:py-10">
-          {children}
+        </aside>
+        <main id="main" className="flex min-w-0 flex-1 flex-col">
+          {org.error ? <OrgUnavailable error={org.error} /> : children}
         </main>
       </div>
       <CommandMenu orgId={orgId} open={searchOpen} onOpenChange={setSearchOpen} />

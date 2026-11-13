@@ -23,12 +23,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <TooltipProvider delayDuration={200}>
         <SmoothScroll>{children}</SmoothScroll>
       </TooltipProvider>
-      <Toaster
-        theme="dark"
-        position="bottom-right"
-        closeButton
-        toastOptions={{ style: { background: "#0a0a0a", border: "1px solid #262626", color: "#fafafa" } }}
-      />
+      <Toaster theme="dark" position="bottom-right" closeButton />
     </QueryClientProvider>
   );
 }

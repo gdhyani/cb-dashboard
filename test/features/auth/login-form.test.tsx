@@ -45,7 +45,7 @@ describe("FR-UI-006 LoginForm", () => {
       },
     });
     renderLogin();
-    fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
     expect(await screen.findByText("Email or password is incorrect.")).toBeInTheDocument();
     expect(screen.getByLabelText("Password")).toHaveValue("");
@@ -56,7 +56,7 @@ describe("FR-UI-006 LoginForm", () => {
   it("shows a network failure inline with its code", async () => {
     mock.onPost("/auth/login").networkError();
     renderLogin();
-    fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
     expect(await screen.findByText(/Can't reach the server/)).toBeInTheDocument();
     expect(screen.getByText(/NETWORK_ERROR/)).toBeInTheDocument();
@@ -73,7 +73,7 @@ describe("FR-UI-006 LoginForm", () => {
       },
     });
     renderLogin();
-    fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     await screen.findByText("Email or password is incorrect.");
 
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "x" } });
@@ -85,7 +85,7 @@ describe("FR-UI-006 LoginForm", () => {
       .onPost("/auth/login")
       .reply(200, { success: true, data: { user: {}, memberships: [] }, meta: { correlationId: "c2" } });
     renderLogin();
-    fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/orgs/o1"));
   });
 

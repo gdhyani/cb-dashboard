@@ -2,6 +2,8 @@
 
 import { ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Admonition } from "@/shared/components/admonition";
+import { cn } from "@/shared/lib/utils";
 import type { FieldDef } from "../lib/catalog";
 import { FieldInput } from "./field-input";
 
@@ -29,24 +31,24 @@ export function AdvancedSection({
   }, [forceOpen]);
   if (fields.length === 0) return null;
   return (
-    <section className="flex flex-col gap-3 border-t border-border pt-3">
+    <section className="-mx-5 flex flex-col gap-3 border-t border-border px-5 pt-4">
       <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 text-left text-[13px] font-medium"
+        className="flex items-center gap-1.5 self-start rounded-md text-left text-sm text-foreground"
       >
-        <ChevronRight aria-hidden className={`size-4 transition-transform ${open ? "rotate-90" : ""}`} />
+        <ChevronRight
+          aria-hidden
+          strokeWidth={1.5}
+          className={cn("size-4 text-foreground-lighter transition-transform", open && "rotate-90")}
+        />
         Advanced
-        <span className="font-normal text-subtle">· connection details</span>
+        <span className="text-foreground-lighter">· connection details</span>
       </button>
       {open && (
-        <div className="flex flex-col gap-3 pl-5">
-          {hint && (
-            <p role="note" className="rounded-md border border-border p-2 text-xs text-foreground">
-              {hint}
-            </p>
-          )}
+        <div className="flex flex-col gap-4 pl-5">
+          {hint && <Admonition type="note">{hint}</Admonition>}
           {fields.map((f) => (
             <FieldInput
               key={f.name}

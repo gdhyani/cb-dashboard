@@ -8,6 +8,7 @@ import { useProfiles, useResources } from "@/features/resources/hooks/use-resour
 import { KINDS } from "@/features/resources/lib/kinds";
 import type { Resource } from "@/features/resources/types";
 import { AvatarInitials } from "@/shared/components/avatar-initials";
+import { BadgeLabel } from "@/shared/components/badge-label";
 import { ChoiceCards } from "@/shared/components/choice-cards";
 import { notifySuccess } from "@/shared/lib/notify";
 import { cn } from "@/shared/lib/utils";
@@ -28,13 +29,26 @@ const DURATIONS = [
   { value: "custom", label: "Until a date…", hours: 0 },
 ];
 
-function SectionTitle({ step, title, hint }: { step: number; title: string; hint?: string }) {
+/** A block of the modal body, split from the one above by an edge-to-edge hairline (Studio modal sections). */
+function DialogBlock({
+  title,
+  hint,
+  first = false,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  first?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex items-baseline gap-2">
-      <span className="font-mono text-[11px] text-subtle">{step}</span>
-      <h3 className="text-sm font-medium">{title}</h3>
-      {hint && <span className="text-xs text-subtle">{hint}</span>}
-    </div>
+    <section className={cn("flex flex-col gap-3", !first && "-mx-5 border-t border-border px-5 pt-4")}>
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="heading-meta text-foreground-lighter">{title}</h3>
+        {hint && <span className="text-xs text-foreground-lighter">{hint}</span>}
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -51,8 +65,8 @@ function CheckRow({
   return (
     <label
       className={cn(
-        "flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-white/[0.03] has-[:focus-visible]:bg-white/[0.06]",
-        checked && "bg-white/[0.04]",
+        "flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-surface-200 has-[:focus-visible]:bg-selection",
+        checked && "bg-surface-200",
       )}
     >
       <input type="checkbox" className="sr-only" checked={checked} onChange={onToggle} />
@@ -60,7 +74,9 @@ function CheckRow({
         aria-hidden
         className={cn(
           "flex size-4 shrink-0 items-center justify-center rounded-[4px] border",
-          checked ? "border-foreground bg-foreground text-background" : "border-border-strong",
+          checked
+            ? "border-primary-solid bg-primary-solid text-primary-solid-foreground"
+            : "border-border-control bg-field",
         )}
       >
         {checked && <Check className="size-3" strokeWidth={3} />}
@@ -83,14 +99,19 @@ function ResourceProfileRow({
   return (
     <li className="flex items-center gap-3 px-3 py-2">
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm">{resource.name}</span>
-        <span className="block truncate text-[11px] text-subtle">{KINDS[resource.kind]?.label ?? resource.kind}</span>
+        <span className="block truncate font-mono text-sm text-foreground">{resource.name}</span>
+        <span className="block truncate text-xs text-foreground-lighter">
+          {KINDS[resource.kind]?.label ?? resource.kind}
+        </span>
       </span>
       {profiles.isPending ? (
-        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-[28px] w-32" />
       ) : (
         <Select value={value} onValueChange={onChange} disabled={(profiles.data?.length ?? 0) < 2}>
-          <SelectTrigger className="h-8 w-32 font-mono text-xs" aria-label={`Credential profile for ${resource.name}`}>
+          <SelectTrigger
+            className="h-[28px] w-32 font-mono text-xs"
+            aria-label={`Credential profile for ${resource.name}`}
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -123,8 +144,8 @@ function EnvironmentResources({
   if (!resources.data?.length) return null;
   return (
     <div className="flex flex-col gap-1">
-      <p className="px-1 font-mono text-[11px] text-subtle">{envName}</p>
-      <ul className="divide-y divide-border rounded-md border border-border">
+      <p className="px-1 font-mono text-xs text-foreground-lighter">{envName}</p>
+      <ul className="divide-y divide-border overflow-hidden rounded-md border border-border bg-surface-75">
         {resources.data.map((r) => (
           <ResourceProfileRow
             key={r.id}
@@ -240,8 +261,8 @@ export function AccessDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
+      <DialogContent className="max-h-[90dvh] max-w-2xl">
+        <DialogHeader className="sticky -top-5 z-10 bg-dialog">
           <DialogTitle>{editing ? `Edit ${person?.name}'s access` : `Add people to ${projectName}`}</DialogTitle>
           <DialogDescription>
             Access lets someone run this project locally. Real credentials never reach their machine.
@@ -249,22 +270,21 @@ export function AccessDialog({
         </DialogHeader>
 
         {!editing && (
-          <section className="flex flex-col gap-2.5">
-            <SectionTitle step={1} title="Who" hint={picked.length ? `${picked.length} selected` : undefined} />
+          <DialogBlock first title="Who" hint={picked.length ? `${picked.length} selected` : undefined}>
             {candidates.length === 0 ? (
-              <p className="rounded-md border border-dashed border-border-strong px-3 py-3 text-sm text-subtle">
+              <p className="rounded-md border border-dashed border-border-strong px-3 py-3 text-sm text-foreground-lighter">
                 Every developer already has access. Invite more people from Members.
               </p>
             ) : (
-              <div className="overflow-hidden rounded-md border border-border">
+              <div className="overflow-hidden rounded-md border border-border bg-surface-75">
                 <div className="flex items-center gap-2 border-b border-border px-3">
-                  <Search className="size-4 text-subtle" />
+                  <Search className="size-3.5 text-foreground-lighter" strokeWidth={1.5} aria-hidden="true" />
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search developers"
                     aria-label="Search developers"
-                    className="h-9 w-full bg-transparent text-sm outline-none placeholder:text-subtle"
+                    className="h-9 w-full bg-transparent text-sm outline-none placeholder:text-foreground-muted"
                   />
                 </div>
                 <div className="max-h-44 divide-y divide-border overflow-y-auto">
@@ -278,20 +298,21 @@ export function AccessDialog({
                     >
                       <AvatarInitials name={c.name} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate">{c.name}</span>
-                        <span className="block truncate font-mono text-xs text-subtle">{c.email}</span>
+                        <span className="block truncate text-foreground">{c.name}</span>
+                        <span className="block truncate font-mono text-xs text-foreground-lighter">{c.email}</span>
                       </span>
                     </CheckRow>
                   ))}
-                  {filtered.length === 0 && <p className="px-3 py-2 text-sm text-subtle">No match.</p>}
+                  {filtered.length === 0 && (
+                    <p className="px-3 py-2 text-sm text-foreground-lighter">No developers match your search</p>
+                  )}
                 </div>
               </div>
             )}
-          </section>
+          </DialogBlock>
         )}
 
-        <section className="flex flex-col gap-2.5">
-          <SectionTitle step={editing ? 1 : 2} title="Where" />
+        <DialogBlock first={editing} title="Where">
           <ChoiceCards
             name="access-scope"
             legend="Where"
@@ -303,7 +324,7 @@ export function AccessDialog({
             ]}
           />
           {scope === "environments" && (
-            <div className="divide-y divide-border overflow-hidden rounded-md border border-border">
+            <div className="divide-y divide-border overflow-hidden rounded-md border border-border bg-surface-75">
               {matrix.environments.map((e) => (
                 <CheckRow
                   key={e.id}
@@ -312,16 +333,15 @@ export function AccessDialog({
                     setEnvIds((ids) => (ids.includes(e.id) ? ids.filter((x) => x !== e.id) : [...ids, e.id]))
                   }
                 >
-                  <span className="flex-1 font-mono">{e.name}</span>
-                  {e.killed && <span className="text-xs text-subtle">suspended</span>}
+                  <span className="flex-1 font-mono text-foreground">{e.name}</span>
+                  {e.killed && <BadgeLabel tone="warning">Suspended</BadgeLabel>}
                 </CheckRow>
               ))}
             </div>
           )}
-        </section>
+        </DialogBlock>
 
-        <section className="flex flex-col gap-2.5">
-          <SectionTitle step={editing ? 2 : 3} title="How long" />
+        <DialogBlock title="How long">
           <div className="flex flex-col gap-2 sm:flex-row">
             <Select value={duration} onValueChange={setDuration}>
               <SelectTrigger className="sm:w-48" aria-label="Duration">
@@ -345,23 +365,30 @@ export function AccessDialog({
               />
             )}
           </div>
-          {customInvalid && customDate && <p className="text-xs text-destructive">Pick a time in the future.</p>}
-        </section>
+          {customInvalid && customDate && (
+            <p role="alert" className="text-sm text-destructive">
+              Pick a time in the future
+            </p>
+          )}
+        </DialogBlock>
 
-        <section className="flex flex-col gap-2.5">
+        <section className="-mx-5 flex flex-col gap-3 border-t border-border px-5 pt-4">
           <button
             type="button"
             onClick={() => setShowProfiles((v) => !v)}
             aria-expanded={showProfiles}
-            className="flex items-center gap-1.5 self-start text-sm text-muted-foreground hover:text-foreground"
+            className="flex items-center gap-1.5 self-start rounded-md text-sm text-foreground"
           >
-            <ChevronRight className={cn("size-4 transition-transform", showProfiles && "rotate-90")} />
+            <ChevronRight
+              strokeWidth={1.5}
+              className={cn("size-4 text-foreground-lighter transition-transform", showProfiles && "rotate-90")}
+            />
             Credential profiles
-            <span className="text-xs text-subtle">optional</span>
+            <span className="text-foreground-lighter">· optional</span>
           </button>
           {showProfiles && (
-            <div className="flex flex-col gap-3">
-              <p className="text-xs text-subtle">
+            <div className="flex flex-col gap-3 pl-5">
+              <p className="text-sm text-foreground-lighter">
                 Pick which real login each resource uses, e.g. a read-only database user. Unchanged ones use default.
               </p>
               {shownEnvs.map((e) => (
@@ -377,8 +404,8 @@ export function AccessDialog({
           )}
         </section>
 
-        <DialogFooter className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground">
+        <DialogFooter className="sticky -bottom-5 z-10 bg-dialog sm:justify-between">
+          <p className="text-xs text-foreground-lighter">
             {valid ? (
               <>
                 <span className="text-foreground">{whoText}</span> → {whereText}, {howLongText}
@@ -387,9 +414,14 @@ export function AccessDialog({
               "Choose who and where to continue."
             )}
           </p>
-          <Button onClick={() => void submit()} disabled={!valid} loading={saving}>
-            {editing ? "Save access" : "Grant access"}
-          </Button>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
+            <Button variant="secondary" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => void submit()} disabled={!valid} loading={saving}>
+              {editing ? "Save access" : "Grant access"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

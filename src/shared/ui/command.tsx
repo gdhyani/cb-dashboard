@@ -25,9 +25,9 @@ function CommandDialog({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="cb-overlay fixed inset-0 z-50 bg-black/70" />
+        <DialogPrimitive.Overlay className="cb-overlay fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
         <DialogPrimitive.Content
-          className="cb-pop fixed top-3 left-1/2 z-50 w-[calc(100%-1.5rem)] max-w-xl -translate-x-1/2 overflow-hidden rounded-xl border border-border-strong bg-card shadow-[0_16px_70px_rgba(0,0,0,0.7)] outline-none sm:top-[14vh]"
+          className="cb-pop fixed top-3 left-1/2 z-50 w-[calc(100%-1.5rem)] max-w-[640px] -translate-x-1/2 overflow-hidden rounded-lg bg-overlay shadow-floating outline-none sm:top-[14vh]"
           aria-describedby={undefined}
         >
           <DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>
@@ -46,10 +46,10 @@ function CommandInput({
 }: React.ComponentProps<typeof CommandPrimitive.Input> & { trailing?: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 border-b border-border px-4">
-      <Search className="size-4 shrink-0 text-subtle" />
+      <Search className="size-4 shrink-0 text-foreground-lighter" strokeWidth={1.5} />
       <CommandPrimitive.Input
         className={cn(
-          "h-12 w-full bg-transparent text-[15px] outline-none placeholder:text-subtle disabled:opacity-50",
+          "h-12 w-full bg-transparent text-sm outline-none placeholder:text-foreground-muted disabled:opacity-50 focus-visible:outline-none",
           className,
         )}
         {...props}
@@ -69,14 +69,14 @@ function CommandList({ className, ...props }: React.ComponentProps<typeof Comman
 }
 
 function CommandEmpty(props: React.ComponentProps<typeof CommandPrimitive.Empty>) {
-  return <CommandPrimitive.Empty className="py-8 text-center text-sm text-subtle" {...props} />;
+  return <CommandPrimitive.Empty className="py-8 text-center text-sm text-foreground-lighter" {...props} />;
 }
 
 function CommandGroup({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Group>) {
   return (
     <CommandPrimitive.Group
       className={cn(
-        "overflow-hidden py-1 [&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.2em] [&_[cmdk-group-heading]]:text-subtle",
+        "overflow-hidden py-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-foreground-muted",
         className,
       )}
       {...props}
@@ -88,7 +88,7 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
   return (
     <CommandPrimitive.Item
       className={cn(
-        "flex cursor-default items-center gap-3 rounded-md px-2.5 py-2 text-sm text-muted-foreground outline-none select-none data-[selected=true]:bg-white/[0.07] data-[selected=true]:text-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-subtle",
+        "flex cursor-default items-center gap-3 rounded-[6px] px-2 py-2.5 text-sm text-foreground-light outline-none select-none data-[selected=true]:bg-overlay-hover data-[selected=true]:text-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-foreground-lighter",
         className,
       )}
       {...props}

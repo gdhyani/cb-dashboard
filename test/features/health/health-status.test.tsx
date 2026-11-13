@@ -26,9 +26,23 @@ describe("<HealthStatus />", () => {
     });
     wrap(<HealthStatus />);
     expect(screen.getByText(/checking/i)).toBeInTheDocument();
-    expect(await screen.findByText("ok")).toBeInTheDocument();
+    expect(await screen.findByText("Backend healthy")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Healthy" })).toBeInTheDocument();
     expect(screen.getByText("mongodb up")).toBeInTheDocument();
-    expect(screen.getByText("12m")).toBeInTheDocument();
+    expect(screen.getByText("Up 12m")).toBeInTheDocument();
+    expect(screen.getByText("v0.0.0")).toBeInTheDocument();
+  });
+
+  it("marks a degraded backend and a failing check", async () => {
+    mock.onGet("/health").reply(200, {
+      success: true,
+      data: { status: "degraded", uptimeSec: 60, version: "1.2.3", checks: { mongodb: "down" } },
+      meta: { correlationId: "c" },
+    });
+    wrap(<HealthStatus />);
+    expect(await screen.findByText("Backend degraded")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Degraded" })).toBeInTheDocument();
+    expect(screen.getByText("mongodb down")).toHaveClass("text-destructive");
   });
 
   it("shows the error code and correlation id when the backend fails", async () => {
@@ -38,6 +52,7 @@ describe("<HealthStatus />", () => {
     });
     wrap(<HealthStatus />);
     expect(await screen.findByText("SERVICE_UNAVAILABLE")).toBeInTheDocument();
+    expect(screen.getByText("Backend unreachable")).toBeInTheDocument();
     expect(screen.getByText(/corr-503/)).toBeInTheDocument();
   });
 });

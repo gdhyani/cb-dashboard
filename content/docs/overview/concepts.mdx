@@ -17,7 +17,7 @@ Members have one of three roles:
 |---|---|
 | `owner` | Everything an admin can, plus manage other owners |
 | `admin` | Manage projects, variables, access, members and emergency stops |
-| `developer` | Run apps under cb with the access they are given; see their own devices and access in **My access** |
+| `developer` | Run apps under cb with the access they are given; see their own devices and access in **My Access** |
 
 Owners and admins can use every project. Developers need [access](#access). Invite people from
 [Members](/docs/guides/dashboard/members).
@@ -97,7 +97,7 @@ dashboard and can give the device a name. The CLI then stores its token in the o
 none is available, in a file only you can read).
 
 Each login creates a session for that device. Admins can see every device and session in
-**Devices & sessions** and revoke either one; revoking a device ends its access at once, without affecting the
+**Devices & Sessions** and revoke either one; revoking a device ends its access at once, without affecting the
 same person's other machines. See [Devices](/docs/guides/dashboard/devices).
 
 ## Access
@@ -112,7 +112,7 @@ running apps, and removed access closes open connections within seconds. See
 
 ## Emergency stop
 
-An emergency stop cuts access at once during an incident. Admins start one from **Emergency stop** with
+An emergency stop cuts access at once during an incident. Admins start one from **Emergency Stop** with
 **Stop access**, choose who or what it covers (everyone, an environment, a service, a person or a device), and
 type a reason. Every matching connection closes within seconds, and `cb run` refuses to start until the stop is
 cleared. Each stop and its reason stay in the history and in **Activity**.

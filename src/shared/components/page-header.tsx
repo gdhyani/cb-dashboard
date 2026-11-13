@@ -1,46 +1,42 @@
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 /**
- * Every page header sits on the subtle grid pattern (same feel on every page).
- * One-line mono breadcrumb (optional back link), then the display title with its actions on the
- * same row — vertically centred on the title — and the description below.
+ * Supabase PageHeader: title (Title Case, 22px Manrope), a declarative one-line description, actions on the right.
+ * Optional `icon` sits left of the title; `breadcrumb` renders as a quiet line above (the top bar already shows
+ * where you are, so most pages leave it out). `nav` (a PageNav) sits flush below, full width.
  */
 export function PageHeader({
   breadcrumb,
-  backHref,
+  icon,
   title,
   description,
   actions,
+  nav,
 }: {
   breadcrumb?: ReactNode;
+  /** @deprecated The top bar breadcrumbs replace back links. Accepted and ignored. */
   backHref?: string;
+  icon?: ReactNode;
   title: string;
   description?: ReactNode;
   actions?: ReactNode;
+  nav?: ReactNode;
 }) {
   return (
-    <header className="cb-grid-wide -mx-4 -mt-8 flex flex-col gap-3 px-4 pt-8 pb-6 sm:-mx-6 sm:px-6 md:-mt-10 md:pt-10">
-      {(breadcrumb || backHref) && (
-        <div className="flex min-w-0 items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-subtle">
-          {backHref && (
-            <Link
-              href={backHref}
-              aria-label="Back"
-              className="-ml-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-white/[0.06] hover:text-foreground"
-            >
-              <ArrowLeft className="size-3.5" />
-            </Link>
-          )}
-          <div className="min-w-0 flex-1">{breadcrumb}</div>
+    <header className="flex flex-col gap-5 pt-10 md:gap-4 md:pt-12">
+      {breadcrumb && <div className="min-w-0 text-sm text-foreground-lighter">{breadcrumb}</div>}
+      <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          {icon && <span className="shrink-0 text-foreground-light [&_svg]:size-6">{icon}</span>}
+          <div className="flex min-w-0 flex-col gap-1.5">
+            {/* Phones get a larger title, like Studio on mobile. */}
+            <h1 className="heading-title truncate text-foreground max-md:text-[1.625rem]">{title}</h1>
+            {description && <div className="text-base text-foreground-light">{description}</div>}
+          </div>
         </div>
-      )}
-      <div className="flex min-w-0 items-center justify-between gap-4">
-        <h1 className="min-w-0 truncate text-display font-semibold">{title}</h1>
-        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+        {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </div>
-      {description && <div className="max-w-2xl text-[15px] leading-relaxed text-muted-foreground">{description}</div>}
+      {nav}
     </header>
   );
 }

@@ -7,9 +7,9 @@ import { EmptyState } from "@/shared/components/empty-state";
 import { PaginationBar } from "@/shared/components/pagination-bar";
 import { QueryState } from "@/shared/components/query-state";
 import { SkeletonRows } from "@/shared/components/skeletons";
-import { StaggerItem } from "@/shared/components/stagger";
 import { timeAgo } from "@/shared/lib/format-time";
 import { Button } from "@/shared/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { useReplayWebhook, useWebhookEvents } from "../hooks/use-webhook-events";
 import { useSendWebhookToMe } from "../hooks/use-webhook-setup";
 import type { WebhookDelivery, WebhookEvent } from "../types";
@@ -29,14 +29,12 @@ function deliveryLabel(d: WebhookDelivery): { text: string; tone: "success" | "w
 
 function EventRow({
   event,
-  index,
   onReplay,
   replaying,
   onSendToMe,
   sending,
 }: {
   event: WebhookEvent;
-  index: number;
   onReplay: () => void;
   replaying: boolean;
   onSendToMe: () => void;
@@ -46,63 +44,60 @@ function EventRow({
   const nobody = event.deliveries.length === 0 && !routing;
   const label = event.type || event.eventId;
   return (
-    <StaggerItem index={index} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:justify-between">
-      <div className="flex min-w-0 flex-col gap-1">
-        <p className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-sm text-foreground">{event.type || event.eventId}</span>
-          <span className="text-xs text-subtle">
-            {event.provider === "razorpay" ? "Razorpay" : "Stripe"} · {timeAgo(event.receivedAt)}
-          </span>
-        </p>
+    <TableRow>
+      <TableCell className="max-w-[16rem] py-2.5 align-top">
+        <span className="block truncate font-mono text-sm text-foreground">{label}</span>
+        <span className="text-xs text-foreground-lighter">{event.provider === "razorpay" ? "Razorpay" : "Stripe"}</span>
+      </TableCell>
+      <TableCell className="min-w-[12rem] py-2.5 align-top">
         {event.deliveries.length === 0 ? (
-          <p className="text-xs text-subtle">
+          <p className="text-xs text-foreground-lighter">
             {routing
               ? "Finding the developer who caused it…"
               : "No one on the team caused this (a test event from the dashboard, or stripe trigger), so it was kept here."}
           </p>
         ) : (
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col gap-1.5">
             {event.deliveries.map((d) => {
-              const label = deliveryLabel(d);
+              const status = deliveryLabel(d);
               return (
-                <li key={d.id} className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <BadgeLabel tone={label.tone}>{label.text}</BadgeLabel>
+                <li key={d.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-foreground-light">
+                  <BadgeLabel tone={status.tone}>{status.text}</BadgeLabel>
                   <span>
                     {d.userEmail} · {d.deviceName}
                   </span>
-                  {d.status !== "delivered" && d.lastError && <span className="text-subtle">{d.lastError}</span>}
+                  {d.status !== "delivered" && d.lastError && (
+                    <span className="text-foreground-lighter">{d.lastError}</span>
+                  )}
                 </li>
               );
             })}
           </ul>
         )}
-      </div>
-      {nobody ? (
-        <Button
-          size="sm"
-          variant="outline"
-          aria-label={`Send ${label} to me`}
-          loading={sending}
-          onClick={onSendToMe}
-          className="self-start"
-        >
-          <Send className="size-3.5" />
-          Send to me
-        </Button>
-      ) : (
-        <Button
-          size="sm"
-          variant="ghost"
-          aria-label={`Replay ${label}`}
-          loading={replaying}
-          onClick={onReplay}
-          className="self-start"
-        >
-          <RotateCcw className="size-3.5" />
-          Replay
-        </Button>
-      )}
-    </StaggerItem>
+      </TableCell>
+      <TableCell className="py-2.5 align-top text-xs whitespace-nowrap text-foreground-lighter">
+        {timeAgo(event.receivedAt)}
+      </TableCell>
+      <TableCell className="py-2 pr-3 text-right align-top">
+        {nobody ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            aria-label={`Send ${label} to me`}
+            loading={sending}
+            onClick={onSendToMe}
+          >
+            <Send />
+            Send to me
+          </Button>
+        ) : (
+          <Button size="sm" variant="ghost" aria-label={`Replay ${label}`} loading={replaying} onClick={onReplay}>
+            <RotateCcw />
+            Replay
+          </Button>
+        )}
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -117,26 +112,37 @@ export function WebhookLog({ envId }: { envId: string }) {
       {events.data && events.data.items.length === 0 ? (
         <EmptyState
           title="Nothing in the last 24 hours"
-          description="Each Stripe or Razorpay event shows up here and goes only to the developer whose app caused it."
+          description="Each Stripe or Razorpay event shows up here and goes only to the developer whose app caused it"
         />
       ) : (
         events.data && (
           <div className="flex flex-col gap-3">
-            <ul className="divide-y divide-border rounded-lg border border-border px-4">
-              {events.data.items.map((e, i) => (
-                <EventRow
-                  key={e.id}
-                  event={e}
-                  index={i}
-                  replaying={replay.isPending && replay.variables === e.id}
-                  onReplay={() => replay.mutate(e.id)}
-                  sending={sendToMe.isPending && sendToMe.variables === e.id}
-                  onSendToMe={() => sendToMe.mutate(e.id)}
-                />
-              ))}
-            </ul>
-            <p className="text-xs text-subtle">Kept for 24 hours.</p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Event</TableHead>
+                  <TableHead>Delivered to</TableHead>
+                  <TableHead>Received</TableHead>
+                  <TableHead className="w-24">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {events.data.items.map((e) => (
+                  <EventRow
+                    key={e.id}
+                    event={e}
+                    replaying={replay.isPending && replay.variables === e.id}
+                    onReplay={() => replay.mutate(e.id)}
+                    sending={sendToMe.isPending && sendToMe.variables === e.id}
+                    onSendToMe={() => sendToMe.mutate(e.id)}
+                  />
+                ))}
+              </TableBody>
+            </Table>
             <PaginationBar pagination={events.data.pagination} onPage={setPage} />
+            <p className="text-xs text-foreground-lighter">Kept for 24 hours</p>
           </div>
         )
       )}

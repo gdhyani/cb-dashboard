@@ -64,7 +64,7 @@ export function RowActions({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant={prominent ? "outline" : "ghost"} size={prominent ? "icon" : "icon-sm"} aria-label={label}>
+          <Button variant={prominent ? "secondary" : "ghost"} size={prominent ? "icon" : "icon-sm"} aria-label={label}>
             <MoreHorizontal />
           </Button>
         </DropdownMenuTrigger>

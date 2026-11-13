@@ -16,14 +16,14 @@ function SelectTrigger({ className, children, ...props }: React.ComponentProps<t
       data-slot="select-trigger"
       className={cn(
         fieldClasses,
-        "flex h-9 items-center justify-between gap-2 text-left data-[placeholder]:text-subtle [&>span]:truncate",
+        "flex h-[34px] cursor-pointer items-center justify-between gap-2 text-left data-[placeholder]:text-foreground-muted [&>span]:truncate",
         className,
       )}
       {...props}
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <ChevronDown className="size-4 shrink-0 text-subtle" />
+        <ChevronDown className="size-4 shrink-0 text-foreground-lighter" strokeWidth={1.5} />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
@@ -42,7 +42,7 @@ function SelectContent({
         position={position}
         sideOffset={6}
         className={cn(
-          "relative z-50 max-h-72 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-lg border border-border-strong bg-popover p-1 text-popover-foreground shadow-[0_8px_30px_rgba(0,0,0,0.6)]",
+          "cb-pop relative z-50 max-h-80 min-w-[var(--radix-select-trigger-width)] overflow-y-auto rounded-md bg-overlay p-1 text-foreground shadow-floating",
           className,
         )}
         {...props}
@@ -58,7 +58,7 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex h-8 cursor-default select-none items-center rounded-md pr-8 pl-2.5 text-sm text-muted-foreground outline-none data-[highlighted]:bg-white/[0.06] data-[highlighted]:text-foreground data-[state=checked]:text-foreground data-[disabled]:opacity-40",
+        "relative flex min-h-7 cursor-default select-none items-center rounded-[6px] py-1.5 pr-8 pl-2 text-sm text-foreground-light outline-none data-[highlighted]:bg-overlay-hover data-[highlighted]:text-foreground data-[state=checked]:text-foreground data-[disabled]:opacity-50",
         className,
       )}
       {...props}

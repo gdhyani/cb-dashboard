@@ -28,40 +28,66 @@ export function SignupForm() {
   const errors = form.formState.errors;
   return (
     <AuthCard
-      title="Create your organization"
-      description="You'll be its owner. Invite your team after."
+      title="Get started"
+      description="Create your account and organization. You are its owner and can invite your team after"
       footer={
-        <>
-          Already have an account?{" "}
-          <Link className="text-foreground underline underline-offset-4" href="/login">
-            Log in
-          </Link>
-          <span className="mt-3 flex justify-center">
-            <DocsLink href={DOCS_PATH}>Read the docs</DocsLink>
+        <div className="flex flex-col items-center gap-4">
+          <span>
+            Have an account?{" "}
+            <Link
+              className="text-foreground underline underline-offset-4 hover:text-foreground-light"
+              href={`/login${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`}
+            >
+              Sign in
+            </Link>
           </span>
-        </>
+          <DocsLink href={DOCS_PATH}>Read the docs</DocsLink>
+        </div>
       }
     >
       <form
         method="post"
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-5"
+        noValidate
         onSubmit={form.handleSubmit((values) => signup.mutate(values, { onSuccess: () => router.replace(next) }))}
       >
         <FormField id="name" label="Your name" error={errors.name?.message}>
-          <Input id="name" autoComplete="name" {...form.register("name")} />
+          <Input id="name" autoComplete="name" aria-invalid={Boolean(errors.name)} {...form.register("name")} />
         </FormField>
         <FormField id="email" label="Email" error={errors.email?.message}>
-          <Input id="email" type="email" autoComplete="email" {...form.register("email")} />
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            aria-invalid={Boolean(errors.email)}
+            {...form.register("email")}
+          />
         </FormField>
-        <FormField id="password" label="Password" error={errors.password?.message} hint="At least 8 characters.">
-          <PasswordInput id="password" autoComplete="new-password" {...form.register("password")} />
+        <FormField id="password" label="Password" error={errors.password?.message} hint="At least 8 characters">
+          <PasswordInput
+            id="password"
+            autoComplete="new-password"
+            aria-invalid={Boolean(errors.password)}
+            {...form.register("password")}
+          />
         </FormField>
-        <FormField id="orgName" label="Organization" error={errors.orgName?.message}>
-          <Input id="orgName" autoComplete="organization" {...form.register("orgName")} />
+        <FormField
+          id="orgName"
+          label="Organization"
+          error={errors.orgName?.message}
+          hint="Usually your company or team"
+        >
+          <Input
+            id="orgName"
+            autoComplete="organization"
+            aria-invalid={Boolean(errors.orgName)}
+            {...form.register("orgName")}
+          />
         </FormField>
         <FormError error={signup.error} />
-        <Button type="submit" disabled={signup.isPending}>
-          {signup.isPending ? "Creating…" : "Create organization"}
+        <Button type="submit" size="lg" block loading={signup.isPending}>
+          Sign up
         </Button>
       </form>
     </AuthCard>

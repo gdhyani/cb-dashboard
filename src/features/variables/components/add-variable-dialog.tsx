@@ -1,10 +1,10 @@
 "use client";
 
-import { AlertTriangle, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Resource } from "@/features/resources";
 import { WebhookSetup } from "@/features/webhooks";
 import { ApiError } from "@/shared/api/api-error";
+import { Admonition } from "@/shared/components/admonition";
 import { FormError } from "@/shared/components/form-error";
 import { FormField } from "@/shared/components/form-field";
 import { ServiceLogo } from "@/shared/components/service-logo";
@@ -27,8 +27,10 @@ import {
   type TypeId,
   WEBHOOK_PROVIDERS,
 } from "../lib/catalog";
+import { STICKY_FOOTER, STICKY_HEADER } from "../lib/dialog-bands";
 import { GENERATED_FORMATS } from "../types";
 import { AdvancedSection } from "./advanced-section";
+import { DialogSection } from "./dialog-section";
 import { ExtrasSection } from "./extras-section";
 import { FieldInput } from "./field-input";
 import { ProviderSelect } from "./provider-select";
@@ -176,8 +178,8 @@ export function AddVariableDialog({
     const providerName = WEBHOOK_PROVIDERS.find((p) => p.id === created.provider)?.name ?? "the provider";
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-h-[90dvh] max-w-2xl">
+          <DialogHeader className={STICKY_HEADER}>
             <DialogTitle className="flex items-center gap-2">
               <ServiceLogo icon={def.icon} />
               {`Connect ${providerName}`}
@@ -188,9 +190,11 @@ export function AddVariableDialog({
             </DialogDescription>
           </DialogHeader>
           <WebhookSetup envId={envId} resource={created.service} generatedSecret={created.generatedSecret} />
-          <p className="text-xs text-subtle">This setup is also in the key's Edit dialog and on the Webhooks tab.</p>
-          <DialogFooter>
-            <Button type="button" onClick={() => onOpenChange(false)}>
+          <p className="text-sm text-foreground-lighter">
+            This setup is also in the key's Edit dialog and on the Webhooks tab
+          </p>
+          <DialogFooter className={STICKY_FOOTER}>
+            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
               Done
             </Button>
           </DialogFooter>
@@ -201,8 +205,8 @@ export function AddVariableDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-h-[90dvh] max-w-2xl">
+        <DialogHeader className={STICKY_HEADER}>
           <DialogTitle className="flex items-center gap-2">
             {draft.type !== "plain" && <ServiceLogo icon={def.icon} />}
             {dialogTitle("Add", draft.type)}
@@ -214,7 +218,7 @@ export function AddVariableDialog({
                 ? def.value?.file
                   ? "Paste or drop the file once. cb keeps it on the server and tests it before saving."
                   : "Paste the real value once. cb keeps it on the server and tests it before saving."
-                : "Every key your app reads from process.env lives here."}
+                : "Every key your app reads from process.env lives here"}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -225,101 +229,100 @@ export function AddVariableDialog({
             if (canSave) void submit();
           }}
         >
-          <FormField
-            id="add-key"
-            label="Key"
-            hint={`The name your code reads, e.g. ${keyExample(draft.type, draft.provider)}.`}
-            error={keyError ?? (keyInvalid ? KEY_HINT : undefined)}
-          >
-            <Input
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField
               id="add-key"
-              value={draft.key}
-              autoFocus
-              autoComplete="off"
-              spellCheck={false}
-              placeholder={keyExample(draft.type, draft.provider)}
-              className="font-mono"
-              onChange={(e) => {
-                setKeyError(undefined);
-                update({ key: normalizeKey(e.target.value) });
-              }}
-            />
-          </FormField>
-          <FormField id="add-type" label="What is this?">
-            <TypeSelect
-              id="add-type"
-              value={draft.type}
-              onChange={(t) => {
-                // A refusal belongs to the type it was for; a new type starts clean.
-                setError(null);
-                setDraft((d) => freshDraft(t, undefined, d.key));
-              }}
-            />
-          </FormField>
-          {def.providers && (
-            <FormField id="add-provider" label={def.providerLabel ?? "Provider"}>
-              <ProviderSelect
-                id="add-provider"
-                providers={def.providers}
-                value={draft.provider ?? ""}
-                onChange={(p) =>
-                  setDraft((d) => ({
-                    ...freshDraft(d.type, p, d.key),
-                    value: (TYPES[d.type].valueMode?.(p) ?? "required") === "none" ? "" : d.value,
-                  }))
-                }
+              label="Key"
+              hint={`The name your code reads, e.g. ${keyExample(draft.type, draft.provider)}.`}
+              error={keyError ?? (keyInvalid ? KEY_HINT : undefined)}
+            >
+              <Input
+                id="add-key"
+                value={draft.key}
+                autoFocus
+                autoComplete="off"
+                spellCheck={false}
+                placeholder={keyExample(draft.type, draft.provider)}
+                className="font-mono"
+                onChange={(e) => {
+                  setKeyError(undefined);
+                  update({ key: normalizeKey(e.target.value) });
+                }}
               />
             </FormField>
-          )}
+            <FormField id="add-type" label="What is this?">
+              <TypeSelect
+                id="add-type"
+                value={draft.type}
+                onChange={(t) => {
+                  // A refusal belongs to the type it was for; a new type starts clean.
+                  setError(null);
+                  setDraft((d) => freshDraft(t, undefined, d.key));
+                }}
+              />
+            </FormField>
+            {def.providers && (
+              <FormField id="add-provider" label={def.providerLabel ?? "Provider"}>
+                <ProviderSelect
+                  id="add-provider"
+                  providers={def.providers}
+                  value={draft.provider ?? ""}
+                  onChange={(p) =>
+                    setDraft((d) => ({
+                      ...freshDraft(d.type, p, d.key),
+                      value: (TYPES[d.type].valueMode?.(p) ?? "required") === "none" ? "" : d.value,
+                    }))
+                  }
+                />
+              </FormField>
+            )}
+          </div>
           {draft.type === "visible" && (
-            <p
-              role="note"
-              className="flex items-start gap-2 rounded-md border border-destructive/40 p-3 text-xs text-destructive"
-            >
-              <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0" />
+            <Admonition type="warning" title="Developers see the real value">
               The real value goes to every developer with access. Use it only when your app must compute with the secret
               itself. Payment webhook secrets don't need this — use the Webhook signing secret type.
-            </p>
+            </Admonition>
           )}
-          {draft.type === "gen" ? (
-            <>
-              <FieldInput
-                idPrefix="add"
-                def={FORMAT}
-                value={draft.format ?? ""}
-                onChange={(v) => update({ format: v })}
-              />
-              <p className="text-xs text-subtle">
-                Nothing to paste. Each developer gets their own value — use it for secrets your app invents
-                (AUTH_SECRET, JWT_SECRET, SESSION_SECRET).
-              </p>
-            </>
-          ) : (
-            def.value &&
-            valueMode !== "none" && (
-              <FieldInput
-                idPrefix="add"
-                def={{
-                  ...def.value,
-                  placeholder:
-                    def.providers?.find((p) => p.id === draft.provider)?.placeholder ?? def.value.placeholder,
-                }}
-                value={draft.value}
-                onChange={(v) => update({ value: v })}
-                error={valueError}
-              />
-            )
+          {(draft.type === "gen" || (def.value && valueMode !== "none") || required.length > 0) && (
+            <DialogSection>
+              {draft.type === "gen" ? (
+                <FieldInput
+                  idPrefix="add"
+                  def={{
+                    ...FORMAT,
+                    hint: "Nothing to paste. Each developer gets their own value — use it for secrets your app invents (AUTH_SECRET, JWT_SECRET, SESSION_SECRET).",
+                  }}
+                  value={draft.format ?? ""}
+                  onChange={(v) => update({ format: v })}
+                />
+              ) : (
+                def.value &&
+                valueMode !== "none" && (
+                  <FieldInput
+                    idPrefix="add"
+                    def={{
+                      ...def.value,
+                      placeholder:
+                        def.providers?.find((p) => p.id === draft.provider)?.placeholder ?? def.value.placeholder,
+                    }}
+                    value={draft.value}
+                    onChange={(v) => update({ value: v })}
+                    error={valueError}
+                  />
+                )
+              )}
+              {required.map((f) => (
+                <FieldInput
+                  key={f.name}
+                  idPrefix="add"
+                  def={f}
+                  value={draft.fields[f.name] ?? ""}
+                  onChange={(v) => setField(f.name, v)}
+                  error={draft.fields[f.name]?.trim() ? f.validate?.(draft.fields[f.name]?.trim() ?? "") : undefined}
+                />
+              ))}
+            </DialogSection>
           )}
-          {required.map((f) => (
-            <FieldInput
-              key={f.name}
-              idPrefix="add"
-              def={f}
-              value={draft.fields[f.name] ?? ""}
-              onChange={(v) => setField(f.name, v)}
-              error={draft.fields[f.name]?.trim() ? f.validate?.(draft.fields[f.name]?.trim() ?? "") : undefined}
-            />
-          ))}
           <ExtrasSection
             defs={extraDefs}
             extras={draft.extras}
@@ -339,25 +342,20 @@ export function AddVariableDialog({
             }
           />
           {protectedType && /^(NEXT_PUBLIC_|VITE_|PUBLIC_|EXPO_PUBLIC_|REACT_APP_)/.test(draft.key) && (
-            <p
-              role="note"
-              className="flex items-start gap-2 rounded-md border border-amber-400/40 p-3 text-xs text-amber-300"
-            >
-              <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0" />
+            <Admonition type="warning" title="This key name is public">
               Keys with this prefix are sent to the browser by your framework. Only a stand-in would ever reach it, so
               nothing real leaks — but browser code can't use a protected key. Use a server-side name instead.
-            </p>
+            </Admonition>
           )}
           {protectedType && draft.type !== "visible" && (
-            <p className="flex items-start gap-2 rounded-md border border-border p-3 text-xs text-subtle">
-              <Lock aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+            <Admonition type="note">
               Developers get a stand-in value that cb makes for each device — there is nothing to enter for it. The real
               value is encrypted on cb's server; nobody can view it again, but you can replace it any time.
-            </p>
+            </Admonition>
           )}
           <FormError error={error} />
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+          <DialogFooter className={STICKY_FOOTER}>
+            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={!canSave} loading={pending}>

@@ -3,11 +3,11 @@ title: Devices and sessions
 description: See every CLI device and dashboard sign-in, and revoke them when a laptop is lost or someone leaves.
 ---
 
-The **Devices & sessions** page (under **Security** in the sidebar) shows every laptop logged in with the CLI and
+The **Devices & Sessions** page (laptop icon in the left rail) shows every laptop signed in with the CLI and
 every browser signed in to the dashboard, across all members. Owners and admins see this page. Developers manage
-their own devices on [My access](/docs/guides/dashboard/my-access).
+their own devices on [My Access](/docs/guides/dashboard/my-access).
 
-<Frame src="/docs/images/guides/devices.png" alt="Devices & sessions page with CLI devices and Dashboard sessions" caption="Devices & sessions page with CLI devices and Dashboard sessions" />
+<Frame src="/docs/images/guides/devices.png" alt="Devices & Sessions page with CLI devices and Dashboard sessions" caption="Devices & Sessions page with CLI devices and Dashboard sessions" />
 
 ## Devices and sessions are different things
 
@@ -18,8 +18,13 @@ manages cb but never connects to your services.
 | | **CLI devices** | **Dashboard sessions** |
 |---|---|---|
 | Created by | `npx cb login`, approved in the dashboard | Signing in to the dashboard |
-| Shows | Device name, owner, OS, last seen, and **Agent online** (with open connections) or **Agent offline** | Browser and OS, email, last active; **This browser** marks your own |
+| Shows | Device name, owner, OS, last seen, and an agent status: **Running** (with open connections) or **Stopped** | Browser and OS, email, last active; **This browser** marks your own |
 | Action | **Revoke device** | **Sign out** |
+
+## Find a device or session
+
+Each table has its own search box. CLI devices filter by agent status (and by Active or Revoked when there are revoked
+devices); dashboard sessions filter by browser. Sort by name, person or last seen from the column heads.
 
 ## Revoke a device or sign out a session
 
@@ -32,7 +37,7 @@ manages cb but never connects to your services.
 | Recorded in Activity | Yes | No |
 
 Choose the action from the row's "…" menu and confirm. You can't sign out your own current browser from this page;
-use **Log out** at the bottom of the sidebar instead.
+use **Sign out** in the account menu (your initials, top right) instead.
 
 <Callout type="tip" title="Lost or stolen laptop">
 Revoke the device first. If you can't tell which device it is, or you want to block a person everywhere until you

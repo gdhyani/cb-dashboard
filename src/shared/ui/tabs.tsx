@@ -4,7 +4,7 @@ import { Tabs as TabsPrimitive } from "radix-ui";
 import type * as React from "react";
 import { cn } from "@/shared/lib/utils";
 
-/** Underline tabs: a hairline under the strip, the active tab carries a 2px white rule. */
+/** Supabase underline tabs: hairline under the strip; the active tab is foreground text on a 1px foreground rule. */
 function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
   return <TabsPrimitive.Root data-slot="tabs" className={cn("flex flex-col gap-4", className)} {...props} />;
 }
@@ -13,7 +13,7 @@ function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimi
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
-      className={cn("flex items-center gap-6 border-b border-border", className)}
+      className={cn("flex items-center gap-5 border-b border-border", className)}
       {...props}
     />
   );
@@ -24,7 +24,7 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "relative -mb-px inline-flex h-10 items-center gap-2 border-b-2 border-transparent text-sm text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:text-foreground data-[state=active]:border-foreground data-[state=active]:font-medium data-[state=active]:text-foreground",
+        "focus-inset relative -mb-px inline-flex h-10 cursor-pointer items-center gap-2 border-b-2 border-transparent text-sm whitespace-nowrap text-foreground-lighter transition-colors hover:text-foreground data-[state=active]:border-foreground data-[state=active]:text-foreground",
         className,
       )}
       {...props}

@@ -1,3 +1,4 @@
+import { Admonition } from "@/shared/components/admonition";
 import { CopyCommand } from "@/shared/components/copy-command";
 import { providerCanReach, providerName, WEBHOOK_SETUP } from "../lib/endpoint";
 
@@ -18,16 +19,16 @@ export function WebhookEndpoint({
   const name = providerName(provider);
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <span className="text-[13px] font-medium">Webhook URL · paste into {name}</span>
+      <span className="text-sm text-foreground">Webhook URL · paste into {name}</span>
       <CopyCommand command={url} prompt={false} label="Copy webhook URL" toastLabel="Webhook URL copied" />
       {!providerCanReach(url) && (
-        <p role="alert" className="text-xs text-destructive">
+        <Admonition type="destructive">
           {name === "the provider" ? "The provider" : name} can't reach this address. Set PUBLIC_URL on the backend to
           its public https address (for example a tunnel), then paste the new URL into {name}.
-        </p>
+        </Admonition>
       )}
       {showSteps && provider && WEBHOOK_SETUP[provider] && (
-        <p className="text-xs text-subtle">{WEBHOOK_SETUP[provider]}</p>
+        <p className="text-sm text-foreground-lighter">{WEBHOOK_SETUP[provider]}</p>
       )}
     </div>
   );
