@@ -59,9 +59,10 @@ export function ProjectSwitcher({ orgId, canCreate }: { orgId: string; canCreate
           <button
             type="button"
             aria-label="Switch project"
-            className="flex h-7 min-w-0 items-center gap-2 rounded-md px-1.5 text-sm text-foreground transition-colors hover:bg-accent data-[state=open]:bg-accent"
+            className="flex h-7 min-w-0 items-center gap-2 rounded-md px-1.5 text-sm text-foreground transition-colors hover:bg-accent data-[state=open]:bg-accent max-md:h-6 max-md:font-medium"
           >
-            {current && <ProjectMark name={current.name} />}
+            {/* Phones show the project mark as a larger box beside the switchers (top bar). */}
+            {current && <ProjectMark name={current.name} className="max-md:hidden" />}
             <span className="truncate">
               {current?.name ??
                 (currentId ? (

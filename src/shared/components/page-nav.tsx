@@ -27,7 +27,7 @@ export function PageNav({ items, label }: { items: PageNavItem[]; label: string 
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "focus-inset -mb-px inline-flex h-10 items-center border-b whitespace-nowrap text-sm transition-colors",
+                  "focus-inset -mb-px inline-flex h-10 items-center border-b-2 whitespace-nowrap text-sm transition-colors",
                   active
                     ? "border-foreground text-foreground"
                     : "border-transparent text-foreground-lighter hover:text-foreground",

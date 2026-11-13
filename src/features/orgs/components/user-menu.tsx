@@ -36,7 +36,7 @@ export function UserMenu({ orgId }: { orgId: string }) {
       <Hint label="Account">
         <DropdownMenuTrigger
           aria-label="Account menu"
-          className="flex size-8 items-center justify-center rounded-full transition-opacity hover:opacity-80"
+          className="flex size-8 items-center justify-center rounded-full transition-opacity hover:opacity-80 max-md:size-9 max-md:[&>span]:size-9 max-md:[&>span]:text-xs"
         >
           <AvatarInitials name={name} size="sm" />
         </DropdownMenuTrigger>

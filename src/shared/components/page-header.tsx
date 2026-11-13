@@ -23,13 +23,14 @@ export function PageHeader({
   nav?: ReactNode;
 }) {
   return (
-    <header className="flex flex-col gap-4 pt-8 md:pt-12">
+    <header className="flex flex-col gap-5 pt-10 md:gap-4 md:pt-12">
       {breadcrumb && <div className="min-w-0 text-sm text-foreground-lighter">{breadcrumb}</div>}
       <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           {icon && <span className="shrink-0 text-foreground-light [&_svg]:size-6">{icon}</span>}
-          <div className="flex min-w-0 flex-col gap-1">
-            <h1 className="heading-title truncate text-foreground">{title}</h1>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            {/* Phones get a larger title, like Studio on mobile. */}
+            <h1 className="heading-title truncate text-foreground max-md:text-[1.625rem]">{title}</h1>
             {description && <div className="text-base text-foreground-light">{description}</div>}
           </div>
         </div>

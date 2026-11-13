@@ -83,7 +83,7 @@ export function MembersTable({
           <TableHeader>
             <TableRow>
               {sortHead("name", "User")}
-              {sortHead("role", "Role", "w-36")}
+              {sortHead("role", "Role", "w-32 sm:w-36")}
               {sortHead("joined", "Joined", "hidden w-36 sm:table-cell")}
               {canManage && (
                 <TableHead className="w-12">
@@ -133,7 +133,10 @@ export function MembersTable({
                           value={m.role}
                           onValueChange={(role) => updateRole.mutate({ userId: m.userId, role: role as Role })}
                         >
-                          <SelectTrigger className="h-[28px] w-28 text-xs" aria-label={`Role for ${m.name}`}>
+                          <SelectTrigger
+                            className="h-[28px] w-[6.5rem] px-2 text-xs sm:w-28 sm:px-3"
+                            aria-label={`Role for ${m.name}`}
+                          >
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>

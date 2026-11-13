@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Layers } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BadgeLabel } from "@/shared/components/badge-label";
@@ -29,8 +29,9 @@ export function EnvironmentSwitcher({ orgId, projectId, envId }: { orgId: string
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label="Switch environment"
-        className="flex h-7 min-w-0 items-center gap-2 rounded-md px-1.5 text-sm text-foreground transition-colors hover:bg-accent data-[state=open]:bg-accent"
+        className="flex h-7 min-w-0 items-center gap-2 rounded-md px-1.5 text-sm text-foreground transition-colors hover:bg-accent data-[state=open]:bg-accent max-md:h-5 max-md:gap-1 max-md:text-xs max-md:text-foreground-light"
       >
+        <Layers className="size-3 shrink-0 text-primary md:hidden" strokeWidth={2} aria-hidden="true" />
         {current ? <span className="truncate">{current.name}</span> : <Skeleton className="h-4 w-20" />}
         {current?.killed && <BadgeLabel tone="warning">Suspended</BadgeLabel>}
         <ChevronsUpDown className="size-3.5 shrink-0 text-foreground-lighter" strokeWidth={1.5} />

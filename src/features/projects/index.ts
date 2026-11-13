@@ -5,6 +5,7 @@ export { EnvironmentTable, type EnvironmentTableRow, environmentStatus } from ".
 export { ProjectAccessPage } from "./components/project-access-page";
 export { ProjectLayout } from "./components/project-layout";
 export { ProjectList } from "./components/project-list";
+export { ProjectMark } from "./components/project-mark";
 export { ProjectNav } from "./components/project-nav";
 export { ProjectSettings } from "./components/project-settings";
 export { ProjectSwitcher } from "./components/project-switcher";

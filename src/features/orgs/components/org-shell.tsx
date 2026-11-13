@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { DOCS_PATH, PRODUCT_NAME } from "@/constants";
-import { EnvironmentSwitcher, ProjectSwitcher } from "@/features/projects";
+import { EnvironmentSwitcher, ProjectMark, ProjectSwitcher, useProject } from "@/features/projects";
 import { CommandMenu, SearchButton, useCommandShortcut } from "@/features/search/components/command-menu";
 import { Hint } from "@/shared/components/hint";
 import { ThemeToggle } from "@/shared/components/theme-toggle";
@@ -23,6 +23,25 @@ function Divider({ className }: { className?: string }) {
     <span aria-hidden="true" className={cn("shrink-0 text-lg font-light text-border-stronger select-none", className)}>
       /
     </span>
+  );
+}
+
+/** Phones: a 36px box with the current project's initial (or the product mark outside a project). */
+function MobileContextMark({ orgId, projectId }: { orgId: string; projectId?: string }) {
+  return (
+    <Link href={projectId ? `/orgs/${orgId}/projects/${projectId}` : `/orgs/${orgId}`} className="shrink-0 md:hidden">
+      {projectId ? <ProjectBox projectId={projectId} /> : <ProductMark />}
+    </Link>
+  );
+}
+
+function ProjectBox({ projectId }: { projectId: string }) {
+  const project = useProject(projectId);
+  return (
+    <ProjectMark
+      name={project.data?.name ?? " "}
+      className="size-9 rounded-lg border-border-strong bg-surface-75 text-sm"
+    />
   );
 }
 
@@ -63,10 +82,35 @@ export function OrgShell({ orgId, children }: { orgId: string; children: ReactNo
       >
         Skip to content
       </a>
-      <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-1.5 border-b border-border bg-background pr-3 pl-3">
-        <Link href={`/orgs/${orgId}`} aria-label={`${PRODUCT_NAME} home`} className="shrink-0">
+      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-4 md:h-12 md:gap-1.5 md:pr-3 md:pl-3">
+        {/* Phones: the menu button on the left; the menu slides in from the left. */}
+        <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+          <SheetTrigger
+            className="flex size-9 items-center justify-center rounded-lg border border-border-strong bg-surface-75 text-foreground-light hover:bg-accent hover:text-foreground md:hidden"
+            aria-label="Open menu"
+          >
+            <Menu className="size-5" strokeWidth={1.5} />
+          </SheetTrigger>
+          <SheetContent side="left" showClose={false}>
+            <SheetTitle>Navigation</SheetTitle>
+            <div className="flex h-12 items-center gap-2 border-b border-border pr-2 pl-4">
+              <ProductMark />
+              <span className="min-w-0 flex-1 truncate text-sm text-foreground">{org.data?.name}</span>
+              <SheetClose
+                aria-label="Close menu"
+                className="flex size-8 items-center justify-center rounded-md text-foreground-lighter hover:bg-accent hover:text-foreground"
+              >
+                <X className="size-4" />
+              </SheetClose>
+            </div>
+            <OrgSidebar orgId={orgId} variant="sheet" />
+          </SheetContent>
+        </Sheet>
+        <Link href={`/orgs/${orgId}`} aria-label={`${PRODUCT_NAME} home`} className="hidden shrink-0 md:block">
           <ProductMark />
         </Link>
+        {/* Phones (Studio): the project's box, then its name with the environment underneath. */}
+        <MobileContextMark orgId={orgId} projectId={params.projectId} />
         <Divider className="hidden md:inline" />
         <Link
           href={`/orgs/${orgId}`}
@@ -75,11 +119,11 @@ export function OrgShell({ orgId, children }: { orgId: string; children: ReactNo
           {org.data?.name}
         </Link>
         <Divider className="hidden md:inline" />
-        <div className="flex min-w-0 items-center gap-1.5">
+        <div className="flex min-w-0 items-center gap-1.5 max-md:flex-col max-md:items-start max-md:gap-0">
           <ProjectSwitcher orgId={orgId} canCreate={org.isAdmin} />
           {params.projectId && params.envId && (
             <>
-              <Divider />
+              <Divider className="max-md:hidden" />
               <EnvironmentSwitcher orgId={orgId} projectId={params.projectId} envId={params.envId} />
             </>
           )}
@@ -106,29 +150,6 @@ export function OrgShell({ orgId, children }: { orgId: string; children: ReactNo
             </Link>
           </Hint>
           <UserMenu orgId={orgId} />
-          {/* Phones: the menu button sits at the right end and the menu slides in from the right. */}
-          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-            <SheetTrigger
-              className="-mr-1 flex size-8 items-center justify-center rounded-md text-foreground-lighter hover:bg-accent hover:text-foreground md:hidden"
-              aria-label="Open menu"
-            >
-              <Menu className="size-5" strokeWidth={1.5} />
-            </SheetTrigger>
-            <SheetContent side="right" showClose={false}>
-              <SheetTitle>Navigation</SheetTitle>
-              <div className="flex h-12 items-center gap-2 border-b border-border pr-2 pl-4">
-                <ProductMark />
-                <span className="min-w-0 flex-1 truncate text-sm text-foreground">{org.data?.name}</span>
-                <SheetClose
-                  aria-label="Close menu"
-                  className="flex size-8 items-center justify-center rounded-md text-foreground-lighter hover:bg-accent hover:text-foreground"
-                >
-                  <X className="size-4" />
-                </SheetClose>
-              </div>
-              <OrgSidebar orgId={orgId} variant="sheet" />
-            </SheetContent>
-          </Sheet>
         </div>
       </header>
       <div className="flex min-h-0 flex-1">

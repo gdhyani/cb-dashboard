@@ -19,7 +19,8 @@ export function SuspensionControl({ env }: { env: Environment }) {
   const switchId = `accept-connections-${env.id}`;
   return (
     <Card>
-      <CardContent className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
+      {/* The switch stays on the right at every width (Studio setting rows). */}
+      <CardContent className="flex items-start justify-between gap-4 md:gap-6">
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
             <Label htmlFor={switchId} className="leading-normal">
@@ -36,6 +37,7 @@ export function SuspensionControl({ env }: { env: Environment }) {
           </p>
         </div>
         <Switch
+          className="mt-0.5"
           id={switchId}
           checked={!env.killed}
           disabled={kill.isPending || revive.isPending}
