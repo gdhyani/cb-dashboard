@@ -1,4 +1,4 @@
-import { THEME_STORAGE_KEY } from "@/constants";
+import { ACCENT_STORAGE_KEY, THEME_STORAGE_KEY } from "@/constants";
 
 export type ThemeChoice = "dark" | "light" | "system";
 export type ResolvedTheme = "dark" | "light";
@@ -35,8 +35,10 @@ export function applyTheme(theme: ResolvedTheme) {
 
 /**
  * Runs before first paint on dashboard pages, so a light-theme user never sees a dark flash. Kept as a string:
- * it is inlined into a <script>. Mirrors readThemeChoice + resolveTheme.
+ * it is inlined into a <script>. Mirrors readThemeChoice + resolveTheme, and applies the (temporary) accent pick.
  */
 export const THEME_BOOT_SCRIPT = `(function(){try{var c=localStorage.getItem(${JSON.stringify(
   THEME_STORAGE_KEY,
-)});if(c!=="light"&&c!=="system")c="dark";var l=c==="light"||(c==="system"&&matchMedia("(prefers-color-scheme: light)").matches);document.documentElement.dataset.theme=l?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}})()`;
+)});if(c!=="light"&&c!=="system")c="dark";var l=c==="light"||(c==="system"&&matchMedia("(prefers-color-scheme: light)").matches);document.documentElement.dataset.theme=l?"light":"dark";var a=localStorage.getItem(${JSON.stringify(
+  ACCENT_STORAGE_KEY,
+)});document.documentElement.dataset.accent=/^(green|brass|mono|cobalt|iris|teal)$/.test(a||"")?a:"green"}catch(e){document.documentElement.dataset.theme="dark";document.documentElement.dataset.accent="green"}})()`;

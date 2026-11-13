@@ -25,7 +25,7 @@ export function AuthCard({
         <Link
           href="/"
           aria-label={`${PRODUCT_NAME} home`}
-          className="flex size-8 items-center justify-center rounded-md bg-brand font-mono text-xs font-semibold text-[#0b1f15]"
+          className="flex size-8 items-center justify-center rounded-md bg-brand font-mono text-xs font-semibold text-brand-foreground"
         >
           {PRODUCT_NAME}
         </Link>

@@ -1,7 +1,7 @@
 /**
  * Badge colours (PRD v1.32, v1.59). One palette for every badge (BadgeLabel, Badge). Two skins from one source:
  * docs keep the soft tinted boxes; dashboard surfaces (`studio:`) use Supabase's small bordered pills, tinted by
- * meaning only (neutral, info violet, green success, amber warning, red danger, quiet muted).
+ * meaning only (neutral, info violet, green success, orange warning, red danger, quiet muted).
  */
 export const BADGE_TONES = {
   /** Neutral information: a developer role, "Waiting". */
@@ -9,7 +9,7 @@ export const BADGE_TONES = {
   /** Emphasis: owner/admin roles, "This browser", "This environment". */
   strong: "bg-violet-400/15 text-violet-300 studio:border-info/40 studio:bg-info/10 studio:text-info",
   /** Good state: "Access granted", "Delivered". */
-  success: "bg-emerald-400/15 text-emerald-300 studio:border-primary/40 studio:bg-primary/10 studio:text-primary",
+  success: "bg-emerald-400/15 text-emerald-300 studio:border-success/40 studio:bg-success/10 studio:text-success",
   /** Needs attention: "Suspended", "Retrying", denied activity. */
   warning: "bg-amber-400/15 text-amber-300 studio:border-warning/40 studio:bg-warning/10 studio:text-warning",
   /** Failed or destructive. */
@@ -29,7 +29,7 @@ export const BADGE_SHAPE =
 export const BADGE_DOTS: Record<BadgeTone, string> = {
   default: "bg-sky-400 studio:bg-foreground-lighter",
   strong: "bg-violet-400 studio:bg-info",
-  success: "bg-emerald-400 studio:bg-primary",
+  success: "bg-emerald-400 studio:bg-success",
   warning: "bg-amber-400 studio:bg-warning",
   danger: "bg-destructive",
   muted: "bg-current",

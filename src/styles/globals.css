@@ -2,6 +2,7 @@
 @import "fumadocs-ui/css/black.css";
 @import "fumadocs-ui/css/preset.css";
 @import "./studio.css";
+@import "./accents.css";
 /* `studio:` — applies only on dashboard surfaces (also inside portals). For shared parts docs reuse too. */
 @custom-variant studio (:root:has([data-studio]) &);
 /* Tailwind must see the classes used inside fumadocs-ui (docs only). */
@@ -72,7 +73,8 @@
   --color-primary-solid-hover: #0a7344;
   --color-primary-solid-foreground: #edefee;
   --color-primary-bright: #4acd8b;
-  --color-brand: #3ecf8e;
+  --color-brand: #e3b341;
+  --color-brand-foreground: #1c1407;
   --color-success: #4acd8b;
   --color-warning: #f2af48;
   --color-warning-foreground: #1a1206;

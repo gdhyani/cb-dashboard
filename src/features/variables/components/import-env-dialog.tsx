@@ -170,7 +170,7 @@ export function ImportEnvDialog({
                   ) : r.result ? (
                     <span className="flex items-center gap-1.5 text-xs text-foreground-light">
                       {r.result.ok ? (
-                        <Check className="size-3.5 text-primary" />
+                        <Check className="size-3.5 text-success" />
                       ) : (
                         <X className="size-3.5 text-destructive" />
                       )}

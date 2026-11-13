@@ -15,11 +15,7 @@ const TYPES = {
     badge: "bg-destructive-solid text-white",
     Icon: CircleAlert,
   },
-  success: {
-    box: "border-primary/40 bg-primary/[0.06]",
-    badge: "bg-primary-solid text-primary-solid-foreground",
-    Icon: CircleCheck,
-  },
+  success: { box: "border-success/40 bg-success/[0.06]", badge: "bg-success text-background", Icon: CircleCheck },
 } as const;
 
 /** Supabase Admonition: callout with a small filled icon badge, a title, body text and optional actions. */

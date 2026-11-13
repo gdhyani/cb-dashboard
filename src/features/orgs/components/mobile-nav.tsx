@@ -53,7 +53,7 @@ export function MobileNav({ orgId }: { orgId: string }) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-4">
-        <span className="flex size-7 items-center justify-center rounded-md bg-brand font-mono text-[11px] font-semibold text-[#0b1f15]">
+        <span className="flex size-7 items-center justify-center rounded-md bg-brand font-mono text-[11px] font-semibold text-brand-foreground">
           {PRODUCT_NAME.slice(0, 2)}
         </span>
         <div className="flex min-w-0 flex-1 flex-col">

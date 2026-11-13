@@ -4,7 +4,7 @@ import { Switch as SwitchPrimitive } from "radix-ui";
 import type * as React from "react";
 import { cn } from "@/shared/lib/utils";
 
-/** Supabase Switch (medium 34×20): bright green when on, control grey when off. */
+/** Switch (Supabase medium 34×20): brass when on, control grey when off. */
 function Switch({ className, ...props }: React.ComponentProps<typeof SwitchPrimitive.Root>) {
   return (
     <SwitchPrimitive.Root
@@ -15,7 +15,7 @@ function Switch({ className, ...props }: React.ComponentProps<typeof SwitchPrimi
       )}
       {...props}
     >
-      <SwitchPrimitive.Thumb className="pointer-events-none block size-4 translate-x-px rounded-full bg-foreground-lighter shadow-lg transition-transform data-[state=checked]:translate-x-[15px] data-[state=checked]:bg-white" />
+      <SwitchPrimitive.Thumb className="pointer-events-none block size-4 translate-x-px rounded-full bg-foreground-lighter shadow-lg transition-transform data-[state=checked]:translate-x-[15px] data-[state=checked]:bg-primary-solid-foreground" />
     </SwitchPrimitive.Root>
   );
 }

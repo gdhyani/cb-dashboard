@@ -63,7 +63,7 @@ function ConnectedRow({
   return (
     <div className="flex flex-col gap-1 rounded-md border border-border bg-surface-75 px-3 py-2.5">
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-        <CheckCircle2 aria-hidden className="size-4 text-primary" strokeWidth={1.5} />
+        <CheckCircle2 aria-hidden className="size-4 text-success" strokeWidth={1.5} />
         <span className="text-foreground">{title}</span>
         <span className="text-xs text-foreground-lighter">
           {allEvents ? "all events, including ones Stripe adds later" : `${events.length} events`}

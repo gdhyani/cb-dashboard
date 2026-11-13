@@ -20,7 +20,7 @@ export function HomeRedirect() {
   }, [me.data, me.error, router]);
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background" aria-busy="true">
-      <span className="flex size-8 animate-pulse items-center justify-center rounded-md bg-brand font-mono text-xs font-semibold text-[#0b1f15]">
+      <span className="flex size-8 animate-pulse items-center justify-center rounded-md bg-brand font-mono text-xs font-semibold text-brand-foreground">
         {PRODUCT_NAME}
       </span>
       <span className="sr-only">Loading</span>

@@ -12,7 +12,7 @@ const PREVIEW = {
   dark: { bg: "#131413", panel: "#181a19", line: "#2a2c2b", text: "#edefee", muted: "#6f716f" },
   light: { bg: "#fcfcfc", panel: "#ffffff", line: "#e6e6e6", text: "#161616", muted: "#9a9a9a" },
 } as const;
-const BRAND = "#3ecf8e";
+const BRAND = "var(--color-brand)";
 
 function Preview({ theme }: { theme: "dark" | "light" }) {
   const c = PREVIEW[theme];

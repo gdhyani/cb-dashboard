@@ -23,7 +23,7 @@ export function NoOrganization() {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-background px-4">
       <div className="flex w-full max-w-lg flex-col gap-6">
-        <span className="flex size-8 items-center justify-center self-center rounded-md bg-brand font-mono text-xs font-semibold text-[#0b1f15]">
+        <span className="flex size-8 items-center justify-center self-center rounded-md bg-brand font-mono text-xs font-semibold text-brand-foreground">
           {PRODUCT_NAME}
         </span>
         <EmptyState

@@ -28,7 +28,7 @@ function Outcome({ outcome }: { outcome: AuditEvent["outcome"] }) {
   if (outcome === "success") {
     return (
       <span className="inline-flex items-center gap-1.5 text-xs text-foreground-lighter">
-        <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />
+        <span className="size-1.5 rounded-full bg-success" aria-hidden="true" />
         <span className="max-sm:sr-only">Success</span>
       </span>
     );

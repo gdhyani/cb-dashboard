@@ -7,6 +7,7 @@ import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { DOCS_PATH, PRODUCT_NAME } from "@/constants";
 import { EnvironmentSwitcher, ProjectMark, ProjectSwitcher, useProject } from "@/features/projects";
 import { CommandMenu, SearchButton, useCommandShortcut } from "@/features/search/components/command-menu";
+import { AccentPicker } from "@/shared/components/accent-picker";
 import { Hint } from "@/shared/components/hint";
 import { ThemeToggle } from "@/shared/components/theme-toggle";
 import { cn } from "@/shared/lib/utils";
@@ -49,7 +50,7 @@ function ProjectBox({ projectId }: { projectId: string }) {
 /** Product mark: the only place the brand green appears as decoration. */
 function ProductMark() {
   return (
-    <span className="flex size-6 items-center justify-center rounded-md bg-brand font-mono text-[11px] font-semibold text-[#0b1f15]">
+    <span className="flex size-6 items-center justify-center rounded-md bg-brand font-mono text-[11px] font-semibold text-brand-foreground">
       {PRODUCT_NAME.slice(0, 2)}
     </span>
   );
@@ -136,6 +137,8 @@ export function OrgShell({ orgId, children }: { orgId: string; children: ReactNo
             <SearchButton onClick={openSearch} />
           </Hint>
           {/* Phones keep it in the account menu, where there is room. */}
+          {/* TEMPORARY: accent colour picker while cb's main colour is chosen (PRD v1.61). */}
+          <AccentPicker />
           <ThemeToggle className="hidden sm:flex" />
           <Hint label="Docs">
             <Link

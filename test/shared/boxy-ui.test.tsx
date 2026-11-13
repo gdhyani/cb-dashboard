@@ -13,7 +13,9 @@ describe("v1.32 / v1.59 badges and buttons (docs skin + Supabase dashboard skin)
     expect(badge.className).toMatch(/\brounded-md\b/);
     expect(badge.className).toMatch(/\bstudio:rounded-full\b/);
     expect(badge.className).toMatch(/\bstudio:uppercase\b/);
-    expect(badge.className).toMatch(/\bstudio:text-primary\b/);
+    // Success stays green (success token), never the brass accent (v1.61).
+    expect(badge.className).toMatch(/\bstudio:text-success\b/);
+    expect(badge.className).not.toMatch(/studio:text-primary/);
     expect(badge.className).toMatch(/emerald/);
     rerender(<BadgeLabel tone="warning">Retrying</BadgeLabel>);
     expect(screen.getByText("Retrying").className).toMatch(/amber/);
