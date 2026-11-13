@@ -49,7 +49,7 @@ function EventRow({
         <span className="block truncate font-mono text-sm text-foreground">{label}</span>
         <span className="text-xs text-foreground-lighter">{event.provider === "razorpay" ? "Razorpay" : "Stripe"}</span>
       </TableCell>
-      <TableCell className="min-w-[16rem] py-2.5 align-top">
+      <TableCell className="min-w-[12rem] py-2.5 align-top">
         {event.deliveries.length === 0 ? (
           <p className="text-xs text-foreground-lighter">
             {routing

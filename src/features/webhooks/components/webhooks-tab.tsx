@@ -51,7 +51,7 @@ export function WebhooksTab({ envId }: { envId: string }) {
         >
           <WebhookEndpoints envId={envId} hooks={hooks} />
           <Sheet open={logOpen} onOpenChange={setLogOpen}>
-            <SheetContent side="right" id="webhook-log" className="w-[46rem] max-w-[95vw]">
+            <SheetContent side="right" id="webhook-log" className="w-[54rem] max-w-[95vw]">
               <div className="flex flex-col gap-1 border-b border-border px-5 py-4 pr-12">
                 <SheetTitle visible className="text-base">
                   Delivery log

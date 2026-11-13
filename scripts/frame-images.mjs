@@ -7,9 +7,9 @@ import sharp from "sharp";
 const ROOT = path.resolve(import.meta.dirname, "..");
 const RAW = path.join(ROOT, "docs-images-raw");
 const OUT = path.join(ROOT, "public/docs/images");
-const MAX_INNER = 1472; // widest screenshot inside the frame (never upscaled)
-const PAD = 64; // gradient around the screenshot
-const RADIUS = 14;
+const MAX_INNER = 2560; // widest screenshot inside the frame (raw captures are 2x; never upscaled)
+const PAD = 112; // gradient around the screenshot
+const RADIUS = 24;
 
 const walk = (d) =>
   readdirSync(d).flatMap((n) => (statSync(path.join(d, n)).isDirectory() ? walk(path.join(d, n)) : [path.join(d, n)]));
@@ -37,14 +37,14 @@ for (const file of walk(RAW).filter((f) => f.endsWith(".png"))) {
     create: { width: w, height: h, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0.45 } },
   })
     .composite([{ input: roundMask(w, h), blend: "dest-in" }])
-    .blur(18)
+    .blur(30)
     .png()
     .toBuffer();
   const out = path.join(OUT, path.relative(RAW, file));
   mkdirSync(path.dirname(out), { recursive: true });
   await sharp(gradient(w + PAD * 2, h + PAD * 2))
     .composite([
-      { input: shadow, left: PAD, top: PAD + 10 },
+      { input: shadow, left: PAD, top: PAD + 16 },
       { input: rounded, left: PAD, top: PAD },
     ])
     .png({ compressionLevel: 9 }) // lossless: palette quantisation blurs text
