@@ -1,0 +1,125 @@
+---
+title: "The cb network model: ports, layers and tunnels"
+description: What actually goes over the wire when your app runs under cb. Loopback listeners, Layer 1 and Layer 2 redirection, TLS inside TLS, the WebSocket tunnel and its close codes, and the event stream that keeps it all current.
+date: 2026-11-08
+image: /blog/covers/network-model.svg
+imageAlt: Nested packet layers, with an inner TLS layer inside an outer TLS layer
+author: The cb team
+---
+
+This post describes cb in network terms: which addresses and ports are involved, which protocols wrap which, where
+TLS starts and ends, and what each component can see. If you want to know what `tcpdump` would show at each point,
+this is the post.
+
+## Two ways in
+
+An app talks to a service in one of two ways, and cb has a matching way in for each.
+
+<ConnectionModes />
+
+- **Layer 1** is for anything addressed by a URL that cb can rewrite: databases, SMTP, AWS endpoints, optional API
+  base URLs. The `.env` value itself points at `127.0.0.1` on a port the agent owns.
+- **Layer 2** is for SDKs that call a fixed hostname, like `api.stripe.com` or `oauth2.googleapis.com`. The URL
+  can't change, so the redirection happens one level lower, when the app opens the TCP connection.
+
+## Ports on the laptop
+
+The agent listens on `127.0.0.1` only, so nothing else on your network can reach it. Each service gets its own port
+from the range **7400–7999**, chosen once per project and kept in `~/.cb/state.json`, so a URL like
+`127.0.0.1:7402` stays the same between runs and Prisma's or your ORM's cached settings keep working. If a port is
+taken, cb moves to a free one and tells you.
+
+| Listener | Example | What arrives on it |
+|---|---|---|
+| Layer 1 database | `127.0.0.1:7402` | Postgres, MySQL, MongoDB or Redis wire protocol, in plain text |
+| Layer 1 HTTP | `127.0.0.1:7409` | Plain HTTP (an AWS SDK call, an API base URL) |
+| Layer 2 host | `127.0.0.1:7421` for `api.stripe.com:443` | The app's own TLS, unopened |
+
+Why is a database URL `sslmode=disable`? Because that hop is loopback: the bytes go from one process to another on
+the same machine and never reach a network card. Encryption starts at the agent, and the database itself is reached
+over verified TLS from the cb server.
+
+## Layer 2 in detail
+
+The preload (loaded into the app with `NODE_OPTIONS=--require`) patches Node's `net.connect`,
+`net.createConnection`, `net.Socket#connect`, `tls.connect` (which `https` and `http2` use) and installs a `fetch`
+dispatcher with the same logic. For each connection it checks a table from the snapshot:
+
+```json
+"redirects": { "api.stripe.com:443": 7421, "oauth2.googleapis.com:443": 7422 }
+```
+
+If the target matches, the socket goes to `127.0.0.1:7421` instead. Everything else is untouched: other hosts,
+Unix sockets, IPv6, the dev server's own connections. For TLS the preload keeps three things:
+
+- **SNI and hostname checks** use the original host, `api.stripe.com`.
+- **Trust** is `tls.rootCertificates` plus your organisation's CA, for this connection only.
+- **ALPN** is preserved, so HTTP/2 still works (Apple Push needs it).
+
+Because the redirect happens before the socket connects, the app never looks up the provider's address and never
+opens a connection to it. The cb server does that.
+
+## What is inside each hop
+
+The same request looks different on each hop. Here are the layers, outermost first.
+
+<PacketLayers mode="layer1" />
+
+<PacketLayers mode="layer2" />
+
+The Layer 2 tunnel hop has **TLS inside TLS**: the outer TLS is between the agent and the cb server; the inner TLS
+is the app's own connection to the gateway. The agent copies the inner bytes without opening them, so even a
+compromised agent could not read the request or swap a key.
+
+## The tunnel
+
+Each local connection opens one WebSocket to the backend:
+
+```text
+GET wss://<cb server>/tunnel?layer=1&env=<envId>&resource=<serviceId>
+GET wss://<cb server>/tunnel?layer=2&env=<envId>&host=api.stripe.com&port=443
+Authorization: Bearer <15-minute access token>
+→ 101 Switching Protocols, then binary frames carrying raw bytes, no extra framing
+```
+
+Before the upgrade completes, the gateway checks, in order: the session and device are not revoked, the user is an
+active member, the environment and organisation are not stopped, and an unexpired grant covers this service (Layer 1)
+or a service claiming this host (Layer 2). Every decision is audited. When a tunnel closes, the code tells the agent
+why:
+
+| Code | Meaning | What the agent does |
+|---|---|---|
+| 1000 | Normal close | Closes the local socket |
+| 4401 | Token invalid or expired | Refreshes the token; the app sees a reset and reconnects |
+| 4403 | No grant, not a member | Logs which service and environment |
+| 4410 | Revoked or stopped | Marks the snapshot revoked and tells `cb run` |
+| 4429 | Rate limited | Logs it |
+| 4502 | Upstream unreachable or login failed | Logs the upstream error, never a secret |
+
+## The event stream
+
+Next to the tunnels, the agent keeps one server-sent-events stream open (`GET /agent/events`):
+
+```text
+event: config.changed   data: {"environmentId":"…","version":13}
+event: access.revoked   data: {"scope":"device","reason":"…"}
+event: webhook          data: {"deliveryId":"…","provider":"stripe","path":"/api/webhooks/stripe",…}
+event: heartbeat        data: {}
+```
+
+The server sends a heartbeat every 15 seconds; 45 seconds of silence, or a clock jump that means the laptop slept,
+makes the agent reconnect with backoff. On `config.changed` it fetches a new snapshot and `cb run` restarts the app;
+on `access.revoked` the gateway has already closed the tunnels (within five seconds) and `cb run` says why.
+
+## What each component can see
+
+| Component | Sees | Never sees |
+|---|---|---|
+| Your app | Stand-ins, plain values, responses | Real secrets (unless shown as-is) |
+| cb agent | Encrypted Layer 2 bytes, plain Layer 1 bytes with stand-ins, its tokens | Real secrets, Layer 2 plaintext |
+| Network between laptop and cb | TLS | Anything inside it |
+| cb gateway | Stand-in and real secret, for the length of a request | Nothing is hidden from it: it is the vault |
+| The real service | The real secret, as it always did | That cb exists |
+
+For how each protocol's login works in the gateway, see [Databases through cb](/blog/databases-through-cb) and
+[Inside cb](/blog/inside-cb).

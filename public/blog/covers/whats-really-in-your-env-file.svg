@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d28d9"/><stop offset="0.55" stop-color="#a21caf"/><stop offset="1" stop-color="#db2777"/></linearGradient></defs>
+<rect width="1200" height="675" fill="url(#g)"/>
+<rect x="56" y="56" width="1088" height="563" rx="22" fill="#000"/>
+<text x="140" y="200" fill="#d4d4d4" font-size="26" font-family="ui-sans-serif, -apple-system, Segoe UI, sans-serif">Plain</text><rect x="380" y="170" width="520" height="44" rx="8" fill="#a3a3a3"/>
+<text x="140" y="305" fill="#d4d4d4" font-size="26" font-family="ui-sans-serif, -apple-system, Segoe UI, sans-serif">Random secret</text><rect x="380" y="275" width="340" height="44" rx="8" fill="#a3a3a3"/>
+<text x="140" y="410" fill="#d4d4d4" font-size="26" font-family="ui-sans-serif, -apple-system, Segoe UI, sans-serif">Shown as-is</text><rect x="380" y="380" width="180" height="44" rx="8" fill="#fbbf24"/>
+<text x="140" y="515" fill="#d4d4d4" font-size="26" font-family="ui-sans-serif, -apple-system, Segoe UI, sans-serif">Protected</text><rect x="380" y="485" width="760" height="44" rx="8" fill="#34d399"/>
+</svg>

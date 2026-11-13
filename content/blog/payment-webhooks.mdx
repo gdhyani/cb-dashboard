@@ -1,0 +1,90 @@
+---
+title: Payment webhooks, from the provider to your laptop
+description: How Stripe and Razorpay events reach the right developer's app with the official SDK's signature check passing, while the real signing secret never leaves cb. Routing, re-signing, retries, replay, Connect and the edge cases.
+date: 2026-11-11
+image: /blog/covers/payment-webhooks.svg
+imageAlt: One provider arrow splitting into separate arrows, each to a different laptop
+author: The cb team
+---
+
+Webhooks are the hardest secret to keep off a laptop, because they run backwards. Every other key is used by your
+app to call a provider. A webhook signing secret is used by your app to check a call **from** the provider, so
+the app seems to need the real secret. And in development there is a second problem: a provider sends events to
+one URL, but a team has many laptops, each running its own tests.
+
+cb solves both with one public URL per provider, and a stand-in signing secret per developer.
+
+## The whole path
+
+<Sequence name="webhook" />
+
+1. Your app creates a payment through cb (Layer 2). As the response passes the gateway, cb notes which
+   **device** created that object, for example the `pi_…` PaymentIntent.
+2. Stripe sends the event to `https://<cb>/api/hooks/<service>`, signed with the **real** signing secret.
+3. cb checks the signature (Stripe's `t=…,v1=…` HMAC-SHA256 with a five-minute tolerance, or Razorpay's HMAC),
+   stores the body encrypted for 24 hours and answers `200` at once, so Stripe never retries because of you.
+4. cb finds the object the event is about and its owner device, then sends the event down that device's event
+   stream, **signed again with that device's stand-in secret** and a fresh timestamp.
+5. The agent posts the bytes unchanged to your app on `127.0.0.1`, at the path you configured and the port your
+   app really listens on.
+6. Your code calls `stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET)` as always.
+   The variable holds `whsec_cb_…`, the signature was made with it, so the check passes.
+
+```ts
+// app/api/webhooks/stripe/route.ts: unchanged
+const event = stripe.webhooks.constructEvent(await req.text(), req.headers.get("stripe-signature")!, process.env.STRIPE_WEBHOOK_SECRET!);
+```
+
+The real secret is used exactly once, at cb's door. Nothing on a laptop could verify, or forge, a real Stripe event.
+
+## Who gets which event
+
+With ten developers testing payments at once, each should see only the events their own tests caused. cb routes by
+**ownership**:
+
+- The gateway records who created each Stripe or Razorpay object, from the API responses that pass through it
+  (and ids in request paths). Owners are kept for 30 days, and the first device wins.
+- An event goes to the owner of the object it describes: Stripe's `data.object` (or `related_object` for thin
+  events), Razorpay's `payload.*.entity`. If nobody owns that, its direct links decide.
+- Accounts and catalog items (`acct_`, `price_`, `prod_`, `plan_`, `coupon_`…) never route, because everybody
+  shares them. Checkout sessions do.
+
+Events nobody owns, like a test sent from the Stripe dashboard or `stripe trigger`, are retried for ownership after
+2, 5 and 15 seconds, then delivered only to devices that asked for them with `cb webhooks listen`. An admin can also
+pick one from the delivery log and **Send to me**.
+
+## Delivery that survives real laptops
+
+- **At least once to the agent, once to your app** per agent process: deliveries carry an id, and repeats are
+  ignored.
+- **Retries** when your app returns an error: from 5 seconds up to 30 minutes apart, for 24 hours.
+- **App not running yet?** The delivery waits (it is not counted as a failure) and goes out as soon as `cb run`
+  sees your app listening.
+- **Replay** from the dashboard's delivery log re-sends an event to a device, signed fresh.
+- **Long-lived connection**: the event stream survives sleep, network changes and expired tokens; 45 seconds of
+  silence triggers a reconnect.
+
+## Stripe's two event formats, one URL
+
+Stripe has classic snapshot events and newer thin events, each from its own destination with its own secret. cb
+keeps both secrets in one service with one URL. It picks the secret by the payload (`object: "v2.core.event"` is
+thin) and also tries the other one. If your app checks thin events with a separate variable, it gets its own
+stand-in, and Stripe's `parseEventNotification` passes with it.
+
+## Setting it up with the least copying
+
+- **Connect Stripe**: save the webhook key without a secret and press Connect. cb uses the Stripe API key stored in
+  the same environment to create the endpoint in Stripe (all events, or snapshot, thin or both) and keeps the
+  secret Stripe returns. Nobody ever sees it. Reconnecting after cb's address changed updates the same endpoint.
+- **Razorpay**: Razorpay has no public API for this, so cb can generate the signing secret and show it **once**,
+  next to the URL, for the admin to paste into Razorpay. Or press Connect Razorpay to create the webhook directly.
+
+## Guard rails
+
+Ingress is public, so it is strict: bodies up to 1 MB, verification before anything is stored, at most 60 verified
+calls a second per service, failed signatures rate-limited per IP, and duplicate events (by provider id and by body
+hash) stored once. Event bodies are encrypted at rest, kept 24 hours, and never listed or logged.
+
+Webhook delivery is about correctness, not secrecy: a developer who can use the environment's Stripe key can
+already read its events through the API. What cb guarantees is that the **signing secret** never reaches a laptop,
+and that each developer's app gets its own events.

@@ -1,0 +1,111 @@
+---
+title: Ports, feature flags and other local values
+description: Not everything in .env is a secret. How cb handles PORT, feature flags, public URLs, per-developer random secrets and the rare shown-as-is key, how values reach the app, which value wins, and what happens when you change one.
+date: 2026-11-09
+image: /blog/covers/local-values.svg
+imageAlt: A toggle switch and a port number beside a small per-developer key
+author: The cb team
+---
+
+Half of a typical `.env` file is not secret at all: a port, a log level, a feature flag, a public URL. The other
+half is secrets your own app checks, like a session key. cb manages both so a team has one place for every value,
+but neither of them needs a tunnel. This post explains how they work.
+
+## How a value reaches your app
+
+When you run `cb run -- npm run dev`, the CLI asks the cb server for this environment's **bootstrap**, and the
+agent writes it as a snapshot file only you can read (`~/.cb/run/<project>.<environment>.json`, mode 0600):
+
+```json
+{
+  "schema": 1,
+  "version": 13,
+  "status": "active",
+  "env": {
+    "PORT": "3000",
+    "ENABLE_CHECKOUT_V2": "true",
+    "AUTH_SECRET": "q7Vx…=",
+    "DATABASE_URL": "postgresql://cbu_ab12cd34:…@127.0.0.1:7402/app?sslmode=disable"
+  },
+  "redirects": { "api.stripe.com:443": 7421 },
+  "orgCaCert": "-----BEGIN CERTIFICATE-----…"
+}
+```
+
+`cb run` starts your command with those values set, plus `NODE_OPTIONS=--require …/register` so every Node process
+under it loads the preload. Plain values, random secrets and stand-ins all arrive the same way; the difference is
+only in what the value is.
+
+## Which value wins
+
+| Where a value comes from | Keys cb manages | Keys cb does not manage |
+|---|---|---|
+| cb (the snapshot) | **Used** | — |
+| Your shell (`export X=…`) | Replaced by cb's | Used |
+| `.env`, `.env.local` and friends | Ignored: loaders never overwrite a set value | Used, as before |
+
+So cb wins for every name it manages, and everything else in your `.env` files keeps working. `cb init` warns about
+managed names still sitting in `.env*` files so nobody is confused by a value that is never used.
+
+## Plain values: ports, flags, URLs
+
+A **plain** value is delivered exactly as written: `PORT=3000`, `LOG_LEVEL=debug`, `ENABLE_CHECKOUT_V2=true`,
+`NEXT_PUBLIC_APP_URL=http://localhost:3000`. It is not secret, and members of the project can read it in the
+dashboard.
+
+**Changing a plain value takes effect everywhere at once.** Edit a flag in the dashboard and the server sends
+`config.changed` on every connected agent's event stream; each agent fetches the new snapshot, and each `cb run`
+restarts its app with the new value:
+
+```text
+cb: configuration changed — restarting your app
+```
+
+A whole team flips a flag together, without anyone editing a file. (`cb run --no-restart` turns the restart off.)
+
+**Your app's own port is never routed.** cb only redirects connections your app *makes* to services. The port your
+app *listens* on is yours. Webhooks are delivered to whatever port the app really opens: the preload reports each
+listening server to `cb run`, so changing `PORT` needs no other change.
+
+**Browser values** (`NEXT_PUBLIC_`, `VITE_`, `REACT_APP_`) are plain values that the framework copies into the
+JavaScript bundle. That's fine for a public URL. If someone gives a *protected* key a browser prefix, the dashboard
+warns: the bundle would hold a stand-in, which is useless outside cb, but the code is probably wrong.
+
+## Random secrets: per developer, never shared
+
+Some secrets only need to agree with themselves: `AUTH_SECRET` for Auth.js, `SESSION_SECRET` for
+express-session, a `JWT_SECRET` your API both signs and checks. There is no reason for two developers to share
+them, so cb makes one **per developer per environment**:
+
+| Format | Example shape | Typical use |
+|---|---|---|
+| `hex:32`, `hex:64` | `9f2c4a…e81d` | JWT and HMAC secrets |
+| `base64:32`, `base64url:32` | `q7Vx…=` | `AUTH_SECRET`, cookie secrets |
+| `alnum:32`, `alnum:48` | `Gk82…` | Session secrets, API-style tokens |
+| `uuid` | `3f1c…-…` | Identifiers |
+
+The value is derived on the cb server from a server-only secret and the developer, environment and variable, so it
+is the same on every device that developer uses and across restarts (sessions survive a reboot), and different for
+everyone else. If it leaks, it signs nothing but that developer's local sessions.
+
+When a secret must match *another* system, for example a `JWT_SECRET` a shared staging API also checks, a random
+value per developer is not enough. That case is the next thing we are building; today the fallback is the last
+type below.
+
+## Shown as-is: the deliberate exception
+
+**Shown as-is** delivers the real value to every developer with access. It exists for a secret your code must
+compute with directly that no connector can stand in for. The snapshot lists such keys in `visibleKeys`, the
+dashboard shows a warning badge wherever the key appears, and removing access stops future runs from receiving it.
+A copy someone already has can't be taken back, so a leaked shown-as-is key has to be rotated at the provider.
+
+## What developers can see in the dashboard
+
+| Type | Value visible in the dashboard? |
+|---|---|
+| Plain | Yes, to project members |
+| Random secret | No: each developer's value only exists in their own runs |
+| Shown as-is | No, even though it reaches their apps |
+| Protected | No, not even to the admin who saved it |
+
+The [type explorer](/blog/every-env-type) shows each of these next to the protected types.

@@ -1,0 +1,72 @@
+---
+title: Every kind of env value cb supports, end to end
+description: Ports, feature flags, random secrets, databases, payment and AI keys, webhooks, cloud keys, email, sign-in, key files and push. Pick any type and follow it from your .env to the real service, hop by hop.
+date: 2026-11-13
+image: /blog/covers/every-env-type.svg
+imageAlt: A grid of env value types, each tile showing where its real value lives
+author: The cb team
+---
+
+A real project's environment is not one kind of thing. It has a port and a few feature flags, a session secret, a
+database URL or three, payment keys and their webhook secrets, an AI key, cloud storage keys, an email login,
+sign-in secrets and sometimes a key file for push notifications. cb handles every one of them, but not all in the
+same way, because they are not checked in the same way.
+
+This post is the map. Pick a type below to see exactly what your app gets in `process.env`, how its connection
+travels (each hop with its protocol and port), where the real value is used, and which real providers it has been
+verified with.
+
+<EnvTypeExplorer />
+
+## The four ways a value is handled
+
+Every type above falls into one of four modes. The mode decides whether any traffic goes through cb at all.
+
+| Mode | Types | What the laptop holds | Where the real value is used |
+|---|---|---|---|
+| **Local value** | Port, feature flags, public URLs, random secrets, shown as-is | The value itself (or a per-developer value) | Nowhere else: there is no connection to protect |
+| **Layer 1: local URL** | Postgres, MySQL, MongoDB, Redis, SMTP, AWS S3 and SES, optional API base URLs | A URL pointing at `127.0.0.1:74xx`, with a stand-in login | On the cb server, logging in to the real service |
+| **Layer 2: same hostname** | Stripe, Razorpay, AI providers, any API key, Supabase, Google and GitHub sign-in, Firebase, Apple Push | A stand-in key; the real hostname stays in the code | On the cb server, after it ends the app's TLS |
+| **Ingress** | Stripe and Razorpay webhook secrets | A stand-in signing secret | At cb's public URL, checking the provider's signature |
+
+<ConnectionModes />
+
+## Every type at a glance
+
+| Type | Your app reads | The swap happens | Laptop ever sees the real value? |
+|---|---|---|---|
+| `PORT`, flags, public URLs | The value | Nowhere (not a secret) | Yes, by design |
+| Random secret (`AUTH_SECRET`, `JWT_SECRET`) | A value made for you | Nowhere (no shared value exists) | Your own value only |
+| Shown as-is | The real value | Nowhere | **Yes: the one exception** |
+| PostgreSQL | `postgresql://cbu_…@127.0.0.1:7402/app` | Gateway logs in with SCRAM-SHA-256 | No |
+| MySQL | `mysql://cbu_…@127.0.0.1:7403/app` | Gateway completes `caching_sha2_password` | No |
+| MongoDB | `mongodb://cbu_…@127.0.0.1:7401/shop?directConnection=true` | Gateway acts as a SCRAM server, then logs in upstream | No |
+| Redis | `redis://cbu_…@127.0.0.1:7404` | Gateway answers `AUTH`, logs in upstream | No |
+| Supabase | `SUPABASE_SECRET_KEY=sb_secret_cb_…` | Both `apikey` and `Authorization` headers swapped | No |
+| Stripe API | `STRIPE_SECRET_KEY=sk_test_cb_…` | Bearer header swapped | No |
+| Razorpay API | `RAZORPAY_KEY_SECRET=cb_…` | Basic auth password swapped | No |
+| AI providers | `OPENAI_API_KEY=sk-cb-…` | Bearer or `x-api-key` swapped, streams passed through | No |
+| Any API key | `ACME_API_KEY=cb_…` | The header you chose | No |
+| Stripe / Razorpay webhooks | `STRIPE_WEBHOOK_SECRET=whsec_cb_…` | Checked at ingress, re-signed per device | No |
+| AWS S3, SES | `AKIACB…` pair + local endpoint | SigV4 checked and re-signed | No |
+| SMTP | `smtp://cbu_…@127.0.0.1:7410` | Gateway logs in with STARTTLS | No |
+| Google, GitHub sign-in | `AUTH_GOOGLE_SECRET=cb-…` | `client_secret` replaced on the token call | No |
+| Firebase key file | A stand-in JSON file under `~/.cb/fake/` | Assertion re-signed, token swapped per call | No |
+| Apple Push `.p8` | A stand-in P-256 key | Provider token re-signed | No |
+
+## How much of it is proven
+
+Every connected type above runs against Docker-hosted real services and mock providers in the test suites. Most are
+also verified end to end against a real account; the rest are marked Beta in the docs until they are.
+
+<CoverageChart />
+
+## Go deeper
+
+Each family has its own post with the protocol details:
+
+- [The cb network model: ports, layers and tunnels](/blog/network-model)
+- [Ports, feature flags and other local values](/blog/local-values)
+- [Databases through cb](/blog/databases-through-cb)
+- [Payment webhooks, from the provider to your laptop](/blog/payment-webhooks)
+- [Key files and signed requests: Firebase, AWS, Apple and sign-in](/blog/key-files-and-signed-requests)

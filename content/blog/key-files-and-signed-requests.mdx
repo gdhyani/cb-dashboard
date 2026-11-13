@@ -1,0 +1,98 @@
+---
+title: "Key files and signed requests: Firebase, AWS, Apple and sign-in"
+description: Some services never see your key. They check a signature made with it, or a token traded for it. How cb gives each device its own stand-in key material and re-signs on the server, with the full protocol walk-throughs.
+date: 2026-11-12
+image: /blog/covers/key-files-and-signed-requests.svg
+imageAlt: A key file with a signature mark, and a second signature replacing it on the way out
+author: The cb team
+---
+
+A Stripe key is simple to protect: it travels in a header, so the gateway swaps the header. Other credentials never
+travel at all. An AWS secret key signs each request; a Google service account signs a token request; an Apple
+`.p8` key signs a provider token. The service checks the **signature**, so swapping a header isn't enough. cb
+gives each device its own key material and **signs again** on the server with the real key.
+
+## Why each device gets its own key
+
+If every developer's stand-in key were the same, one leaked laptop would leak a key valid for everyone's tunnels.
+So stand-in key material is per device:
+
+| Credential | The stand-in | How it is made |
+|---|---|---|
+| AWS key pair | `AKIACB…` and a 40-character secret | Derived per device from a server-only secret |
+| Google service account | A full service-account JSON with an RSA-2048 key | Generated once per device, stored encrypted on the server |
+| Apple `.p8` key | An EC P-256 private key | Derived deterministically per device |
+| OAuth client secret | `cb-…` | Derived per device |
+
+Files are written by the agent, not stored in your project: a stand-in service-account file lands in
+`~/.cb/fake/…/GOOGLE_APPLICATION_CREDENTIALS.json`, readable only by you (mode 0600), and the variable points at it.
+
+## Firebase and other Google service accounts
+
+<Sequence name="googleSa" />
+
+`firebase-admin` (or any Google client) reads the stand-in file and signs a JWT assertion asking Google for an
+access token. That request goes to `oauth2.googleapis.com`, which the preload redirects. The gateway checks the
+assertion with the stand-in **public** key, builds the same assertion (same scope, same audience) signed with the
+**real** key, and trades it with Google. It keeps the real access token, mapped to a stand-in token (`ya29.cb_…`)
+that it returns to your app. Every later call to `fcm.googleapis.com` (or another listed Google API) carries the
+stand-in token, and the gateway swaps the real one in. Both `cert()` with the JSON and `applicationDefault()` with
+the file are verified against a real Firebase project, including an FCM send.
+
+## AWS: S3, SES and presigned URLs
+
+AWS signs every request with **SigV4**: an HMAC chain over the method, path, headers, a hash of the body, the date,
+region and service. The variables your SDK reads point it at the agent:
+
+```bash
+AWS_ACCESS_KEY_ID=AKIACB…            # stand-in, this device only
+AWS_SECRET_ACCESS_KEY=…              # stand-in, 40 characters
+AWS_REGION=ap-southeast-1            # plain
+AWS_ENDPOINT_URL_S3=http://127.0.0.1:7409
+```
+
+The gateway reads the service and region from the signature's credential scope, checks the signature made with the
+stand-in, removes it, and signs the request again with the real key for the real endpoint (AWS, or an S3-compatible
+store). Streaming `aws-chunked` uploads are decoded and re-signed too. Errors that echo the access key ID are
+cleaned before they reach your app.
+
+Presigned URLs are the interesting case, because the browser uses them, not your server:
+
+<Sequence name="awsPresigned" />
+
+The URL is computed locally with the stand-in key and points at `127.0.0.1:7409`. Your browser on the same machine
+can upload to it; the gateway checks the query-string signature and re-signs it for S3. The same URL is useless on
+any other computer, because it points at a local port that only exists on yours.
+
+## Apple Push
+
+<Sequence name="apns" />
+
+Apple's push API is HTTP/2 only, so the preload keeps ALPN when it redirects `api.push.apple.com`. Your push
+library signs its ES256 provider token with the stand-in `.p8`; the gateway checks it with the stand-in public key
+and replaces it with a token signed by the real key (cached for up to 50 minutes, as Apple asks). The key ID and
+team ID stay real: they are identifiers, not secrets. Built and tested against a mock HTTP/2 server; not yet
+verified against Apple, so it is Beta.
+
+## Google and GitHub sign-in
+
+<Sequence name="oauth" />
+
+Sign-in is the case where most of the traffic does **not** go through cb. Your users' browsers talk to Google's or
+GitHub's sign-in pages directly. Only the server's token exchange carries the client secret, so that is the only
+request cb redirects. The gateway replaces the stand-in `client_secret`, whether it is sent in the form body
+(`client_secret_post`) or in Basic auth (`client_secret_basic`); every other path on those hosts passes through
+untouched. Auth.js and Passport work unchanged, and the session they create afterwards is signed with your own
+`AUTH_SECRET`, a [random secret](/blog/local-values) made for you.
+
+## What these have in common
+
+| Service | What the provider checks | What cb does |
+|---|---|---|
+| AWS | A SigV4 signature on every request | Checks the stand-in signature, signs again with the real key |
+| Google | A signed assertion, then a bearer token | Re-signs the assertion, keeps the real token, swaps it in on every call |
+| Apple Push | An ES256 provider token | Checks it, sends one signed with the real key |
+| Sign-in | A client secret on the token call | Replaces it on that one call |
+
+In every case the real key material stays on the cb server, and what the laptop holds can only produce signatures
+that cb itself accepts, for that one device.

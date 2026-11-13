@@ -12,6 +12,8 @@ export const CLI_COMMANDS = {
   run: "npm run dev",
 } as const;
 export const DOCS_PATH = "/docs";
+/** FR-DOC-010: public blog next to the docs. */
+export const BLOG_PATH = "/blog";
 /** Prebuilt local search index (outside /api/*, which is rewritten to the backend). */
 export const DOCS_SEARCH_PATH = "/docs-search";
 export const GITHUB_URLS = {

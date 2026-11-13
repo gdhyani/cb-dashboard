@@ -1,0 +1,72 @@
+---
+title: What's really in your .env file
+description: Not every environment variable is a secret, and not every secret is the same kind of secret. A field guide to env values and how cb treats each one.
+date: 2026-11-05
+image: /blog/covers/whats-really-in-your-env-file.svg
+imageAlt: Four bars for the four kinds of env value cb manages
+author: The cb team
+---
+
+A `.env` file looks like a flat list of names and values. In practice it mixes very different things: settings
+anyone may read, values that only matter on your own machine, and keys that unlock real money and real data.
+Treating them all the same is how secrets end up in screenshots, and how harmless settings end up locked away.
+
+cb sorts every value into one of four types. The type decides what a developer's laptop holds.
+
+<ValueTypesMatrix />
+
+## Plain values
+
+`PORT=3000`, `NEXT_PUBLIC_APP_NAME=Shop`, a public API URL, a feature flag. These are configuration, not
+secrets, and cb hands them to the app as they are. Keeping them in cb anyway means every developer gets the same
+settings without copying a file around.
+
+## Random secrets
+
+Some secrets only have to agree with themselves. `SESSION_SECRET`, `AUTH_SECRET` or a cookie-signing key is set
+by your app and checked by your app. Nobody else needs to know it, so there is no point sharing one.
+
+For these cb makes a **random value per developer**, in the format the library expects (hex, base64, a UUID).
+It is stable across restarts on that developer's setup and different for everyone else. If it leaks, it unlocks
+nothing but that one developer's local sessions.
+
+## Shown as-is
+
+Occasionally the app has to compute with a secret itself, and no connector can stand in for it. Today the
+admin's fallback is **Shown as-is**: the real value reaches developers, on purpose. It is the one exception,
+the last resort, and the dashboard and docs mark it with a warning wherever it appears. Removing someone's access
+stops future runs from receiving it, but a copy they already have can't be taken back.
+
+## Protected values
+
+Everything that unlocks a real service is **Protected**. The laptop gets a stand-in, and the real value stays
+encrypted on the cb server. Protected keys fall into four families, depending on how the service checks them,
+and cb has a different way of swapping in the real key for each:
+
+| Family | Examples | How cb uses the real key |
+|---|---|---|
+| Database logins | Postgres, MySQL, MongoDB, Redis, SMTP | The connection is tunnelled to cb, which completes the login handshake with the real user and password |
+| API keys in a header | OpenAI, Gemini, Groq, Stripe, Razorpay, Supabase, any HTTP API | cb replaces the stand-in in the request header with the real key |
+| Signed requests | AWS S3 and SES, Firebase service accounts, sign-in client secrets | cb checks the stand-in's signature, then signs the request again with the real key |
+| Webhook signing secrets | Stripe, Razorpay | cb checks the provider's signature with the real secret, then signs again for each developer's stand-in |
+
+The [connector guide](/docs/connectors/choosing-a-type) walks through which type to pick for each key.
+
+<Frame src="/docs/images/guides/add-dialog-type.png" alt="The Add variable dialog with the type picker open" caption="Adding a key: the type decides what developers get." />
+
+## How much of this is tested for real
+
+Each protected family has to work with the provider's real servers, not only with test doubles. This is where
+coverage stands: green providers have been verified end to end with a real account, amber ones are Beta.
+
+<CoverageChart />
+
+## The type that is still missing
+
+One kind of secret does not fit any of the four types yet: **a key the app uses to sign or encrypt by itself**,
+which must also match something outside the laptop. A `JWT_SECRET` checked by a shared staging service is the
+typical case. The app signs inside its own process, so a gateway in the middle never sees the key being used,
+and a per-developer random value would not match what the other service expects.
+
+Supporting these without code changes means moving the signing itself to the cb server. That is the next piece
+of work, and we will write about it when it ships.

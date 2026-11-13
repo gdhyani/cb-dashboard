@@ -1,0 +1,141 @@
+---
+title: How environment variables really work
+description: From the operating system's environment block to .env files, framework load order and browser bundles. Every kind of value an app keeps there, with examples, and why the environment was never a safe.
+date: 2026-11-04
+image: /blog/covers/how-environment-variables-work.svg
+imageAlt: Lines of KEY=value flowing into process.env, with the secret ones in amber
+author: The cb team
+---
+
+Almost every app reads its configuration from environment variables. It is the advice of the Twelve-Factor App,
+it is what every hosting platform supports, and it is what every SDK's quick start tells you to do. But what an
+environment variable actually *is*, where its value comes from and who else can read it is rarely explained. This
+post covers all of it, before we show how cb changes it.
+
+## What an environment variable is
+
+When the operating system starts a process, it gives it a block of `NAME=value` text strings: the environment.
+That block lives in the process's own memory. A process can read it, change its own copy, and pass a copy to any
+process it starts. Nothing more.
+
+In Node.js the block is exposed as `process.env`:
+
+```js
+// PORT=4000 node server.js
+console.log(process.env.PORT);          // "4000"  (always a string)
+console.log(typeof process.env.PORT);   // "string"
+
+process.env.RETRIES = 3;                // stored as "3"
+process.env.FLAG = undefined;           // stored as "undefined", not removed
+delete process.env.FLAG;                // this removes it
+```
+
+Three properties matter for everything that follows:
+
+- **Values are strings.** Numbers, booleans and JSON have to be parsed by your code.
+- **The environment is copied, not shared.** A child process gets a snapshot of its parent's environment when it
+  starts. Changing `process.env` later does not reach processes that are already running.
+- **It is plain text in memory.** There is no access control inside a process: any code in it, including every
+  dependency, can read every variable.
+
+## Where the values come from
+
+Nothing in Node reads a `.env` file by itself unless you ask it to. Values reach `process.env` in one of these
+ways, from the most explicit to the most automatic.
+
+| Source | Example | Notes |
+|---|---|---|
+| Shell or host | `export PORT=4000`, or the platform's settings | Inherited by everything started from that shell |
+| Inline for one command | `PORT=4000 node server.js` | Only that process and its children |
+| Node's own loader | `node --env-file=.env server.js`, `process.loadEnvFile()` | Built in since Node 20.6 (the function since 20.12) |
+| The `dotenv` package | `import "dotenv/config"` | Never overwrites a variable that is already set |
+| Framework loaders | Next.js, Vite, Remix, Nuxt read `.env*` for you | Each with its own file order and rules |
+
+Frameworks add a **load order**, because a project usually has several files. Next.js, for example, looks a name
+up in these places during `next dev` and stops at the first that defines it:
+
+<EnvPrecedenceDiagram />
+
+That is why `.env.local` exists: it is the file for values that are yours alone, and it is listed in
+`.gitignore` by default. The shared `.env` holds defaults that are safe to commit.
+
+## Server values and browser values
+
+On the server, `process.env` is read while the app runs. In the browser there is no process environment at all,
+so frameworks **copy the value into the JavaScript bundle at build time**, but only for names with a public
+prefix:
+
+| Framework | Prefix that reaches the browser | Read as |
+|---|---|---|
+| Next.js | `NEXT_PUBLIC_` | `process.env.NEXT_PUBLIC_API_URL` |
+| Vite | `VITE_` | `import.meta.env.VITE_API_URL` |
+| Create React App | `REACT_APP_` | `process.env.REACT_APP_API_URL` |
+
+The prefix is a promise that the value is public. Anything with it ends up as plain text in a file every visitor
+downloads. A secret named `NEXT_PUBLIC_STRIPE_SECRET_KEY` is not a secret any more, however well the `.env` file
+is guarded.
+
+## Who can read a running process's environment
+
+Because the environment is just strings in a process, it is visible in many ordinary ways, without any attack:
+
+<EnvVisibilityDiagram />
+
+- Every **child process** starts with a full copy: build tools, test runners, `npx` commands, install scripts.
+- **Process listings** can print it for your own processes (`ps eww` on Linux, `ps -E` on macOS), and on Linux
+  `/proc/<pid>/environ` holds the environment a process started with.
+- **Debuggers and heap snapshots** read memory directly.
+- **Crash reporters and error trackers** often attach the environment to help debugging.
+- One `console.log(process.env)` puts everything in a log file or a terminal recording.
+
+None of this is a bug. The environment was designed for configuration, not for secrets.
+
+## Every kind of value an app keeps there
+
+A real `.env` file mixes very different things. Here is each kind, with what it looks like, who checks it, and
+what happens if it leaks.
+
+| Kind | Example | Who checks it | If it leaks |
+|---|---|---|---|
+| Settings | `PORT=3000`, `LOG_LEVEL=debug`, `AWS_REGION=eu-west-1` | Nobody | Nothing |
+| URLs and endpoints | `API_BASE_URL=https://api.shop.test` | Nobody | Usually nothing |
+| Feature flags | `ENABLE_CHECKOUT_V2=true` | Your code | Nothing |
+| Public keys and IDs | `STRIPE_PUBLISHABLE_KEY=pk_test_…`, `GOOGLE_CLIENT_ID=…apps.googleusercontent.com` | The provider, together with a secret | Nothing on their own: they are made to be public |
+| API secret keys | `OPENAI_API_KEY=sk-…`, `STRIPE_SECRET_KEY=sk_live_…` | The provider, on every request | Full use of the account, billed to you |
+| Connection strings | `DATABASE_URL=postgres://app:password@db.host:5432/shop` | The database, at login | Read and write access to the data |
+| Cloud access keys | `AWS_ACCESS_KEY_ID=AKIA…` + `AWS_SECRET_ACCESS_KEY=…` | The cloud, by checking a signature (SigV4) | Whatever the key's policy allows |
+| Webhook signing secrets | `STRIPE_WEBHOOK_SECRET=whsec_…` | Your app, to trust incoming events | Anyone can send your app fake payments |
+| Sign-in client secrets | `GOOGLE_CLIENT_SECRET=…` | The identity provider, at token exchange | Others can pose as your app at sign-in |
+| Your app's own secrets | `SESSION_SECRET`, `JWT_SECRET`, `ENCRYPTION_KEY` | Your own app | Forged sessions and tokens, readable encrypted data |
+| Key files and certificates | `GOOGLE_APPLICATION_CREDENTIALS=./sa.json`, an APNs `.p8`, a CA `.pem` | The provider, by checking a signature | Full use of that service account or push key |
+
+The list shows why "the `.env` file" is not one thing to protect. Settings and public IDs are harmless; API keys,
+connection strings and key files are the business.
+
+Here is the mix in one real app, cb's own test app that talks to every provider we support. We counted the names
+only; no value was read:
+
+<EnvCompositionChart />
+
+Thirty of the 49 values would give someone access if they leaked. The other nineteen are safe to read, and it is
+exactly that mix in one file that makes it hard to handle well: the harmless values get shared freely, and the
+secret ones travel with them.
+
+## What teams do today, and where it stops
+
+Good teams already do a lot:
+
+- **`.env.example` plus `.gitignore`.** The real file is never committed; a template shows the names.
+- **A secret manager.** Vault, Doppler, 1Password, AWS Secrets Manager or the platform's own settings store the
+  values encrypted and hand them out at start-up.
+- **Short-lived and scoped keys.** Restricted API keys, read-only database users, keys per environment.
+- **Rotation.** New keys after someone leaves or after a scare.
+
+All of these protect where secrets are **stored** and how they are **handed out**. None of them changes the last
+step: the real value still ends up in `process.env` on the developer's laptop, with every reader in the diagram
+above. On a server that is a reasonable trade. On dozens of laptops, each running editors, coding agents, browser
+extensions and thousands of npm packages, it is the weakest point.
+
+cb changes that last step: the laptop gets a value that works through cb but nowhere else, and the real one never
+arrives. [What's really in your .env file](/blog/whats-really-in-your-env-file) shows how cb sorts each kind of value,
+and [Inside cb](/blog/inside-cb) shows how it is built.
