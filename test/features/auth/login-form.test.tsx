@@ -69,7 +69,7 @@ describe("FR-UI-006 LoginForm", () => {
       { "retry-after": "900" },
     );
     renderLogin();
-    fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
     expect(await screen.findByText(/Too many failed logins\. Try again in 15 minute\(s\)\./)).toBeInTheDocument();
     expect(screen.getByText(/RATE_LIMITED/)).toBeInTheDocument();
