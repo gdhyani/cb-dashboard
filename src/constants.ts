@@ -28,3 +28,5 @@ export const GITHUB_REPO = { owner: "gdhyani", repo: "cb-env" } as const;
 export const THEME_STORAGE_KEY = "cb-theme";
 /** Sidebar behaviour (expanded / collapsed / hover), kept per browser. */
 export const SIDEBAR_STORAGE_KEY = "cb-sidebar";
+/** Session flag: the first-landing splash (cb wordmark) has played in this browser tab. */
+export const SPLASH_SESSION_KEY = "cb-splash";

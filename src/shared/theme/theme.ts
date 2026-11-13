@@ -1,4 +1,4 @@
-import { THEME_STORAGE_KEY } from "@/constants";
+import { SPLASH_SESSION_KEY, THEME_STORAGE_KEY } from "@/constants";
 
 export type ThemeChoice = "dark" | "light" | "system";
 export type ResolvedTheme = "dark" | "light";
@@ -35,8 +35,11 @@ export function applyTheme(theme: ResolvedTheme) {
 
 /**
  * Runs before first paint on dashboard pages, so a light-theme user never sees a dark flash. Kept as a string:
- * it is inlined into a <script>. Mirrors readThemeChoice + resolveTheme.
+ * it is inlined into a <script>. Mirrors readThemeChoice + resolveTheme. It also lets the first-landing splash play once
+ * per browser tab: later page loads get <html data-splash="skip"> (styles/studio.css hides the splash).
  */
 export const THEME_BOOT_SCRIPT = `(function(){try{var c=localStorage.getItem(${JSON.stringify(
   THEME_STORAGE_KEY,
-)});if(c!=="light"&&c!=="system")c="dark";var l=c==="light"||(c==="system"&&matchMedia("(prefers-color-scheme: light)").matches);document.documentElement.dataset.theme=l?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}})()`;
+)});if(c!=="light"&&c!=="system")c="dark";var l=c==="light"||(c==="system"&&matchMedia("(prefers-color-scheme: light)").matches);document.documentElement.dataset.theme=l?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}try{var p=location.pathname;if(p.indexOf("/docs")!==0&&p.indexOf("/blog")!==0){if(sessionStorage.getItem(${JSON.stringify(
+  SPLASH_SESSION_KEY,
+)}))document.documentElement.dataset.splash="skip";else sessionStorage.setItem(${JSON.stringify(SPLASH_SESSION_KEY)},"1")}}catch(e){}})()`;
