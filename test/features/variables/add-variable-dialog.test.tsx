@@ -4,6 +4,7 @@ import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AddVariableDialog } from "@/features/variables/components/add-variable-dialog";
 import { ApiError } from "@/shared/api/api-error";
+import { axeViolations } from "../../a11y";
 
 const api = vi.hoisted(() => ({
   createService: vi.fn(),
@@ -236,5 +237,12 @@ describe("Add variable dialog (D2, D5, FR-UI-001)", () => {
     expect(
       screen.queryByText("A_URL already exists in this environment.", { selector: "p.text-destructive" }),
     ).toBeNull();
+  });
+});
+
+describe("NFR-A11Y Add variable dialog", () => {
+  it("NFR-A11Y add variable dialog has no axe violations", async () => {
+    renderDialog();
+    expect(await axeViolations()).toEqual([]);
   });
 });

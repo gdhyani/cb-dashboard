@@ -12,6 +12,7 @@ import { SkeletonRows } from "@/shared/components/skeletons";
 import { StaggerBlock } from "@/shared/components/stagger";
 import { TableToolbar } from "@/shared/components/table-toolbar";
 import { useCopy } from "@/shared/hooks/use-copy";
+import { useReturnFocus } from "@/shared/hooks/use-return-focus";
 import { useTableQuery } from "@/shared/hooks/use-table-query";
 import { Button } from "@/shared/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
@@ -47,6 +48,7 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
   const { copy } = useCopy("Key copied");
   const [adding, setAdding] = useState<{ type: TypeId; provider?: string } | null>(null);
   const [importing, setImporting] = useState(false);
+  const returnFocus = useReturnFocus();
   const [editing, setEditing] = useState<{
     variable?: Variable;
     group?: ServiceGroup;
@@ -105,11 +107,24 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
 
   const addActions = isAdmin && (
     <>
-      <Button variant="secondary" size="sm" onClick={() => setImporting(true)}>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={() => {
+          returnFocus.remember();
+          setImporting(true);
+        }}
+      >
         <FileUp />
         Import .env
       </Button>
-      <Button size="sm" onClick={() => setAdding({ type: "plain" })}>
+      <Button
+        size="sm"
+        onClick={() => {
+          returnFocus.remember();
+          setAdding({ type: "plain" });
+        }}
+      >
         <Plus />
         Add variable
       </Button>
@@ -275,7 +290,11 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
         <ImportEnvDialog
           envId={envId}
           open
-          onOpenChange={(open) => !open && setImporting(false)}
+          onOpenChange={(open) => {
+            if (open) return;
+            setImporting(false);
+            returnFocus.restore();
+          }}
           existingKeys={(variables.data ?? []).map((v) => v.key)}
         />
       )}
@@ -284,7 +303,11 @@ export function VariablesPanel({ projectId, envId, isAdmin }: { projectId: strin
           key={`${adding.type}-${adding.provider ?? ""}`}
           envId={envId}
           open
-          onOpenChange={(open) => !open && setAdding(null)}
+          onOpenChange={(open) => {
+            if (open) return;
+            setAdding(null);
+            returnFocus.restore();
+          }}
           initialType={adding?.type}
           initialProvider={adding?.provider}
         />
