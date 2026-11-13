@@ -9,7 +9,26 @@ on `main`.
 
 ## 13 November 2026
 
+### Security
+
+- **The gateway only ever calls the configured service.** A request whose path named another host
+  (`http://other/…` or `//other/…`) is now refused with `400 cb_bad_request_target` before any connection; before, it
+  could send the real key to that host.
+- **Login limits.** After 10 failed logins for one email, or 30 from one address, within 15 minutes, cb refuses
+  logins for that email or address until the 15 minutes pass (`429`, with `Retry-After`). Behind the dashboard each
+  browser counts on its own address; the new backend setting `TRUST_PROXY` (default `loopback`) controls this.
+- **Shared hosts.** When two services share a host (Google sign-in and Firebase on `oauth2.googleapis.com`), each
+  is checked on its own, and an emergency stop, disable or login change on either closes the connection.
+
+### CLI
+
+- `cb run` and `cb shell` add the preload with `--import`, or with `--require` when your `NODE_OPTIONS` already
+  uses `--import`, so a preload of your own keeps working under Next.js.
+
 ### Dashboard
+
+- Next.js 16.4.6 (security update). Secondary text is easier to read (higher contrast), and closing **Add
+  variable** or **Import .env** with Escape returns focus to the button that opened it.
 
 - **Blog.** A new [blog](/blog) beside the docs, with eleven posts: why we build cb, how environment variables
   really work, every kind of env value cb supports (an interactive explorer that follows each type from `.env` to
