@@ -43,12 +43,20 @@ Credential Manager, the Secret Service on Linux), never into a file.
 4. Starts your command with two extra variables:
 
 ```bash
-NODE_OPTIONS="--require /…/node_modules/@cb/env/dist/register/index.js"
+NODE_OPTIONS="--import file:///…/node_modules/@cb/env/dist/register/index.js"
 CB_SNAPSHOT_PATH="/…/.cb/run/<project>.<environment>.json"
 ```
 
 Because it is `NODE_OPTIONS`, every Node process under the command inherits it: `next dev` and its workers,
-Prisma, test runners. Non-Node programs are not touched.
+Prisma, test runners. Non-Node programs are not touched. Anything you already had in `NODE_OPTIONS` is kept.
+
+Why `--import` with a file URL? Some tools read `NODE_OPTIONS` back and rebuild it with **one value per flag**.
+Next.js does this when it starts its workers: with your own `--require ./instrument.cjs` and cb's `--require`, the
+two paths were merged into one path that does not exist, and the workers failed to start. So cb adds its preload
+with the flag your options do not use: `--import` by default, and `--require "<path>"` if you already use `--import`
+(for `tsx` or OpenTelemetry, say). A file URL needs no quoting, so folders with spaces work on every OS. The
+nextjs-prisma test app runs this way in every mode (Turbopack, webpack, `next build` + `next start`), with a
+`--require` preload of its own.
 
 ## 2. The preload: steering connections without changing the app
 
@@ -98,6 +106,15 @@ The app's TLS connection ends at the gateway. The backend keeps one CA per organ
 trusts that CA for this connection. The gateway then reads the plain HTTP request, checks the stand-in, swaps in
 the real key and sends the request to the real host over a **separate, fully verified TLS connection** made with
 `undici`.
+
+The host it sends to is the one the admin saved, never one the app names. An HTTP request line can carry a whole
+URL (`GET http://other.example/x`) or a path that starts with `//other.example`, and a naive
+`new URL(path, upstream)` turns either into a request for another host. The gateway accepts only a plain path
+(`/v1/charges?limit=3`), builds the URL on the saved origin and checks the result is still that origin; anything else
+gets `400 cb_bad_request_target` before a connection is opened. Otherwise any code in the app, or a dependency of
+it, holding the stand-in could have had the gateway send the real key to a server of its choosing. An independent
+review found this during hardening, and a test now runs a listening "attacker" server and checks it is never
+contacted.
 
 <HttpsPathSequence />
 
@@ -158,8 +175,16 @@ port, signed again with that device's stand-in secret, so the official SDK's ver
   says nothing about it.
 - **Stand-in key material**: Apple `.p8` stand-ins are derived deterministically per device; Google stand-in RSA
   keys are generated once per device and stored encrypted.
-- **Passwords and tokens**: dashboard passwords are hashed with argon2; access tokens are 15-minute ES256 JWTs
-  (made with `jose`); refresh tokens rotate on every use, and a reused one is detected.
+- **Passwords and tokens**: dashboard passwords are hashed with argon2id; access tokens are 15-minute ES256 JWTs
+  (made with `jose`); refresh tokens rotate on every use, and reuse of an old one signs that device out (every
+  token it holds stops working).
+- **Login limits**: after 10 failed logins for one email within 15 minutes, cb answers `429` with `Retry-After`
+  until the window ends, even for the right password; a correct password clears the count. Each attempt is counted
+  *before* the password is checked, so a burst of parallel guesses cannot slip past the limit while argon2 runs.
+  Where cb can tell callers apart, 30 failures from one address are refused the same way. Logins through the
+  dashboard all arrive from its own proxy on the same machine, so they are limited per email only; behind a reverse
+  proxy that sets `X-Forwarded-For`, the backend setting `TRUST_PROXY` names that proxy, and only then is the header
+  believed (a client could otherwise pick any address it likes).
 
 ## 6. Nothing comes back
 
@@ -176,6 +201,10 @@ device or environment is closed within five seconds, with an error the app's dri
 `ErrorResponse`, a MySQL `ERR` packet, an HTTP 403) rather than a hang, and the agent's event stream tells `cb run` to
 show why. Stand-ins stop working at once because the gateway re-checks access on every connection.
 
+Some tunnels carry more than one service: Google sign-in and Firebase both talk to `oauth2.googleapis.com`. Each
+service on such a tunnel is checked on its own when it opens (a stopped one is left out), and each is watched for
+revocation, so stopping either one closes the connection.
+
 ## 8. How we test it
 
 - **Unit and integration tests** in all three repositories (Vitest), named after the requirement they prove.
@@ -191,6 +220,26 @@ show why. Stand-ins stop working at once because the gateway re-checks access on
 
 Every scan so far has found zero real secrets, with the number of files growing as we added checks for debuggers,
 crash dumps, malicious install scripts and coding-agent style commands.
+
+- **The same canary checks on every OS**: a second suite needs no Docker (an in-memory MongoDB and mock HTTPS
+  providers), so it runs on macOS and Windows as well as Linux, for an ES module app and a CommonJS one.
+- **An independent security review** against every security requirement, by a reviewer who had not written the
+  code. It found the request-target hole described above, missing login limits, and a shared-host gap; each was fixed
+  with a test that failed first.
+- **Dependencies** are audited in CI: a high or critical advisory in anything that ships fails the build.
+
+### What it costs
+
+The benchmark runs the same client twice, straight at the services and through cb (agent, WebSocket tunnel,
+gateway), 500 times per operation after 50 warm-ups, and checks the cb run really used the local listeners and a
+stand-in key:
+
+<GatewayOverheadChart />
+
+The target was under 3 ms at the median and 10 ms at the 95th percentile; the worst measured was 0.49 ms at the
+95th. Large transfers stay within 2% of direct (a 50 MB S3 upload and download), the preload adds 6.7–8.2 ms to Node's
+start (target 10 ms), and a fresh device goes from `cb login` to a running app in 2.8 seconds of machine time. All of
+this is on one machine; a backend in another region adds the network round trip to each new connection.
 
 ## What is next
 

@@ -3,6 +3,7 @@
  * - ENV_COMPOSITION: the 49 variable names in cb's own real-provider test app (`real-keys-app`), sorted by kind.
  *   Counted from names only; no value was read.
  * - LEAK_SCANS: the leak scans logged in PRD §17.4 / §20 (v1.33, v1.42, v1.48, v1.49).
+ * - GATEWAY_OVERHEAD: M7 T2 benchmark, added median latency through cb on localhost (PRD §17.4, v1.61).
  */
 export type BarDatum = { label: string; value: number; secret?: boolean; note?: string };
 
@@ -24,4 +25,13 @@ export const LEAK_SCANS: LeakScan[] = [
   { run: "After AWS S3 and SES", date: "2026-10-06", secrets: 20, files: 1474, leaks: 0 },
   { run: "Security suite", date: "2026-10-07", secrets: 31, files: 6131, leaks: 0 },
   { run: "Full security guide", date: "2026-10-07", secrets: 31, files: 12077, leaks: 0 },
+];
+
+/** M7 T2 (2026-11-13, `npm run bench -- t2`): milliseconds cb adds at the median, 500 samples per workload. */
+export const GATEWAY_OVERHEAD: BarDatum[] = [
+  { label: "Redis GET", value: 0.07, note: "direct 0.11 ms, through cb 0.18 ms" },
+  { label: "MongoDB findOne", value: 0.08, note: "direct 0.10 ms, through cb 0.19 ms" },
+  { label: "Postgres SELECT 1", value: 0.11, note: "direct 0.11 ms, through cb 0.22 ms" },
+  { label: "Stream first byte (SSE)", value: 0.25, note: "direct 0.12 ms, through cb 0.37 ms" },
+  { label: "HTTPS API call", value: 0.36, note: "direct 0.20 ms, through cb 0.57 ms: two TLS hops instead of one" },
 ];
