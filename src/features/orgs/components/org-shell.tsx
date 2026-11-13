@@ -92,9 +92,15 @@ export function OrgShell({ orgId, children }: { orgId: string; children: ReactNo
           >
             <Menu className="size-4" strokeWidth={1.5} />
           </SheetTrigger>
-          <SheetContent side="left" showClose={false} className="w-[19rem]">
+          {/* Darker than other panels (the app background), and no focus ring jumping onto Close when it opens. */}
+          <SheetContent
+            side="left"
+            showClose={false}
+            className="w-[19rem] bg-background"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
             <SheetTitle>Navigation</SheetTitle>
-            <MobileNav orgId={orgId} projectId={params.projectId} />
+            <MobileNav orgId={orgId} />
           </SheetContent>
         </Sheet>
         <Link href={`/orgs/${orgId}`} aria-label={`${PRODUCT_NAME} home`} className="hidden shrink-0 md:block">

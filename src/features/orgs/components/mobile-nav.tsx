@@ -1,22 +1,14 @@
 "use client";
 
-import { KeyRound, Layers, LayoutGrid, Settings, X } from "lucide-react";
+import { X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { PRODUCT_NAME } from "@/constants";
-import { useProject } from "@/features/projects/hooks/use-projects";
 import { cn } from "@/shared/lib/utils";
 import { SheetClose } from "@/shared/ui/sheet";
 import { useOrg } from "../hooks/use-orgs";
 import { isActive, orgNavGroups } from "./org-sidebar";
-
-/** Group titles for the phone menu (the rail shows the same groups split by hairlines). */
-const GROUP_TITLES = [undefined, "Organization", "Security & account"] as const;
-
-function GroupTitle({ children }: { children: ReactNode }) {
-  return <p className="heading-meta px-3 pt-4 pb-1.5 text-foreground-muted">{children}</p>;
-}
 
 function Item({
   href,
@@ -50,10 +42,10 @@ function Item({
 }
 
 /**
- * Phone menu (Studio mobile): org header, the current project's pages and environments when inside one, and the org
- * navigation in titled groups. Account, theme, Docs and Sign out live in the profile menu (top bar).
+ * Phone menu: the same items and groups as the desktop rail, on every page (static), under an org header. Account,
+ * theme, Docs and Sign out live in the profile menu (top bar).
  */
-export function MobileNav({ orgId, projectId }: { orgId: string; projectId?: string }) {
+export function MobileNav({ orgId }: { orgId: string }) {
   const pathname = usePathname();
   const org = useOrg(orgId);
   const groups = orgNavGroups(orgId, org.isAdmin);
@@ -76,84 +68,18 @@ export function MobileNav({ orgId, projectId }: { orgId: string; projectId?: str
         </SheetClose>
       </div>
 
-      <nav aria-label="Menu" className="flex-1 overflow-y-auto px-2 pb-4">
-        {projectId && <ProjectGroup orgId={orgId} projectId={projectId} pathname={pathname} isAdmin={org.isAdmin} />}
+      <nav aria-label="Menu" className="flex-1 overflow-y-auto px-2 py-3">
         {groups.map((group, gi) => (
-          <div key={group[0]?.href ?? gi}>
-            {GROUP_TITLES[gi] ? <GroupTitle>{GROUP_TITLES[gi]}</GroupTitle> : <div className="pt-3" />}
-            <div className="flex flex-col gap-0.5">
-              {group.map(({ href, label, icon: Icon, exact }) => (
-                <Item key={href} href={href} active={isActive(pathname, href, exact)} icon={<Icon strokeWidth={1.5} />}>
-                  {label}
-                </Item>
-              ))}
-            </div>
+          <div key={group[0]?.href ?? gi} className="flex flex-col gap-0.5">
+            {gi > 0 && <div className="mx-3 my-2 h-px bg-border" />}
+            {group.map(({ href, label, icon: Icon, exact }) => (
+              <Item key={href} href={href} active={isActive(pathname, href, exact)} icon={<Icon strokeWidth={1.5} />}>
+                {label}
+              </Item>
+            ))}
           </div>
         ))}
       </nav>
-    </div>
-  );
-}
-
-/** The current project's pages and environments, on top while you're inside it. */
-function ProjectGroup({
-  orgId,
-  projectId,
-  pathname,
-  isAdmin,
-}: {
-  orgId: string;
-  projectId: string;
-  pathname: string;
-  isAdmin: boolean;
-}) {
-  const project = useProject(projectId);
-  const base = `/orgs/${orgId}/projects/${projectId}`;
-  return (
-    <div>
-      <GroupTitle>{project.data?.name ?? "Project"}</GroupTitle>
-      <div className="flex flex-col gap-0.5">
-        <Item href={base} active={pathname === base} icon={<LayoutGrid strokeWidth={1.5} />}>
-          Overview
-        </Item>
-        {isAdmin && (
-          <>
-            <Item
-              href={`${base}/access`}
-              active={isActive(pathname, `${base}/access`)}
-              icon={<KeyRound strokeWidth={1.5} />}
-            >
-              Access
-            </Item>
-            <Item
-              href={`${base}/settings`}
-              active={isActive(pathname, `${base}/settings`)}
-              icon={<Settings strokeWidth={1.5} />}
-            >
-              Settings
-            </Item>
-          </>
-        )}
-        {project.data?.environments.map((e) => {
-          const href = `${base}/environments/${e.id}`;
-          return (
-            <Item
-              key={e.id}
-              href={href}
-              active={isActive(pathname, href)}
-              icon={<Layers strokeWidth={1.5} />}
-              trailing={
-                e.killed ? (
-                  <span className="size-1.5 rounded-full bg-warning" role="img" aria-label="Suspended" />
-                ) : undefined
-              }
-            >
-              <span className="font-mono text-[13px]">{e.name}</span>
-            </Item>
-          );
-        })}
-      </div>
-      <div className="mx-3 mt-3 h-px bg-border" />
     </div>
   );
 }
