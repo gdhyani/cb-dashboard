@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Menu, X } from "lucide-react";
+import { BookOpen, Menu } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
@@ -10,9 +10,10 @@ import { CommandMenu, SearchButton, useCommandShortcut } from "@/features/search
 import { Hint } from "@/shared/components/hint";
 import { ThemeToggle } from "@/shared/components/theme-toggle";
 import { cn } from "@/shared/lib/utils";
-import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/shared/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/shared/ui/sheet";
 import { useOrg } from "../hooks/use-orgs";
 import { useSidebarMode } from "../hooks/use-sidebar-mode";
+import { MobileNav } from "./mobile-nav";
 import { OrgSidebar } from "./org-sidebar";
 import { OrgUnavailable } from "./org-unavailable";
 import { UserMenu } from "./user-menu";
@@ -26,7 +27,7 @@ function Divider({ className }: { className?: string }) {
   );
 }
 
-/** Phones: a 36px box with the current project's initial (or the product mark outside a project). */
+/** Phones: a 28px box with the current project's initial (or the product mark outside a project). */
 function MobileContextMark({ orgId, projectId }: { orgId: string; projectId?: string }) {
   return (
     <Link href={projectId ? `/orgs/${orgId}/projects/${projectId}` : `/orgs/${orgId}`} className="shrink-0 md:hidden">
@@ -40,7 +41,7 @@ function ProjectBox({ projectId }: { projectId: string }) {
   return (
     <ProjectMark
       name={project.data?.name ?? " "}
-      className="size-9 rounded-lg border-border-strong bg-surface-75 text-sm"
+      className="size-7 rounded-md border-border-strong bg-surface-75 text-xs"
     />
   );
 }
@@ -86,24 +87,14 @@ export function OrgShell({ orgId, children }: { orgId: string; children: ReactNo
         {/* Phones: the menu button on the left; the menu slides in from the left. */}
         <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
           <SheetTrigger
-            className="flex size-9 items-center justify-center rounded-lg border border-border-strong bg-surface-75 text-foreground-light hover:bg-accent hover:text-foreground md:hidden"
+            className="flex size-8 items-center justify-center rounded-md border border-border-strong bg-surface-75 text-foreground-light hover:bg-accent hover:text-foreground md:hidden"
             aria-label="Open menu"
           >
-            <Menu className="size-5" strokeWidth={1.5} />
+            <Menu className="size-4" strokeWidth={1.5} />
           </SheetTrigger>
-          <SheetContent side="left" showClose={false}>
+          <SheetContent side="left" showClose={false} className="w-[19rem]">
             <SheetTitle>Navigation</SheetTitle>
-            <div className="flex h-12 items-center gap-2 border-b border-border pr-2 pl-4">
-              <ProductMark />
-              <span className="min-w-0 flex-1 truncate text-sm text-foreground">{org.data?.name}</span>
-              <SheetClose
-                aria-label="Close menu"
-                className="flex size-8 items-center justify-center rounded-md text-foreground-lighter hover:bg-accent hover:text-foreground"
-              >
-                <X className="size-4" />
-              </SheetClose>
-            </div>
-            <OrgSidebar orgId={orgId} variant="sheet" />
+            <MobileNav orgId={orgId} projectId={params.projectId} />
           </SheetContent>
         </Sheet>
         <Link href={`/orgs/${orgId}`} aria-label={`${PRODUCT_NAME} home`} className="hidden shrink-0 md:block">
