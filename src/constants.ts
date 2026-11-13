@@ -28,5 +28,3 @@ export const GITHUB_REPO = { owner: "gdhyani", repo: "cb-env" } as const;
 export const THEME_STORAGE_KEY = "cb-theme";
 /** Sidebar behaviour (expanded / collapsed / hover), kept per browser. */
 export const SIDEBAR_STORAGE_KEY = "cb-sidebar";
-/** TEMPORARY: dashboard accent picked while choosing cb's main colour (PRD v1.61). */
-export const ACCENT_STORAGE_KEY = "cb-accent";

@@ -5,7 +5,7 @@ import type * as React from "react";
 import { cn } from "@/shared/lib/utils";
 
 /**
- * Supabase Button. Green is rare: only `default` (the page's one primary action) uses the deep green plate.
+ * Supabase Button. The accent is rare: only `default` (the page's one primary action) uses the teal plate.
  * Everything else is the raised grey `secondary`, a quiet `ghost`, or an `outline`/`dashed` frame.
  * Sizes follow Studio's density: 26px is the everyday size, 34px for auth pages and big forms.
  */

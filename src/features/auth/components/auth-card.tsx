@@ -21,7 +21,7 @@ export function AuthCard({
   return (
     <div className="flex min-h-dvh bg-background">
       <main className="flex min-w-0 flex-1 flex-col px-4 py-8 sm:px-8 lg:max-w-[50%] xl:max-w-[44%]">
-        {/* Fixed dark text on the brand green: the mark looks the same in both themes (as in the org shell). */}
+        {/* The product mark: brand teal with its own ink (as in the org shell). */}
         <Link
           href="/"
           aria-label={`${PRODUCT_NAME} home`}

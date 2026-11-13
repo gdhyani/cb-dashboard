@@ -147,7 +147,8 @@ type ApiErrorBody = { success: false; error: { code: string; message: string; st
 
 ## Design system — Supabase Studio (PRD §11.5, v1.59)
 
-The dashboard is a port of the **Supabase design system** (supabase.com/design-system). It applies to dashboard routes only.
+The dashboard is a port of the **Supabase design system** (supabase.com/design-system) with cb's own colours: a teal
+accent and a deep slate background (PRD v1.62). It applies to dashboard routes only.
 
 - **Scope.** Dashboard routes live in `src/app/(studio)/`; its layout renders `[data-studio]`, and `src/styles/studio.css`
   applies the tokens to `:root` only while that marker is on the page (portals included). Docs (`src/app/docs*`), the blog
@@ -156,7 +157,8 @@ The dashboard is a port of the **Supabase design system** (supabase.com/design-s
 - **Tokens, never raw colours.** Surfaces `bg-background`, `bg-surface-75/100/200/300`, `bg-overlay`, `bg-dialog`, washes
   `bg-muted`/`bg-accent`/`bg-selection`, fields `bg-field`; text `text-foreground` › `-light` › `-lighter` › `-muted`;
   borders `border-border` (+ `-muted`, `-strong`, `-stronger`, `-control`). Colour carries meaning only: `primary`
-  (green — the one primary action per view, success, links, focus), `warning`, `destructive`, `info`. No `white/[x]`,
+  (cb teal — the one primary action per view, links, focus, switches, charts), `success` (green), `warning`
+  (orange), `destructive`, `info`. No `white/[x]`,
   no hex, no Tailwind palette colours in dashboard code: the light theme must keep working.
 - **Type roles:** `heading-title` (page), `heading-section`, `heading-default`, `heading-meta` (mono uppercase micro-label:
   table heads, card titles, menu groups). Body `text-sm` = 13 px. Inter / Manrope / Source Code Pro are loaded by the
@@ -174,7 +176,7 @@ The dashboard is a port of the **Supabase design system** (supabase.com/design-s
 - **Docs exception (PRD v1.36):** docs screenshots are framed on one gradient (`scripts/frame-images.mjs`) and docs diagrams use
   `--docs-frame-gradient`. Nowhere in the dashboard.
 - Subtle, purposeful animation (`cb-enter`, `StaggerItem`, `cb-pop`); respect `prefers-reduced-motion`. Charts in
-  `shared/components/charts` use the green single-series ramp (`charts/shades.ts`); use `dataviz` for new charts.
+  `shared/components/charts` use the teal single-series ramp (`charts/shades.ts`); use `dataviz` for new charts.
 - UI work: follow this section and the Supabase research in PRD §11.5; `frontend-design:frontend-design` for anything new.
 
 ## Configuration (env)

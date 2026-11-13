@@ -9,8 +9,8 @@ import { useTheme } from "@/shared/theme/use-theme";
  * cannot use the theme tokens (they follow the active theme). Values match styles/studio.css.
  */
 const PREVIEW = {
-  dark: { bg: "#131413", panel: "#181a19", line: "#2a2c2b", text: "#edefee", muted: "#6f716f" },
-  light: { bg: "#fcfcfc", panel: "#ffffff", line: "#e6e6e6", text: "#161616", muted: "#9a9a9a" },
+  dark: { bg: "#111518", panel: "#171c20", line: "#283035", text: "#eceff1", muted: "#6b757c" },
+  light: { bg: "#f7f9fa", panel: "#ffffff", line: "#e2e7ea", text: "#141a1e", muted: "#95a0a6" },
 } as const;
 const BRAND = "var(--color-brand)";
 

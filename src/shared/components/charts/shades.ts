@@ -1,7 +1,7 @@
 const green = (pct: number) => `color-mix(in oklch, var(--color-primary-bright) ${pct}%, transparent)`;
 
 /**
- * Five-step ramp shared by every block chart (0 = empty, 4 = strongest). Supabase charts use the bright green as
+ * Five-step ramp shared by every block chart (0 = empty, 4 = strongest). Charts use the bright accent (cb teal) as
  * the single-series colour; empty cells are the quiet control wash. Theme-aware through the CSS tokens.
  */
 export const BLOCK_SHADES = ["var(--color-control)", green(28), green(50), green(75), green(100)] as const;

@@ -7,32 +7,32 @@
  *
  * Themes: dark by default; `data-theme="light"` on <html> picks light, and no attribute + a light OS preference
  * (theme "System") picks light too. Values follow Supabase's OKLCH semantic structure (surfaces step up in
- * lightness, borders and washes are foreground at low alpha) with cb's own colours: neutral greys carry a faint warm
- * tint toward the brass accent (hue 80), success stays green, warning is orange (PRD v1.61).
+ * lightness, borders and washes are foreground at low alpha) with cb's own colours: a deep slate background with a
+ * faint cool tint (hue 220), the teal accent (hue ~184), a yellower success green and orange warning (PRD v1.62).
  */
 
 /* ── Dark (default) ─────────────────────────────────────────────────────────────────────────── */
 :root:has([data-studio]) {
   color-scheme: dark;
-  --sb-fg: oklch(0.95 0.003 80);
+  --sb-fg: oklch(0.95 0.005 220);
 
   /* Surfaces */
-  --color-background: oklch(0.19 0.003 80);
-  --color-alternative: oklch(0.165 0.003 80);
-  --color-card: oklch(0.215 0.003 80);
-  --color-surface-75: oklch(0.205 0.003 80);
-  --color-surface-100: oklch(0.215 0.003 80);
-  --color-surface-200: oklch(0.2275 0.003 80);
-  --color-surface-300: oklch(0.24 0.003 80);
-  --color-dialog: oklch(0.2275 0.003 80);
-  --color-popover: oklch(0.24 0.003 80);
-  --color-overlay: oklch(0.24 0.003 80);
-  --color-overlay-hover: oklch(0.95 0.003 80 / 7%);
-  --color-secondary: oklch(0.24 0.003 80);
-  --color-muted: oklch(0.95 0.003 80 / 3.3%);
-  --color-accent: oklch(0.95 0.003 80 / 5.5%);
-  --color-control: oklch(0.95 0.003 80 / 5%);
-  --color-selection: oklch(0.95 0.003 80 / 8%);
+  --color-background: oklch(0.18 0.012 220);
+  --color-alternative: oklch(0.155 0.012 220);
+  --color-card: oklch(0.205 0.012 220);
+  --color-surface-75: oklch(0.195 0.012 220);
+  --color-surface-100: oklch(0.205 0.012 220);
+  --color-surface-200: oklch(0.218 0.012 220);
+  --color-surface-300: oklch(0.232 0.012 220);
+  --color-dialog: oklch(0.218 0.012 220);
+  --color-popover: oklch(0.232 0.012 220);
+  --color-overlay: oklch(0.232 0.012 220);
+  --color-overlay-hover: oklch(0.95 0.005 220 / 7%);
+  --color-secondary: oklch(0.232 0.012 220);
+  --color-muted: oklch(0.95 0.005 220 / 3.3%);
+  --color-accent: oklch(0.95 0.005 220 / 5.5%);
+  --color-control: oklch(0.95 0.005 220 / 5%);
+  --color-selection: oklch(0.95 0.005 220 / 8%);
   --color-field: oklch(0 0 0 / 12%);
 
   /* Text: four steps */
@@ -41,38 +41,38 @@
   --color-popover-foreground: var(--sb-fg);
   --color-secondary-foreground: var(--sb-fg);
   --color-accent-foreground: var(--sb-fg);
-  --color-foreground-light: oklch(0.798 0.003 80);
-  --color-foreground-lighter: oklch(0.684 0.003 80);
-  --color-foreground-muted: oklch(0.56 0.003 80);
-  --color-foreground-contrast: oklch(0.19 0.003 80);
+  --color-foreground-light: oklch(0.798 0.005 220);
+  --color-foreground-lighter: oklch(0.684 0.005 220);
+  --color-foreground-muted: oklch(0.56 0.005 220);
+  --color-foreground-contrast: oklch(0.18 0.012 220);
   --color-muted-foreground: var(--color-foreground-light);
   --color-subtle: var(--color-foreground-lighter);
 
   /* Borders: foreground at low alpha, so they sit right on every surface */
-  --color-border: oklch(0.95 0.003 80 / 9%);
-  --color-border-muted: oklch(0.95 0.003 80 / 6%);
-  --color-border-strong: oklch(0.95 0.003 80 / 13.5%);
-  --color-border-stronger: oklch(0.95 0.003 80 / 17.5%);
-  --color-border-overlay: oklch(0.95 0.003 80 / 13.5%);
-  --color-border-control: oklch(0.95 0.003 80 / 13.5%);
-  --color-border-control-hover: oklch(0.95 0.003 80 / 28%);
+  --color-border: oklch(0.95 0.005 220 / 9%);
+  --color-border-muted: oklch(0.95 0.005 220 / 6%);
+  --color-border-strong: oklch(0.95 0.005 220 / 13.5%);
+  --color-border-stronger: oklch(0.95 0.005 220 / 17.5%);
+  --color-border-overlay: oklch(0.95 0.005 220 / 13.5%);
+  --color-border-control: oklch(0.95 0.005 220 / 13.5%);
+  --color-border-control-hover: oklch(0.95 0.005 220 / 28%);
   --color-input: var(--color-border-control);
 
   /*
-   * cb accent = brass (PRD v1.61): the colour of a physical key. Ink for links and selected states, a brass plate
-   * with dark ink for the one primary button, bright brass for focus rings, switches and the chart series.
-   * Success stays green and warning is orange, so the accent never reads as a status.
+   * cb accent = teal (PRD v1.62, OQ18): ink for links and selected states, a teal plate with dark ink for the one
+   * primary button, bright teal for focus rings, switches and the chart series. Success is a yellower green and
+   * warning orange, so the accent never reads as a status.
    */
-  --color-primary: oklch(0.83 0.125 85);
-  --color-primary-foreground: oklch(0.22 0.04 80);
-  --color-primary-solid: oklch(0.8 0.14 83);
-  --color-primary-solid-hover: oklch(0.85 0.13 85);
-  --color-primary-solid-foreground: oklch(0.2 0.04 78);
-  --color-primary-bright: oklch(0.82 0.14 85);
-  --color-brand: oklch(0.8 0.14 83);
-  --color-brand-foreground: oklch(0.2 0.04 78);
-  --color-success: oklch(0.76 0.15 157.5);
-  --color-ring: oklch(0.82 0.14 85 / 55%);
+  --color-primary: oklch(0.8 0.12 185);
+  --color-primary-foreground: oklch(0.2 0.04 185);
+  --color-primary-solid: oklch(0.68 0.12 183);
+  --color-primary-solid-hover: oklch(0.73 0.12 183);
+  --color-primary-solid-foreground: oklch(0.18 0.04 185);
+  --color-primary-bright: oklch(0.76 0.13 184);
+  --color-brand: oklch(0.7 0.12 183);
+  --color-brand-foreground: oklch(0.18 0.04 185);
+  --color-success: oklch(0.78 0.17 145);
+  --color-ring: oklch(0.76 0.13 184 / 55%);
 
   /* States */
   --color-warning: oklch(0.74 0.16 50);
@@ -114,53 +114,53 @@
   --sb-shadow-raised: 0 1px 2px 0 oklch(0 0 0 / 35%), inset 0 1px 0 0 oklch(1 0 0 / 10%);
   --sb-shadow-floating:
     0 0 0 1px oklch(1 0 0 / 9%), 0 4px 12px -2px oklch(0 0 0 / 45%), 0 16px 40px -8px oklch(0 0 0 / 55%);
-  --sb-shimmer-a: oklch(0.95 0.003 80 / 5%);
-  --sb-shimmer-b: oklch(0.95 0.003 80 / 11%);
+  --sb-shimmer-a: oklch(0.95 0.005 220 / 5%);
+  --sb-shimmer-b: oklch(0.95 0.005 220 / 11%);
   --header-height: 3rem;
 }
 
 /* ── Light (the theme script resolves "System" to light or dark on <html data-theme>) ───────────────── */
 :root[data-theme="light"]:has([data-studio]) {
   color-scheme: light;
-  --sb-fg: oklch(0.16 0 0);
-  --color-background: #fcfcfc;
-  --color-alternative: #f8f8f8;
+  --sb-fg: oklch(0.18 0.012 230);
+  --color-background: #f7f9fa;
+  --color-alternative: #f1f4f6;
   --color-card: #ffffff;
   --color-surface-75: #ffffff;
   --color-surface-100: #ffffff;
-  --color-surface-200: #f6f6f6;
-  --color-surface-300: #f0f0f0;
+  --color-surface-200: #f2f5f7;
+  --color-surface-300: #eaeef1;
   --color-dialog: #ffffff;
   --color-popover: #ffffff;
   --color-overlay: #ffffff;
   --color-overlay-hover: oklch(0 0 0 / 5%);
-  --color-secondary: #f3f3f3;
+  --color-secondary: #eef2f4;
   --color-muted: oklch(0 0 0 / 3%);
   --color-accent: oklch(0 0 0 / 5%);
   --color-control: oklch(0 0 0 / 4%);
   --color-selection: oklch(0 0 0 / 7%);
   --color-field: oklch(0 0 0 / 1.5%);
-  --color-foreground-light: #4f4f4f;
-  --color-foreground-lighter: #6e6e6e;
-  --color-foreground-muted: #9a9a9a;
+  --color-foreground-light: #48535a;
+  --color-foreground-lighter: #66727a;
+  --color-foreground-muted: #95a0a6;
   --color-foreground-contrast: #fbfbfb;
-  --color-border: #e6e6e6;
-  --color-border-muted: #eeeeee;
-  --color-border-strong: #d9d9d9;
-  --color-border-stronger: #c4c4c4;
-  --color-border-overlay: #e3e3e3;
-  --color-border-control: #d6d6d6;
-  --color-border-control-hover: #b3b3b3;
-  --color-primary: oklch(0.52 0.11 78);
-  --color-primary-foreground: #fffaf0;
-  --color-primary-solid: oklch(0.76 0.15 80);
-  --color-primary-solid-hover: oklch(0.71 0.15 78);
-  --color-primary-solid-foreground: oklch(0.2 0.04 78);
-  --color-primary-bright: oklch(0.72 0.15 80);
-  --color-brand: oklch(0.76 0.15 80);
-  --color-brand-foreground: oklch(0.2 0.04 78);
-  --color-success: #0e7e4e;
-  --color-ring: oklch(0.7 0.15 80 / 55%);
+  --color-border: #e2e7ea;
+  --color-border-muted: #ebeff1;
+  --color-border-strong: #d5dce0;
+  --color-border-stronger: #bec7cc;
+  --color-border-overlay: #dfe5e8;
+  --color-border-control: #d2d9dd;
+  --color-border-control-hover: #aeb8be;
+  --color-primary: oklch(0.5 0.09 185);
+  --color-primary-foreground: #ffffff;
+  --color-primary-solid: oklch(0.56 0.1 184);
+  --color-primary-solid-hover: oklch(0.5 0.1 184);
+  --color-primary-solid-foreground: #ffffff;
+  --color-primary-bright: oklch(0.6 0.11 184);
+  --color-brand: oklch(0.56 0.1 184);
+  --color-brand-foreground: #ffffff;
+  --color-success: oklch(0.55 0.15 145);
+  --color-ring: oklch(0.6 0.11 184 / 50%);
   --color-warning: oklch(0.56 0.16 45);
   --color-warning-foreground: #ffffff;
   --color-destructive: #c03a36;
