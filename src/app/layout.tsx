@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import type { ReactNode } from "react";
 import { PRODUCT_NAME, PRODUCT_TAGLINE } from "@/constants";
 import { AppProviders } from "@/shared/providers/app-providers";
@@ -26,11 +25,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       data-scroll-behavior="smooth"
       className={`dark ${geistSans.variable} ${geistMono.variable}`}
     >
+      <head>
+        {/*
+         * Dashboard theme (light/dark) before first paint; only dashboard tokens read data-theme, docs ignore it.
+         * A plain inline script in <head>: server-rendered and only hydrated, so React never renders it on the client
+         * (next/script beforeInteractive did, and React 19 warns about that).
+         */}
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: static theme boot script, no user input */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body className="min-h-dvh">
-        {/* Dashboard theme (light/dark) before first paint; only dashboard tokens read data-theme, docs ignore it. */}
-        <Script id="cb-theme" strategy="beforeInteractive">
-          {THEME_BOOT_SCRIPT}
-        </Script>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
