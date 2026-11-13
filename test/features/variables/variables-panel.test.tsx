@@ -212,7 +212,9 @@ describe("Variables tab (D1, D4)", () => {
 describe("NFR-A11Y Variables tab", () => {
   it("NFR-A11Y variables table has no axe violations", async () => {
     renderPanel();
-    await screen.findAllByText("Quick add");
+    // Audit the loaded table, not the skeleton.
+    await screen.findAllByText("STRIPE_SECRET_KEY");
+    expect(screen.getAllByText("PORT").length).toBeGreaterThan(0);
     expect(await axeViolations()).toEqual([]);
   });
 });
