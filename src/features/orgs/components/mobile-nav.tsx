@@ -1,18 +1,12 @@
 "use client";
 
-import { BookOpen, ChevronRight, KeyRound, Layers, LayoutGrid, LogOut, Settings, X } from "lucide-react";
+import { KeyRound, Layers, LayoutGrid, Settings, X } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { DOCS_PATH, LOGIN_PATH, PRODUCT_NAME } from "@/constants";
-import { useLogout, useMe } from "@/features/auth/hooks/use-auth";
+import { PRODUCT_NAME } from "@/constants";
 import { useProject } from "@/features/projects/hooks/use-projects";
-import { AvatarInitials } from "@/shared/components/avatar-initials";
-import { BadgeLabel } from "@/shared/components/badge-label";
-import { THEME_ICONS } from "@/shared/components/theme-toggle";
 import { cn } from "@/shared/lib/utils";
-import { THEME_CHOICES } from "@/shared/theme/theme";
-import { useTheme } from "@/shared/theme/use-theme";
 import { SheetClose } from "@/shared/ui/sheet";
 import { useOrg } from "../hooks/use-orgs";
 import { isActive, orgNavGroups } from "./org-sidebar";
@@ -56,16 +50,12 @@ function Item({
 }
 
 /**
- * Phone menu (Studio mobile): org header, the current project's pages and environments when inside one, the org
- * navigation in titled groups, and the account (theme, docs, sign out) pinned at the bottom.
+ * Phone menu (Studio mobile): org header, the current project's pages and environments when inside one, and the org
+ * navigation in titled groups. Account, theme, Docs and Sign out live in the profile menu (top bar).
  */
 export function MobileNav({ orgId, projectId }: { orgId: string; projectId?: string }) {
   const pathname = usePathname();
-  const router = useRouter();
   const org = useOrg(orgId);
-  const me = useMe();
-  const logout = useLogout();
-  const { choice, setChoice } = useTheme();
   const groups = orgNavGroups(orgId, org.isAdmin);
 
   return (
@@ -101,65 +91,6 @@ export function MobileNav({ orgId, projectId }: { orgId: string; projectId?: str
           </div>
         ))}
       </nav>
-
-      <div className="shrink-0 border-t border-border bg-surface-75 p-3">
-        <div className="flex items-center gap-3 px-1 pb-3">
-          <AvatarInitials name={me.data?.user.name ?? ""} />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <span className="flex min-w-0 items-center gap-2">
-              <span className="truncate text-sm text-foreground">{me.data?.user.name}</span>
-              {org.data && <BadgeLabel tone={org.isAdmin ? "strong" : "default"}>{org.data.role}</BadgeLabel>}
-            </span>
-            <span className="truncate text-xs text-foreground-lighter">{me.data?.user.email}</span>
-          </div>
-        </div>
-        {/* Theme as a segmented control, like Studio's appearance switch. */}
-        <fieldset className="mb-2 grid grid-cols-3 gap-1 rounded-md border border-border bg-background p-0.5">
-          <legend className="sr-only">Theme</legend>
-          {THEME_CHOICES.map((t) => {
-            const Icon = THEME_ICONS[t.value];
-            const selected = choice === t.value;
-            return (
-              <label
-                key={t.value}
-                className={cn(
-                  "flex h-7 cursor-pointer items-center justify-center gap-1.5 rounded-[5px] text-xs transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-ring",
-                  selected ? "bg-selection text-foreground" : "text-foreground-lighter hover:text-foreground",
-                )}
-              >
-                <input
-                  type="radio"
-                  name="mobile-theme"
-                  value={t.value}
-                  checked={selected}
-                  onChange={() => setChoice(t.value)}
-                  className="sr-only"
-                />
-                <Icon className="size-3.5" strokeWidth={1.5} />
-                {t.label}
-              </label>
-            );
-          })}
-        </fieldset>
-        <div className="flex flex-col gap-0.5">
-          <Item
-            href={DOCS_PATH}
-            active={false}
-            icon={<BookOpen strokeWidth={1.5} />}
-            trailing={<ChevronRight className="size-3.5 text-foreground-muted" />}
-          >
-            Docs
-          </Item>
-          <button
-            type="button"
-            onClick={() => logout.mutate(undefined, { onSettled: () => router.replace(LOGIN_PATH) })}
-            className="flex h-9 items-center gap-3 rounded-md px-3 text-sm text-destructive transition-colors hover:bg-destructive/10"
-          >
-            <LogOut className="size-4 shrink-0" strokeWidth={1.5} />
-            Sign out
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
