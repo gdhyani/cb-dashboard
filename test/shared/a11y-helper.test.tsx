@@ -8,6 +8,7 @@ describe("NFR-A11Y axe helper", () => {
       <div>
         <button type="button" />
         {/* biome-ignore lint/a11y/useAltText: deliberate violation for the helper test */}
+        {/* biome-ignore lint/performance/noImgElement: a plain img is the point of this test */}
         <img src="x.png" />
         <input type="text" />
       </div>,
