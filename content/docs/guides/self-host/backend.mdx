@@ -115,11 +115,12 @@ COOKIE_SECURE=false
     Allows plain `http://` API services on private or loopback addresses (handy for local services). Set `false` on a
     backend shared by several teams.
   </Field>
-  <Field name="TRUST_PROXY" type="false | loopback | address, subnet or hop count" default="loopback">
-    Which proxies cb believes about the caller's address (`X-Forwarded-For`), used for the login limits. The default
-    trusts a proxy on the same machine, such as the dashboard's built-in `/api` proxy, so each browser is limited
-    on its own address. Behind your own reverse proxy, set its address or subnet (for example `10.0.0.0/8`). `false`
-    ignores the header.
+  <Field name="TRUST_PROXY" type="false | addresses, subnets or a hop count" default="false">
+    Which proxies cb believes about the caller's address (`X-Forwarded-For`), used for the per-address login limit.
+    By default the header is ignored, because a client can send its own. Logins that arrive through the dashboard
+    come from this machine, so they are limited per email only. If a reverse proxy in front of the dashboard sets
+    `X-Forwarded-For`, list it together with `loopback`, for example `loopback, 10.0.0.0/8`, and each browser is also
+    limited on its own address.
   </Field>
   <Field name="UPSTREAM_EXTRA_CA_FILE" type="file path">
     Test only: an extra CA certificate file trusted for upstream connections, used by cb's own test suite with mock

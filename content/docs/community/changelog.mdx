@@ -14,9 +14,9 @@ on `main`.
 - **The gateway only ever calls the configured service.** A request whose path named another host
   (`http://other/…` or `//other/…`) is now refused with `400 cb_bad_request_target` before any connection; before, it
   could send the real key to that host.
-- **Login limits.** After 10 failed logins for one email, or 30 from one address, within 15 minutes, cb refuses
-  logins for that email or address until the 15 minutes pass (`429`, with `Retry-After`). Behind the dashboard each
-  browser counts on its own address; the new backend setting `TRUST_PROXY` (default `loopback`) controls this.
+- **Login limits.** After 10 failed logins for one email within 15 minutes, cb refuses logins for that email until
+  the 15 minutes pass (`429`, with `Retry-After`). Callers cb can tell apart are also limited to 30 failures per
+  address; behind your own reverse proxy, the new backend setting `TRUST_PROXY` says which proxy to believe.
 - **Shared hosts.** When two services share a host (Google sign-in and Firebase on `oauth2.googleapis.com`), each
   is checked on its own, and an emergency stop, disable or login change on either closes the connection.
 
