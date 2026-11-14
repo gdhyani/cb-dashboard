@@ -14,7 +14,7 @@ describe("FR-UI-007 org that can't be loaded", () => {
     );
     expect(screen.getByText("Organization not available")).toBeInTheDocument();
     expect(screen.getByText(/NOT_FOUND · correlation id c-1/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Go to my organization" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Go to my organization" })).toHaveAttribute("href", "/dashboard");
   });
 
   it("shows the server's message for other failures", () => {

@@ -1,7 +1,7 @@
 import { GithubInfo } from "fumadocs-ui/components/github-info";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 import { LayoutDashboard, Newspaper } from "lucide-react";
-import { BLOG_PATH, DOCS_PATH, GITHUB_REPO, PRODUCT_NAME } from "@/constants";
+import { APP_HOME_PATH, BLOG_PATH, DOCS_PATH, GITHUB_REPO, PRODUCT_NAME } from "@/constants";
 
 export const docsLayoutOptions: BaseLayoutProps = {
   nav: {
@@ -17,8 +17,8 @@ export const docsLayoutOptions: BaseLayoutProps = {
   themeSwitch: { enabled: false },
   links: [
     { type: "main", text: "Blog", url: BLOG_PATH, icon: <Newspaper /> },
-    // "/" sends signed-out visitors to /login and signed-in ones into the app (proxy.ts); the docs never read the session.
-    { type: "main", text: "Open dashboard", url: "/", icon: <LayoutDashboard /> },
+    // The dashboard entry sends signed-out visitors to /login and signed-in ones into the app (proxy.ts); the docs never read the session.
+    { type: "main", text: "Open dashboard", url: APP_HOME_PATH, icon: <LayoutDashboard /> },
     // Stars and forks, fetched when the docs are built (static).
     { type: "custom", children: <GithubInfo owner={GITHUB_REPO.owner} repo={GITHUB_REPO.repo} className="lg:-mx-2" /> },
   ],

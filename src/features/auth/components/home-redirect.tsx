@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { PRODUCT_NAME } from "@/constants";
 import { useMe } from "../hooks/use-auth";
 
-/** "/" → first organization when signed in (or /no-organization), otherwise the sign-in page. */
+/** "/dashboard" → first organization when signed in (or /no-organization), otherwise the sign-in page. */
 export function HomeRedirect() {
   const router = useRouter();
   const me = useMe({ allowSignedOut: true });

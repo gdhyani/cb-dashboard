@@ -3,6 +3,7 @@
 import { ReactLenis, useLenis } from "lenis/react";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
+import { LANDING_PATH } from "@/constants";
 import { prefersSmoothScroll, watchScrollLock } from "@/shared/lib/smooth-scroll";
 
 /** Runs inside ReactLenis: the instance only exists after Lenis mounts, so read it through useLenis. */
@@ -29,9 +30,10 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     return () => query.removeEventListener("change", update);
   }, []);
 
+  // The landing page runs its own Lenis on the GSAP ticker (features/landing/motion).
   // The docs scroll natively: code blocks and tables scroll sideways only, and the page keeps the vertical wheel.
   const pathname = usePathname();
-  if (!enabled || pathname?.startsWith("/docs")) return children;
+  if (!enabled || pathname === LANDING_PATH || pathname?.startsWith("/docs")) return children;
   return (
     <ReactLenis root options={{ lerp: 0.14, anchors: true, allowNestedScroll: true }}>
       <LenisSync />

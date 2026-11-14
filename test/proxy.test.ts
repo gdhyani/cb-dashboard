@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import { config, proxy } from "@/proxy";
 
 describe("FR-UI-006 proxy (signed-out redirect)", () => {
-  it("guards the home page too", () => {
-    expect(config.matcher).toContain("/");
+  it("guards the dashboard entry", () => {
+    expect(config.matcher).toContain("/dashboard");
   });
 
   it("sends signed-out visitors to /login with the page they wanted", () => {
@@ -13,8 +13,8 @@ describe("FR-UI-006 proxy (signed-out redirect)", () => {
     expect(res.headers.get("location")).toBe("http://localhost:4201/login?next=%2Forgs%2Fo1%2Fmembers%3Ftab%3D2");
   });
 
-  it("does not add a pointless next for the home page", () => {
-    const res = proxy(new NextRequest("http://localhost:4201/"));
+  it("does not add a pointless next for the dashboard entry", () => {
+    const res = proxy(new NextRequest("http://localhost:4201/dashboard"));
     expect(res.headers.get("location")).toBe("http://localhost:4201/login");
   });
 
@@ -36,5 +36,11 @@ describe("FR-DOC-001 docs are public", () => {
     const { DOCS_PATH, DOCS_SEARCH_PATH, API_BASE_PATH } = await import("@/constants");
     expect(DOCS_PATH).toBe("/docs");
     expect(DOCS_SEARCH_PATH.startsWith(API_BASE_PATH)).toBe(false);
+  });
+});
+
+describe("Landing page at / (v1.69)", () => {
+  it("never runs the proxy on /, so everyone sees the landing page, signed in or not", () => {
+    expect(config.matcher).not.toContain("/");
   });
 });
