@@ -53,8 +53,10 @@ members, sessions/devices, audit and kill switches; developer `/me` page; CLI de
 cb-dashboard/
 ├─ src/
 │  ├─ app/                         # Next.js App Router — routes/layouts ONLY; thin pages that compose features
+│  │  ├─ (landing)/                # `/`: public product page (own look, NOT the dashboard design system; PRD §11.6)
 │  │  ├─ (studio)/                 # EVERY dashboard route (scopes the Supabase design system, see "Design system")
 │  │  │  ├─ layout.tsx             # [data-studio] marker + dashboard fonts
+│  │  │  ├─ dashboard              # entry: signed-in → their organization (`/` is the landing page for everyone)
 │  │  │  ├─ (auth)/login  (auth)/signup  invite/[token]  device
 │  │  │  └─ orgs/[orgId]/…         # home, projects, members, devices, audit, emergency, me, account,
 │  │  │                            # projects/[projectId]/{access,settings,environments/[envId]/{access,webhooks,settings}}
@@ -80,8 +82,9 @@ cb-dashboard/
 │  │  └─ providers/                # QueryClientProvider, theme
 │  ├─ styles/globals.css           # design tokens
 │  ├─ constants.ts                 # product names, CLI command strings — rename here
-│  ├─ proxy.ts                     # Next 16 name for middleware: redirect unauthenticated users to /login
+│  ├─ proxy.ts                     # Next 16 middleware: app pages → /login when signed out; `/` is not matched (public)
 │  ├─ app/docs/  app/docs-search/  # public documentation (Fumadocs): layout, [[...slug]] page, search index
+│  ├─ features/landing/            # landing page: content.ts (all copy), components/, motion/ (GSAP + Lenis), landing.css
 │  └─ features/docs/               # docs components (Frame, Callout, Fields, EnvTable, StatusBadge, diagrams), catalogs
 ├─ content/docs/                   # MDX documentation pages + meta.json (committed)
 ├─ public/docs/images/             # documentation screenshots, already framed on the gradient (committed)
@@ -150,6 +153,9 @@ type ApiErrorBody = { success: false; error: { code: string; message: string; st
 The dashboard is a port of the **Supabase design system** (supabase.com/design-system) with cb's own colours: a teal
 accent and a deep slate background (PRD v1.62). It applies to dashboard routes only.
 
+- **Landing page (`/`, PRD §11.6)** has its own look ("marked-up document": highlighter = placeholder key, black bar = real secret;
+  Archivo + Fragment Mono; `lp-` classes in `features/landing/landing.css`) and its own motion (GSAP ticker drives Lenis and
+  ScrollTrigger; the app-wide smooth scroll skips `/`). Never show a full credential-shaped string there (FR-LP-003).
 - **Scope.** Dashboard routes live in `src/app/(studio)/`; its layout renders `[data-studio]`, and `src/styles/studio.css`
   applies the tokens to `:root` only while that marker is on the page (portals included). Docs (`src/app/docs*`), the blog
   and marketing pages must never render inside `(studio)` and keep their own look. A shared part that docs also use gets its

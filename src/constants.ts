@@ -5,6 +5,12 @@ export const API_BASE_PATH = "/api";
 export const CSRF_HEADER = "x-cb-csrf";
 export const SESSION_COOKIE = "cb_session";
 export const LOGIN_PATH = "/login";
+/** Public product page (signed-out visitors). */
+export const LANDING_PATH = "/";
+/** Dashboard entry: sends a signed-in user to their organization (v1.63; "/" is the public landing page). */
+export const APP_HOME_PATH = "/dashboard";
+/** Public address of this dashboard (canonical links, sitemap). Set NEXT_PUBLIC_SITE_URL in production. */
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:4201";
 export const CLI_COMMANDS = {
   install: "npm i -D @cb/env",
   login: "npx cb login",

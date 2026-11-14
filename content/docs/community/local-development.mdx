@@ -73,7 +73,8 @@ npm run dev
 
 Open `http://localhost:4201`. Requests to `/api/*` are proxied to the backend at `CB_API_URL`
 (default `http://localhost:4200`); copy `.env.example` to `.env.local` only if you need to change it. The docs you
-are reading are served at `http://localhost:4201/docs`.
+are reading are served at `http://localhost:4201/docs`. The home page (`/`) is the public product page
+(`src/app/(landing)`, `src/features/landing`); the dashboard starts at `/dashboard`.
 </Step>
 <Step>
 ### Build the CLI

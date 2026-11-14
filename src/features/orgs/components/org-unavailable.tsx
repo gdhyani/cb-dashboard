@@ -2,6 +2,7 @@
 
 import { Building2 } from "lucide-react";
 import Link from "next/link";
+import { APP_HOME_PATH } from "@/constants";
 import type { ApiError } from "@/shared/api/api-error";
 import { EmptyState } from "@/shared/components/empty-state";
 import { PageContainer } from "@/shared/components/page-container";
@@ -32,7 +33,7 @@ export function OrgUnavailable({ error }: { error: ApiError }) {
         }
         action={
           <Button asChild size="sm">
-            <Link href="/">Go to my organization</Link>
+            <Link href={APP_HOME_PATH}>Go to my organization</Link>
           </Button>
         }
       />

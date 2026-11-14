@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { APP_HOME_PATH } from "@/constants";
 import { notifyError, notifySuccess } from "@/shared/lib/notify";
 import * as api from "../api/account.api";
 import { accountKeys } from "../api/account.keys";
@@ -47,7 +48,7 @@ export const useDeletionPreview = (enabled: boolean) =>
 
 /**
  * After the account or an organization is gone, start over from a clean page: every cached query belongs to data that
- * no longer exists. "/" sends a signed-in user to their next organization, everyone else to sign in.
+ * no longer exists. The dashboard entry sends a signed-in user to their next organization, everyone else to sign in.
  */
 function startOver(path: string) {
   window.location.replace(path);
@@ -63,13 +64,13 @@ export function useDeleteAccount() {
 export function useDeleteOrganization(orgId: string) {
   return useMutation({
     mutationFn: (body: { password: string; confirm: string }) => api.deleteOrganization(orgId, body),
-    onSuccess: () => startOver("/"),
+    onSuccess: () => startOver(APP_HOME_PATH),
   });
 }
 
 export function useLeaveOrganization(orgId: string) {
   return useMutation({
     mutationFn: (userId: string) => api.leaveOrganization(orgId, userId),
-    onSuccess: () => startOver("/"),
+    onSuccess: () => startOver(APP_HOME_PATH),
   });
 }

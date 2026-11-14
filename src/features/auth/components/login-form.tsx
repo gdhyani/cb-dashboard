@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { DOCS_PATH } from "@/constants";
+import { APP_HOME_PATH, DOCS_PATH } from "@/constants";
 import { DocsLink } from "@/shared/components/docs-link";
 import { FormError } from "@/shared/components/form-error";
 import { FormField } from "@/shared/components/form-field";
@@ -65,7 +65,7 @@ export function LoginForm() {
             Don&apos;t have an account?{" "}
             <Link
               className="text-foreground underline underline-offset-4 hover:text-foreground-light"
-              href={`/signup${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`}
+              href={`/signup${next !== APP_HOME_PATH ? `?next=${encodeURIComponent(next)}` : ""}`}
             >
               Sign up
             </Link>

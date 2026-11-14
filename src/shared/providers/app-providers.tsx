@@ -3,7 +3,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
 import { Toaster } from "sonner";
-import { LOGIN_PATH } from "@/constants";
+import { APP_HOME_PATH, LANDING_PATH, LOGIN_PATH } from "@/constants";
 import { makeQueryClient } from "@/shared/api/query-client";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { SmoothScroll } from "./smooth-scroll";
@@ -12,7 +12,8 @@ import { SmoothScroll } from "./smooth-scroll";
 function redirectToLogin() {
   const { pathname, search } = window.location;
   if (pathname === LOGIN_PATH) return;
-  const back = pathname === "/" ? "" : `?next=${encodeURIComponent(pathname + search)}`;
+  const back =
+    pathname === LANDING_PATH || pathname === APP_HOME_PATH ? "" : `?next=${encodeURIComponent(pathname + search)}`;
   window.location.replace(`${LOGIN_PATH}${back}`);
 }
 
