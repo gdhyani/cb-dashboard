@@ -1,9 +1,24 @@
 # cb-dashboard
 
+<p align="center"><img src=".github/readme/banner.png" alt="cb-dashboard: where teams manage keys they never hand out. Live captures of the product page at /, the docs at /docs and the blog at /blog, in the cb brand." width="100%"></p>
+
 The admin and developer web app for cb, where teams manage projects, variables, access and devices — and the home of the cb documentation.
 
 **Documentation:** the dashboard serves the docs at `/docs`; their source is in [`content/docs/`](content/docs)
 of this repository (gdhyani/cb-dashboard).
+
+## What's in this app
+
+| Route | What it is |
+|---|---|
+| `/` | Public product page, told by scroll (GSAP + Lenis) |
+| `/dashboard` | Admin and developer app: projects, variables, access, devices, webhooks, audit |
+| `/docs` | Documentation (Fumadocs, MDX in `content/docs/`) |
+| `/blog` | Notes on credentialless development |
+
+The dashboard never holds or receives a real secret: it talks to cb-backend over REST, and protected values are never readable.
+
+<p align="center"><img src=".github/readme/system.png" alt="The three cb repos: cb-dashboard (REST, cookie) and cb-env (WSS and SSE, bearer) talk to cb-backend, the only repo that holds real keys, which reaches the real services with TLS verified." width="100%"></p>
 
 ## Run
 
