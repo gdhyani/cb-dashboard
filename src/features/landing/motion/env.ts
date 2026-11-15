@@ -10,3 +10,5 @@ export const ease = {
 
 /** Set on <html> before first paint when motion is allowed: hides reveal targets until they animate in. */
 export const MOTION_CLASS = "lp-motion";
+/** Set once the motion module runs; until then a CSS failsafe shows hidden blocks after a short wait. */
+export const READY_CLASS = "lp-motion-ready";
