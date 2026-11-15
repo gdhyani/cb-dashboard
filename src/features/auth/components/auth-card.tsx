@@ -21,7 +21,7 @@ export function AuthCard({
   return (
     <div className="flex min-h-dvh bg-background">
       <main className="flex min-w-0 flex-1 flex-col px-4 py-8 sm:px-8 lg:max-w-[50%] xl:max-w-[44%]">
-        {/* The product mark: brand teal with its own ink (as in the org shell). */}
+        {/* The product mark: brand yellow with its own ink (as in the org shell). */}
         <Link
           href="/"
           aria-label={`${PRODUCT_NAME} home`}
@@ -42,7 +42,7 @@ export function AuthCard({
         <div className="flex max-w-lg flex-col gap-8">
           <blockquote className="flex flex-col gap-4">
             <p className="text-2xl leading-snug text-foreground">
-              Run your app with every key it needs, without a single real secret on your laptop.
+              Run your app with every key it needs, without a single real secret on your developer machine.
             </p>
             <footer className="heading-meta text-foreground-lighter">{PRODUCT_TAGLINE}</footer>
           </blockquote>

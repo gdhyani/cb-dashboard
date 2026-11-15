@@ -19,7 +19,7 @@ export function EmergencyStopView({ orgId }: { orgId: string }) {
   const past = stops.data?.filter((s) => s.clearedAt).slice(0, 20) ?? [];
   return (
     <>
-      <PageHeader title="Emergency Stop" description="Cut access at once for incidents, lost laptops or leaked keys" />
+      <PageHeader title="Emergency Stop" description="Cut access at once for incidents, lost devices or leaked keys" />
       <div className="pt-8">
         <Admonition type="warning" title="A stop takes effect within seconds">
           Live database and API connections close and new ones are refused until you restore access. You give a reason

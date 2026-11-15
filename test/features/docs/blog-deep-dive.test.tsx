@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { BlogBento } from "@/features/docs/components/blog/blog-bento";
+import { BlogIndex } from "@/features/docs/components/blog/blog-index";
 import { EnvCompositionChart } from "@/features/docs/components/blog/env-composition-chart";
 import { EnvPrecedenceDiagram } from "@/features/docs/components/blog/env-precedence-diagram";
 import { EnvVisibilityDiagram } from "@/features/docs/components/blog/env-visibility-diagram";
@@ -49,23 +49,25 @@ describe("FR-DOC-010 blog covers", () => {
 });
 
 describe("FR-DOC-010 blog index", () => {
-  it("shows the latest four in the bento grid with images, the rest in a list below", () => {
-    render(<BlogBento posts={[1, 2, 3, 4, 5, 6].map(post)} />);
-    const grid = screen.getByRole("list", { name: "Latest posts" });
-    expect(within(grid).getAllByRole("listitem")).toHaveLength(4);
+  it("features the newest post, then every other post in one even grid, newest first", () => {
+    render(<BlogIndex posts={[1, 2, 3, 4, 5].map(post)} />);
+    const latest = screen.getByRole("region", { name: "Latest post" });
+    expect(within(latest).getByRole("link")).toHaveAttribute("href", "/blog/post-1");
+    expect(within(latest).getByText("Latest")).toBeInTheDocument();
+    expect(within(latest).getByAltText("Cover 1")).toBeInTheDocument();
+    const grid = screen.getByRole("list", { name: "Earlier posts" });
+    const items = within(grid).getAllByRole("listitem");
+    expect(items.map((li) => li.textContent)).toEqual(
+      ["Post 2", "Post 3", "Post 4", "Post 5"].map((t) => expect.stringContaining(t)),
+    );
     expect(within(grid).getAllByRole("img")).toHaveLength(4);
-    expect(within(grid).getByAltText("Cover 1")).toBeInTheDocument();
-    const rest = screen.getByRole("list", { name: "More posts" });
-    expect(
-      within(rest)
-        .getAllByRole("listitem")
-        .map((li) => li.textContent),
-    ).toEqual([expect.stringContaining("Post 5"), expect.stringContaining("Post 6")]);
   });
 
-  it("leaves out the list when there are four posts or fewer", () => {
-    render(<BlogBento posts={[1, 2, 3].map(post)} />);
-    expect(screen.queryByRole("list", { name: "More posts" })).toBeNull();
+  it("shows only the feature with one post, and nothing with none", () => {
+    const { container, rerender } = render(<BlogIndex posts={[post(1)]} />);
+    expect(screen.queryByRole("list", { name: "Earlier posts" })).toBeNull();
+    rerender(<BlogIndex posts={[]} />);
+    expect(container).toBeEmptyDOMElement();
   });
 });
 

@@ -1,11 +1,12 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useReducedMotion } from "@/shared/hooks/use-reduced-motion";
 import { DiagramFrame } from "../diagram-frame";
 import { ArrowMarker, BOX_H, BOX_W, Box } from "../diagram-parts";
 
-const REAL = "#fbbf24";
-const STAND_IN = "#d4d4d4";
+const REAL = "var(--dg-hot)";
+const STAND_IN = "var(--dg-ph)";
 const NODES = [
   { x: 20, label: "Your app", sub: "reads a stand-in" },
   { x: 270, label: "cb agent", sub: "passes bytes through" },
@@ -40,12 +41,21 @@ export function SecurePassageDiagram() {
         fontFamily="inherit"
       >
         <ArrowMarker id="arrow-passage" />
-        <rect x={6} y={40} width={478} height={180} rx={14} fill="none" stroke="#525252" strokeDasharray="6 6" />
-        <text x={22} y={64} fill="#a1a1a1" fontSize={12} fontWeight={600}>
+        <rect
+          x={6}
+          y={40}
+          width={478}
+          height={180}
+          rx={14}
+          fill="none"
+          stroke="var(--dg-line-strong)"
+          strokeDasharray="6 6"
+        />
+        <text x={22} y={64} fill="var(--dg-ink-2)" fontSize={12} fontWeight={600}>
           Your laptop
         </text>
-        <rect x={500} y={40} width={230} height={180} rx={14} fill="none" stroke="#525252" />
-        <text x={516} y={64} fill="#a1a1a1" fontSize={12} fontWeight={600}>
+        <rect x={500} y={40} width={230} height={180} rx={14} fill="none" stroke="var(--dg-line-strong)" />
+        <text x={516} y={64} fill="var(--dg-ink-2)" fontSize={12} fontWeight={600}>
           cb server
         </text>
         {!still && (
@@ -87,14 +97,14 @@ export function SecurePassageDiagram() {
                 y1={MID}
                 x2={x2}
                 y2={MID}
-                stroke={h.real ? REAL : "#8f8f8f"}
+                stroke={h.real ? REAL : "var(--dg-arrow)"}
                 markerEnd="url(#arrow-passage)"
               />
               <text
                 x={(x1 + x2) / 2}
                 y={Y + BOX_H + 22}
                 textAnchor="middle"
-                fill={h.real ? REAL : "#a1a1a1"}
+                fill={h.real ? REAL : "var(--dg-ink-2)"}
                 fontSize={11}
               >
                 {h.label}
@@ -102,7 +112,7 @@ export function SecurePassageDiagram() {
             </g>
           );
         })}
-        <text x={490} y={244} textAnchor="middle" fill="#737373" fontSize={11}>
+        <text x={490} y={244} textAnchor="middle" fill="var(--dg-ink-3)" fontSize={11}>
           The stand-in works only from this device, only through cb, and only while access is granted.
         </text>
       </svg>

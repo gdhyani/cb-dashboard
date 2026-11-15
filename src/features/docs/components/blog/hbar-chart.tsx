@@ -3,13 +3,15 @@
 import { useState } from "react";
 import type { BarDatum } from "../../lib/blog-data";
 
-const SECRET = "#fbbf24";
-const PLAIN = "#a3a3a3";
+/** With a legend: red = gives access if leaked, grey = safe. Without: one series in the cb yellow. */
+const SECRET = "var(--dg-hot)";
+const PLAIN = "var(--dg-ink-3)";
+const SERIES = "var(--dg-ph)";
 
 /**
  * FR-DOC-010: a single-measure horizontal bar chart for the blog. Bars are thin with 4px rounded ends; values are
  * direct-labelled; hover or focus shows the note; a table view carries the same numbers. When `legend` is set,
- * bars marked `secret` are amber and the rest grey, and the legend names both.
+ * bars marked `secret` are red and the rest grey (otherwise every bar is the cb yellow), and the legend names both.
  */
 export function HBarChart({
   title,
@@ -65,7 +67,7 @@ export function HBarChart({
                 className="h-4 rounded-[4px] outline-offset-2"
                 style={{
                   width: `${Math.max(2, (d.value / max) * 78)}%`,
-                  background: legend && d.secret ? SECRET : PLAIN,
+                  background: legend ? (d.secret ? SECRET : PLAIN) : SERIES,
                 }}
               />
               <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{format(d.value)}</span>

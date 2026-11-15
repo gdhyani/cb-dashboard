@@ -46,7 +46,7 @@ function ProjectBox({ projectId }: { projectId: string }) {
   );
 }
 
-/** Product mark: the only place the brand teal appears as decoration. */
+/** Product mark: the only place the brand yellow appears as decoration. */
 function ProductMark() {
   return (
     <span className="flex size-6 items-center justify-center rounded-md bg-brand font-mono text-[11px] font-semibold text-brand-foreground">

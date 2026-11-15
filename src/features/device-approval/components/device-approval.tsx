@@ -61,7 +61,7 @@ export function DeviceApproval({ initialCode }: { initialCode: string }) {
             id="device"
             value={deviceName}
             onChange={(e) => setDeviceName(e.target.value)}
-            placeholder="Work laptop"
+            placeholder="Work machine"
           />
         </FormField>
         <Button type="submit" size="lg" block loading={approve.isPending} disabled={code.trim().length < 9}>

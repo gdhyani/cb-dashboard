@@ -16,9 +16,9 @@ export function describeValue(v: Variable, isMain: boolean): { text: string; mon
     default:
       // By field, not by position: a legacy group may show a host or an email first.
       if (v.field && LOCAL_URL_FIELDS.has(v.field)) return { text: "local URL, set by cb", mono: false };
-      if (v.field && STAND_IN_FIELDS.has(v.field)) return { text: "stand-in, made by cb", mono: false };
+      if (v.field && STAND_IN_FIELDS.has(v.field)) return { text: "placeholder, made by cb", mono: false };
       if (v.field && FROM_SERVICE_FIELDS.has(v.field)) return { text: "from the service settings", mono: false };
       if (isMain || !v.field) return { text: "●●●●●●●● · real value hidden", mono: false };
-      return { text: "stand-in, made by cb", mono: false };
+      return { text: "placeholder, made by cb", mono: false };
   }
 }

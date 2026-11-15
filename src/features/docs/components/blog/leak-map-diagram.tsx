@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useReducedMotion } from "@/shared/hooks/use-reduced-motion";
 import { DiagramFrame } from "../diagram-frame";
 
 const CX = 450;
@@ -28,11 +29,11 @@ export function LeakMapDiagram() {
       >
         {DESTINATIONS.map((d, i) => (
           <g key={d.label}>
-            <line x1={CX} y1={CY} x2={d.x} y2={d.y} stroke="#3a3a3a" />
+            <line x1={CX} y1={CY} x2={d.x} y2={d.y} stroke="var(--dg-line)" />
             {!still && (
               <motion.circle
                 r={4}
-                fill="#fbbf24"
+                fill="var(--dg-hot)"
                 aria-hidden
                 initial={{ cx: CX, cy: CY, opacity: 0 }}
                 animate={{ cx: [CX, d.x], cy: [CY, d.y], opacity: [0, 1, 0] }}
@@ -41,20 +42,36 @@ export function LeakMapDiagram() {
             )}
           </g>
         ))}
-        <rect x={CX - 130} y={CY - 38} width={260} height={76} rx={10} fill="#0a0a0a" stroke="#6d6d6d" />
-        <text x={CX - 112} y={CY - 10} fill="#a1a1a1" fontSize={12} fontFamily="var(--font-geist-mono), monospace">
+        <rect
+          x={CX - 130}
+          y={CY - 38}
+          width={260}
+          height={76}
+          rx={10}
+          fill="var(--dg-panel)"
+          stroke="var(--dg-line-strong)"
+        />
+        <text x={CX - 112} y={CY - 10} fill="var(--dg-ink-2)" fontSize={12} fontFamily="var(--font-mono), monospace">
           .env
         </text>
-        <text x={CX - 112} y={CY + 16} fill="#fbbf24" fontSize={12} fontFamily="var(--font-geist-mono), monospace">
+        <text x={CX - 112} y={CY + 16} fill="var(--dg-hot)" fontSize={12} fontFamily="var(--font-mono), monospace">
           STRIPE_SECRET_KEY=sk_live_••••
         </text>
         {DESTINATIONS.map((d) => (
           <g key={`${d.label}-box`} data-testid="leak-destination">
-            <rect x={d.x - 95} y={d.y - 24} width={190} height={48} rx={8} fill="#0a0a0a" stroke="#3a3a3a" />
-            <text x={d.x} y={d.y - 3} textAnchor="middle" fill="#ededed" fontSize={13} fontWeight={600}>
+            <rect
+              x={d.x - 95}
+              y={d.y - 24}
+              width={190}
+              height={48}
+              rx={8}
+              fill="var(--dg-panel)"
+              stroke="var(--dg-line)"
+            />
+            <text x={d.x} y={d.y - 3} textAnchor="middle" fill="var(--dg-ink)" fontSize={13} fontWeight={600}>
               {d.label}
             </text>
-            <text x={d.x} y={d.y + 14} textAnchor="middle" fill="#a1a1a1" fontSize={11}>
+            <text x={d.x} y={d.y + 14} textAnchor="middle" fill="var(--dg-ink-2)" fontSize={11}>
               {d.sub}
             </text>
           </g>

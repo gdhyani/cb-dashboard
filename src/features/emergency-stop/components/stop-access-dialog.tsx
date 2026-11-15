@@ -25,7 +25,7 @@ import type { StopScope } from "../types";
 
 export const SCOPES: readonly { value: StopScope; label: string; hint: string }[] = [
   { value: "user", label: "A person", hint: "Every device of one member" },
-  { value: "device", label: "A device", hint: "One laptop, for example lost or stolen" },
+  { value: "device", label: "A device", hint: "One machine, for example lost or stolen" },
   { value: "resource", label: "A service", hint: "One database or API" },
   { value: "environment", label: "An environment", hint: "Everything in it" },
   { value: "org", label: "Everyone", hint: "The whole organization, admins too" },
@@ -172,7 +172,7 @@ export function StopAccessDialog({ orgId, scope: initialScope = "user" }: { orgI
             id="stop-reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Laptop reported stolen"
+            placeholder="Machine reported stolen"
             rows={2}
           />
         </FormField>

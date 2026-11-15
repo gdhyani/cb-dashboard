@@ -73,10 +73,10 @@ function Nest({ layers, depth = 0 }: { layers: Layer[]; depth?: number }) {
   if (!outer) return null;
   const tone =
     outer.tone === "real"
-      ? "border-amber-300/70 bg-amber-300/[0.07]"
+      ? "border-hot/70 bg-hot-soft"
       : outer.tone === "app"
-        ? "border-emerald-300/50 bg-emerald-300/[0.05]"
-        : "border-[#333] bg-[#0b0b0b]";
+        ? "border-placeholder/50 bg-placeholder-soft"
+        : "border-border-strong bg-card";
   return (
     <StaggerBlock
       index={depth}
@@ -84,7 +84,7 @@ function Nest({ layers, depth = 0 }: { layers: Layer[]; depth?: number }) {
       data-label={outer.label}
       className={`rounded-md border p-2 ${tone}`}
     >
-      <p className={`font-mono text-[11.5px] ${outer.tone === "real" ? "text-amber-300" : "text-foreground"}`}>
+      <p className={`font-mono text-[11.5px] ${outer.tone === "real" ? "text-hot" : "text-foreground"}`}>
         {outer.label}
       </p>
       <p className="text-[10.5px] text-muted-foreground">{outer.detail}</p>

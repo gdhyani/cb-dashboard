@@ -29,7 +29,7 @@ export function BackToTop() {
       className={cn(
         "fixed right-5 bottom-5 z-40 flex size-10 items-center justify-center rounded-full border border-fd-border",
         "bg-fd-card/90 text-fd-muted-foreground shadow-lg backdrop-blur transition-all duration-300",
-        "hover:border-violet-400/50 hover:text-violet-300",
+        "hover:border-placeholder/50 hover:text-placeholder",
         visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0",
       )}
     >

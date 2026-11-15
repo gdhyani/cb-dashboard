@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useReducedMotion } from "@/shared/hooks/use-reduced-motion";
 import { DiagramFrame } from "../diagram-frame";
 
 const CX = 450;
@@ -28,11 +29,11 @@ export function EnvVisibilityDiagram() {
       >
         {READERS.map((r, i) => (
           <g key={r.label}>
-            <line x1={CX} y1={CY} x2={r.x} y2={r.y} stroke="#3a3a3a" strokeDasharray="4 5" />
+            <line x1={CX} y1={CY} x2={r.x} y2={r.y} stroke="var(--dg-line)" strokeDasharray="4 5" />
             {!still && (
               <motion.circle
                 r={4}
-                fill="#d4d4d4"
+                fill="var(--dg-ink-2)"
                 aria-hidden
                 initial={{ cx: CX, cy: CY, opacity: 0 }}
                 animate={{ cx: [CX, r.x], cy: [CY, r.y], opacity: [0, 1, 0] }}
@@ -41,23 +42,39 @@ export function EnvVisibilityDiagram() {
             )}
           </g>
         ))}
-        <rect x={CX - 150} y={CY - 44} width={300} height={88} rx={10} fill="#0a0a0a" stroke="#6d6d6d" />
-        <text x={CX - 132} y={CY - 16} fill="#ededed" fontSize={13} fontWeight={600}>
+        <rect
+          x={CX - 150}
+          y={CY - 44}
+          width={300}
+          height={88}
+          rx={10}
+          fill="var(--dg-panel)"
+          stroke="var(--dg-line-strong)"
+        />
+        <text x={CX - 132} y={CY - 16} fill="var(--dg-ink)" fontSize={13} fontWeight={600}>
           node server.js
         </text>
-        <text x={CX - 132} y={CY + 6} fill="#a1a1a1" fontSize={11} fontFamily="var(--font-geist-mono), monospace">
+        <text x={CX - 132} y={CY + 6} fill="var(--dg-ink-2)" fontSize={11} fontFamily="var(--font-mono), monospace">
           PORT=3000
         </text>
-        <text x={CX - 132} y={CY + 24} fill="#fbbf24" fontSize={11} fontFamily="var(--font-geist-mono), monospace">
+        <text x={CX - 132} y={CY + 24} fill="var(--dg-hot)" fontSize={11} fontFamily="var(--font-mono), monospace">
           DATABASE_URL=postgres://app:••••@db…
         </text>
         {READERS.map((r) => (
           <g key={`${r.label}-box`} data-testid="env-reader">
-            <rect x={r.x - 105} y={r.y - 24} width={210} height={48} rx={8} fill="#0a0a0a" stroke="#3a3a3a" />
-            <text x={r.x} y={r.y - 3} textAnchor="middle" fill="#ededed" fontSize={12} fontWeight={600}>
+            <rect
+              x={r.x - 105}
+              y={r.y - 24}
+              width={210}
+              height={48}
+              rx={8}
+              fill="var(--dg-panel)"
+              stroke="var(--dg-line)"
+            />
+            <text x={r.x} y={r.y - 3} textAnchor="middle" fill="var(--dg-ink)" fontSize={12} fontWeight={600}>
               {r.label}
             </text>
-            <text x={r.x} y={r.y + 14} textAnchor="middle" fill="#a1a1a1" fontSize={11}>
+            <text x={r.x} y={r.y + 14} textAnchor="middle" fill="var(--dg-ink-2)" fontSize={11}>
               {r.sub}
             </text>
           </g>

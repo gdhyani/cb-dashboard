@@ -1,7 +1,7 @@
 import { PRODUCT_NAME } from "@/constants";
 
 /**
- * First-landing splash (once per browser tab): the wordmark with a teal strike through its middle, then the page.
+ * First-landing splash (once per browser tab): the wordmark with a yellow highlighter strike through its middle, then the page.
  * Pure CSS (styles/studio.css), so it never waits for JavaScript; skipped for later loads (`data-splash="skip"`, set by
  * the theme boot script) and for reduced motion. Decorative: hidden from screen readers.
  */
