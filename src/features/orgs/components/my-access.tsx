@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 
 const QUICK_START = [
   { step: "Add the package to your app", command: CLI_COMMANDS.install },
-  { step: "Sign in from this laptop", command: CLI_COMMANDS.login },
+  { step: "Sign in from this machine", command: CLI_COMMANDS.login },
   { step: "Link the folder to a project", command: CLI_COMMANDS.init },
   { step: "Run your app as usual", command: CLI_COMMANDS.run },
 ] as const;
@@ -39,11 +39,11 @@ export function MyAccess({ orgId }: { orgId: string }) {
         </QueryState>
       </Section>
 
-      <Section title="Quick start" description="Run any environment you can use from your laptop">
+      <Section title="Quick start" description="Run any environment you can use from your machine">
         <Card>
           <CardHeader>
             <CardTitle>CLI</CardTitle>
-            <CardDescription>Your app keeps its usual SDKs; real credentials never reach your laptop</CardDescription>
+            <CardDescription>Your app keeps its usual SDKs; real credentials never reach your machine</CardDescription>
           </CardHeader>
           {QUICK_START.map((s, i) => (
             <CardContent key={s.command} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-6">
@@ -61,7 +61,7 @@ export function MyAccess({ orgId }: { orgId: string }) {
         </Card>
       </Section>
 
-      <Section title="Devices" description="Laptops you are signed in on with the CLI">
+      <Section title="Devices" description="Machines you are signed in on with the CLI">
         <DevicesTable scope="mine" />
       </Section>
     </>

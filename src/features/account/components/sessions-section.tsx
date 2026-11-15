@@ -55,7 +55,7 @@ export function SessionsSection({ orgId }: { orgId: string }) {
     <Section
       layout="horizontal"
       title="Sessions"
-      description="Browsers and laptops signed in as you. Revoking one signs it out at once"
+      description="Browsers and machines signed in as you. Revoking one signs it out at once"
     >
       <Card>
         <DashboardSessions orgId={orgId} userId={me.data?.user.id} canList={org.isAdmin} orgLoaded={!org.isPending} />
@@ -152,7 +152,7 @@ function CliDevices() {
   const revoke = useRevokeMyDevice();
   return (
     <>
-      <GroupHeader title="CLI devices" description={`Laptops signed in with ${CLI_COMMANDS.login}`} />
+      <GroupHeader title="CLI devices" description={`Machines signed in with ${CLI_COMMANDS.login}`} />
       <QueryState
         isPending={devices.isPending}
         error={devices.error}

@@ -1,9 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d28d9"/><stop offset="0.55" stop-color="#a21caf"/><stop offset="1" stop-color="#db2777"/></linearGradient></defs>
+<title>The four kinds of value in an env file: plain, random secret, shown as-is and protected</title>
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b0c0e"/><stop offset="1" stop-color="#111317"/></linearGradient><radialGradient id="glow" cx="0" cy="0" r="1.1"><stop offset="0" stop-color="#ffd84a" stop-opacity="0.1"/><stop offset="0.6" stop-color="#ffd84a" stop-opacity="0.025"/><stop offset="1" stop-color="#ffd84a" stop-opacity="0"/></radialGradient><pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="12" cy="12" r="1.2" fill="#ecece7" fill-opacity="0.06"/></pattern></defs>
 <rect width="1200" height="675" fill="url(#g)"/>
-<rect x="56" y="56" width="1088" height="563" rx="22" fill="#000"/>
-<text x="140" y="200" fill="#d4d4d4" font-size="26" font-family="ui-sans-serif, -apple-system, Segoe UI, sans-serif">Plain</text><rect x="380" y="170" width="520" height="44" rx="8" fill="#a3a3a3"/>
-<text x="140" y="305" fill="#d4d4d4" font-size="26" font-family="ui-sans-serif, -apple-system, Segoe UI, sans-serif">Random secret</text><rect x="380" y="275" width="340" height="44" rx="8" fill="#a3a3a3"/>
-<text x="140" y="410" fill="#d4d4d4" font-size="26" font-family="ui-sans-serif, -apple-system, Segoe UI, sans-serif">Shown as-is</text><rect x="380" y="380" width="180" height="44" rx="8" fill="#fbbf24"/>
-<text x="140" y="515" fill="#d4d4d4" font-size="26" font-family="ui-sans-serif, -apple-system, Segoe UI, sans-serif">Protected</text><rect x="380" y="485" width="760" height="44" rx="8" fill="#34d399"/>
+<rect width="1200" height="675" fill="url(#dots)"/>
+<rect width="1200" height="675" fill="url(#glow)"/>
+<rect x="56" y="56" width="1088" height="563" rx="22" fill="#0b0c0e" fill-opacity="0.9" stroke="#2b2e33" stroke-width="1"/>
+<text x="140" y="200" fill="#ecece7" font-size="26" font-family="Archivo, Helvetica Neue, Arial, sans-serif">Plain</text><rect x="380" y="170" width="520" height="44" rx="8" fill="#a6aab1"/>
+<text x="140" y="305" fill="#ecece7" font-size="26" font-family="Archivo, Helvetica Neue, Arial, sans-serif">Random secret</text><rect x="380" y="275" width="340" height="44" rx="8" fill="#7d828a"/>
+<text x="140" y="410" fill="#ecece7" font-size="26" font-family="Archivo, Helvetica Neue, Arial, sans-serif">Shown as-is</text><rect x="380" y="380" width="180" height="44" rx="8" fill="#ff5b3d"/>
+<text x="140" y="515" fill="#ecece7" font-size="26" font-family="Archivo, Helvetica Neue, Arial, sans-serif">Protected</text><rect x="380" y="485" width="760" height="44" rx="8" fill="#ffd84a"/>
 </svg>

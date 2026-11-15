@@ -59,7 +59,7 @@ export function ValueTypesMatrix() {
                 {r.type}
               </th>
               <td className="px-4 py-3">
-                <span className={r.warn ? "text-amber-300" : r.safe ? "text-emerald-300" : undefined}>{r.laptop}</span>
+                <span className={r.warn ? "text-hot" : r.safe ? "text-placeholder" : undefined}>{r.laptop}</span>
                 <p className="mt-1 text-xs text-muted-foreground">{r.note}</p>
               </td>
               <td className="px-4 py-3 text-muted-foreground">{r.worksFor}</td>

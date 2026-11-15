@@ -1,4 +1,4 @@
-// Frames raw docs screenshots onto the docs gradient (PRD v1.36): docs-images-raw/<section>/<name>.png →
+// Frames raw docs screenshots onto the cb brand panel (PRD v1.36, brand v1.73): docs-images-raw/<section>/<name>.png →
 // public/docs/images/<section>/<name>.png. Raw captures are not committed; the framed PNGs are.
 import { mkdirSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
@@ -8,18 +8,26 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 const RAW = path.join(ROOT, "docs-images-raw");
 const OUT = path.join(ROOT, "public/docs/images");
 const MAX_INNER = 2560; // widest screenshot inside the frame (raw captures are 2x; never upscaled)
-const PAD = 112; // gradient around the screenshot
+const PAD = 112; // brand panel around the screenshot
 const RADIUS = 24;
 
 const walk = (d) =>
   readdirSync(d).flatMap((n) => (statSync(path.join(d, n)).isDirectory() ? walk(path.join(d, n)) : [path.join(d, n)]));
 
+// The landing page's ground (near-black) with the yellow highlighter as a soft glow from the top-left and a faint dot
+// grid: dark artwork that sits well on both the light and the dark docs theme.
 const gradient = (w, h) =>
   Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#6d28d9"/><stop offset="0.55" stop-color="#a21caf"/><stop offset="1" stop-color="#db2777"/>
-  </linearGradient></defs>
-  <rect width="${w}" height="${h}" rx="${RADIUS + 6}" fill="url(#g)"/></svg>`);
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#14161a"/><stop offset="1" stop-color="#0b0c0e"/></linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="scale(${w * 0.9} ${h * 0.9})">
+      <stop offset="0" stop-color="#ffd84a" stop-opacity="0.16"/><stop offset="1" stop-color="#ffd84a" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.2" fill="#ecece7" fill-opacity="0.07"/></pattern>
+  </defs>
+  <rect width="${w}" height="${h}" rx="${RADIUS + 6}" fill="url(#g)"/>
+  <rect width="${w}" height="${h}" rx="${RADIUS + 6}" fill="url(#dots)"/>
+  <rect width="${w}" height="${h}" rx="${RADIUS + 6}" fill="url(#glow)"/></svg>`);
 
 const roundMask = (w, h) =>
   Buffer.from(

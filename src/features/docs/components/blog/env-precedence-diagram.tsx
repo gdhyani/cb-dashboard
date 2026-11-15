@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useReducedMotion } from "@/shared/hooks/use-reduced-motion";
 import { DiagramFrame } from "../diagram-frame";
 
 const STEPS = [
@@ -28,13 +29,13 @@ export function EnvPrecedenceDiagram() {
           <div
             key={s.name}
             data-testid="precedence-step"
-            className="relative flex items-baseline gap-4 rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3"
+            className="relative flex items-baseline gap-4 rounded-lg border border-border-strong bg-card px-4 py-3"
             style={{ marginLeft: `${i * 1.25}rem` }}
           >
             {!still && (
               <motion.span
                 aria-hidden
-                className="absolute inset-0 rounded-lg border border-amber-300/70"
+                className="absolute inset-0 rounded-lg border border-placeholder/70"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: [0, 1, 0] }}
                 transition={{

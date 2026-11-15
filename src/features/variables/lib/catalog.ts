@@ -853,7 +853,7 @@ export const TYPES: Record<TypeId, TypeDef> = {
     extras: (p) => [
       {
         suggestedKey: "AWS_ACCESS_KEY_ID",
-        what: "Access key ID (stand-in), needed by AWS SDKs",
+        what: "Access key ID (placeholder), needed by AWS SDKs",
         field: "accessKeyId",
         preticked: true,
       },
@@ -881,8 +881,8 @@ export const TYPES: Record<TypeId, TypeDef> = {
     extras: () => [
       { suggestedKey: "SMTP_HOST", what: "Host", field: "host" },
       { suggestedKey: "SMTP_PORT", what: "Port", field: "port" },
-      { suggestedKey: "SMTP_USER", what: "Username (stand-in)", field: "user" },
-      { suggestedKey: "SMTP_PASS", what: "Password (stand-in)", field: "password" },
+      { suggestedKey: "SMTP_USER", what: "Username (placeholder)", field: "user" },
+      { suggestedKey: "SMTP_PASS", what: "Password (placeholder)", field: "password" },
     ],
     advanced: () => [CA_CERT],
   },

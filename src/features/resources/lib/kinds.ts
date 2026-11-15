@@ -210,7 +210,8 @@ export const KINDS: Record<ResourceKind, KindSpec> = {
   },
   webhook: {
     label: "Webhook signing secret",
-    description: "Providers post to cb; each developer's app gets the webhooks it caused, signed with its stand-in.",
+    description:
+      "Providers post to cb; each developer's app gets the webhooks it caused, signed with its placeholder key.",
     namePlaceholder: "stripe-webhooks",
     settings: [
       { name: "path", label: "Path in your app", type: "text", mono: true, placeholder: "/api/webhooks/stripe" },

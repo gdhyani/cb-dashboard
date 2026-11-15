@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Archivo, Fragment_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { PRODUCT_NAME, PRODUCT_TAGLINE } from "@/constants";
 import { AppProviders } from "@/shared/providers/app-providers";
@@ -7,8 +7,9 @@ import { THEME_BOOT_SCRIPT } from "@/shared/theme/theme";
 import "lenis/dist/lenis.css";
 import "@/styles/globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+// The cb brand type on every page (landing, dashboard, docs, blog): Archivo for text, Fragment Mono for code.
+const brandSans = Archivo({ variable: "--brand-font-sans", subsets: ["latin"], axes: ["wdth"], display: "swap" });
+const brandMono = Fragment_Mono({ variable: "--brand-font-mono", subsets: ["latin"], weight: "400", display: "swap" });
 
 export const metadata: Metadata = {
   title: PRODUCT_NAME,
@@ -17,17 +18,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    // `dark`: docs (Fumadocs) key their tokens off this class. Dashboard pages also get data-theme (light/dark)
-    // from their boot script before hydration, hence suppressHydrationWarning on <html> only.
+    // One theme for every page (`cb-theme`): the boot script sets data-theme (landing, dashboard, docs tokens) and the
+    // `dark` class (Fumadocs) before first paint, hence suppressHydrationWarning on <html> only.
     <html
       lang="en"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`dark ${geistSans.variable} ${geistMono.variable}`}
+      className={`${brandSans.variable} ${brandMono.variable}`}
     >
       <head>
         {/*
-         * Dashboard theme (light/dark) before first paint; only dashboard tokens read data-theme, docs ignore it.
+         * Theme (light/dark) before first paint, on every route, so a light-theme reader never sees a dark flash.
          * A plain inline script in <head>: server-rendered and only hydrated, so React never renders it on the client
          * (next/script beforeInteractive did, and React 19 warns about that).
          */}

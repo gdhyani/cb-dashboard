@@ -6,10 +6,10 @@ import { ENV_TYPE_GROUPS, ENV_TYPES, type EnvKind, MODE_LABEL } from "../../lib/
 import { HopStrip } from "./hop-strip";
 
 const KIND_STYLE: Record<EnvKind, { label: string; className: string }> = {
-  plain: { label: "plain", className: "bg-white/[0.06] text-subtle" },
-  generated: { label: "per developer", className: "bg-sky-400/15 text-sky-300" },
-  "stand-in": { label: "stand-in", className: "bg-emerald-400/15 text-emerald-300" },
-  real: { label: "real value", className: "bg-amber-400/15 text-amber-300" },
+  plain: { label: "plain", className: "bg-muted text-subtle" },
+  generated: { label: "per developer", className: "bg-info/10 text-info" },
+  "stand-in": { label: "stand-in", className: "bg-placeholder-soft text-placeholder" },
+  real: { label: "real value", className: "bg-hot-soft text-hot" },
 };
 
 /**
@@ -37,7 +37,7 @@ export function EnvTypeExplorer({ initial }: { initial?: string }) {
                   aria-controls={`${base}-panel`}
                   onClick={() => setId(x.id)}
                   className={`rounded-md px-2 py-1 text-left text-[13px] transition-colors ${
-                    x.id === id ? "bg-white/10 text-foreground" : "text-muted-foreground hover:text-foreground"
+                    x.id === id ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {x.name}
@@ -51,7 +51,7 @@ export function EnvTypeExplorer({ initial }: { initial?: string }) {
         role="tabpanel"
         id={`${base}-panel`}
         aria-labelledby={`${base}-${t.id}`}
-        className="min-w-0 rounded-lg bg-[#060606] p-4 sm:p-5"
+        className="min-w-0 rounded-lg bg-card p-4 sm:p-5"
       >
         <StaggerBlock key={t.id} className="flex flex-col gap-5">
           <div>
@@ -64,7 +64,7 @@ export function EnvTypeExplorer({ initial }: { initial?: string }) {
               {t.lines.map((l) => (
                 <li key={l.key} className="flex flex-wrap items-baseline gap-x-2 gap-y-1 font-mono text-[12.5px]">
                   <span className="text-foreground">{l.key}</span>
-                  <span className="min-w-0 break-all text-[#bdbdbd]">= {l.value}</span>
+                  <span className="min-w-0 break-all text-muted-foreground">= {l.value}</span>
                   <span className={`rounded-md px-1.5 py-0.5 font-sans text-[10.5px] ${KIND_STYLE[l.kind].className}`}>
                     {KIND_STYLE[l.kind].label}
                   </span>
@@ -78,13 +78,13 @@ export function EnvTypeExplorer({ initial }: { initial?: string }) {
               {t.hops.length > 0 ? (
                 <HopStrip hops={t.hops} />
               ) : (
-                <p className="rounded-lg border border-dashed border-[#2a2a2a] px-3 py-2.5 text-[13px] text-muted-foreground">
+                <p className="rounded-lg border border-dashed border-border-strong px-3 py-2.5 text-[13px] text-muted-foreground">
                   No connection goes through cb. The value is used inside your app.
                 </p>
               )}
             </div>
           </div>
-          <p className="text-[14px] leading-relaxed text-[#c8c8c8]">{t.how}</p>
+          <p className="text-[14px] leading-relaxed text-foreground">{t.how}</p>
           <dl className="grid gap-3 text-xs sm:grid-cols-2">
             <div>
               <dt className="text-subtle">The real value lives</dt>

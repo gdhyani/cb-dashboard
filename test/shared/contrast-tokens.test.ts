@@ -4,8 +4,10 @@ import { describe, expect, it } from "vitest";
 
 /** NFR accessibility (PRD §14, WCAG AA): every text token is readable (≥ 4.5:1) on every surface it sits on. */
 const css = fs.readFileSync(path.resolve(__dirname, "../../src/styles/globals.css"), "utf8");
-const token = (name: string) => {
-  const m = new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6})`).exec(css);
+// Dark values come first (@theme); the light ones live in the `:root[data-theme="light"]…` block (PRD v1.73).
+const lightCss = css.slice(css.indexOf(':root[data-theme="light"]:not(:has([data-studio]))'));
+const token = (name: string, from = css) => {
+  const m = new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6})`).exec(from);
   if (!m?.[1]) throw new Error(`token --color-${name} not found`);
   return m[1];
 };
@@ -23,9 +25,13 @@ const contrast = (a: string, b: string) => {
 
 describe("NFR-A11Y colour contrast of text tokens", () => {
   const surfaces = ["background", "card", "popover", "muted", "secondary", "accent"];
-  for (const text of ["foreground", "muted-foreground", "subtle"])
-    for (const surface of surfaces)
-      it(`NFR-A11Y ${text} on ${surface} is at least 4.5:1`, () => {
-        expect(contrast(token(text), token(surface))).toBeGreaterThanOrEqual(4.5);
-      });
+  for (const [theme, from] of [
+    ["dark", css],
+    ["light", lightCss],
+  ] as const)
+    for (const text of ["foreground", "muted-foreground", "subtle", "placeholder", "hot"])
+      for (const surface of surfaces)
+        it(`NFR-A11Y ${theme}: ${text} on ${surface} is at least 4.5:1`, () => {
+          expect(contrast(token(text, from), token(surface, from))).toBeGreaterThanOrEqual(4.5);
+        });
 });

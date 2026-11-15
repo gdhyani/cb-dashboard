@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { COVERAGE, coverageTotals } from "../../lib/coverage";
 
-const VERIFIED = "#34d399";
-const BETA = "#fbbf24";
+const VERIFIED = "var(--dg-ok)";
+const BETA = "var(--color-warning)";
 const MAX = Math.max(...COVERAGE.map((g) => g.verified.length + g.beta.length));
 
 type Hover = { group: string; kind: "Verified" | "Beta"; names: string[] } | null;

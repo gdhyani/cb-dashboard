@@ -23,7 +23,7 @@ export function Field({
         {required && <BadgeLabel tone="danger">Required</BadgeLabel>}
         {def && <BadgeLabel tone="muted">{`Default: ${def}`}</BadgeLabel>}
       </div>
-      <div className="text-sm leading-relaxed text-[#c8c8c8] [&_code]:rounded [&_code]:bg-white/[0.06] [&_code]:px-1 [&_code]:font-mono [&_p]:my-0">
+      <div className="text-sm leading-relaxed text-(--docs-prose) [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono [&_p]:my-0">
         {children}
       </div>
     </div>

@@ -29,6 +29,8 @@ export const GITHUB_URLS = {
 } as const;
 /** Plain Markdown of a docs page ("Copy page", "View as Markdown"); outside the /api rewrite. */
 export const DOCS_MARKDOWN_PATH = "/docs-md";
+/** Plain Markdown of a blog post ("Copy Markdown", "Open in …"), like the docs' one. */
+export const BLOG_MARKDOWN_PATH = "/blog-md";
 export const GITHUB_REPO = { owner: "gdhyani", repo: "cb-env" } as const;
 /** Dashboard theme choice (light / dark / system), kept per browser. */
 export const THEME_STORAGE_KEY = "cb-theme";

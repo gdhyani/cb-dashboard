@@ -10,7 +10,7 @@ export default async function DevicesPage({ params }: { params: Promise<{ orgId:
       <PageHeader title="Devices & Sessions" description="CLI sign-ins and dashboard sessions across your members" />
       <Section
         title="CLI devices"
-        description="Laptops signed in with the CLI and whether their agent is running. Revoking a device closes its connections immediately"
+        description="Developer machines signed in with the CLI and whether their agent is running. Revoking a device closes its connections immediately"
       >
         <DevicesTable scope="org" orgId={orgId} />
       </Section>

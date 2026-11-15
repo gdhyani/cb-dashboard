@@ -343,14 +343,14 @@ export function AddVariableDialog({
           />
           {protectedType && /^(NEXT_PUBLIC_|VITE_|PUBLIC_|EXPO_PUBLIC_|REACT_APP_)/.test(draft.key) && (
             <Admonition type="warning" title="This key name is public">
-              Keys with this prefix are sent to the browser by your framework. Only a stand-in would ever reach it, so
-              nothing real leaks — but browser code can't use a protected key. Use a server-side name instead.
+              Keys with this prefix are sent to the browser by your framework. Only a placeholder would ever reach it,
+              so nothing real leaks — but browser code can't use a protected key. Use a server-side name instead.
             </Admonition>
           )}
           {protectedType && draft.type !== "visible" && (
             <Admonition type="note">
-              Developers get a stand-in value that cb makes for each device — there is nothing to enter for it. The real
-              value is encrypted on cb's server; nobody can view it again, but you can replace it any time.
+              Developers get a placeholder value that cb makes for each device — there is nothing to enter for it. The
+              real value is encrypted on cb's server; nobody can view it again, but you can replace it any time.
             </Admonition>
           )}
           <FormError error={error} />

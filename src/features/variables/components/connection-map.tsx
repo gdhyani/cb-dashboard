@@ -23,7 +23,7 @@ function Node({ title, detail, strong = false }: { title: string; detail: string
   );
 }
 
-/** Dashed on the laptop side (fake values), solid past the gateway (real credentials). */
+/** Dashed on the developer machine side (placeholder values), solid past the gateway (real credentials). */
 function Link({ solid = false }: { solid?: boolean }) {
   return (
     <div aria-hidden className="flex items-center justify-center">

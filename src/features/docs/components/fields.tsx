@@ -17,7 +17,7 @@ export function Fields({
   const [open, setOpen] = useState(!collapsible);
   const id = useId();
   return (
-    <section className="not-prose my-6 rounded-md border border-border bg-[#070707]">
+    <section className="not-prose my-6 rounded-md border border-border bg-card">
       {collapsible ? (
         <button
           type="button"
