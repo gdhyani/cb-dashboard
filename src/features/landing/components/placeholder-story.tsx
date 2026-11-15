@@ -1,14 +1,11 @@
 "use client";
 
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Check, Lock, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { placeholders } from "../content-story";
-import { centerPin } from "../motion/center-pin";
 import { prefersReducedMotion } from "../motion/env";
-
-gsap.registerPlugin(ScrollTrigger);
+import { loadMotion } from "../motion/load";
+import { whenNear } from "../motion/when-near";
 
 const STEPS = placeholders.steps.length;
 
@@ -22,103 +19,109 @@ const STEPS = placeholders.steps.length;
 export function PlaceholderStory() {
   const root = useRef<HTMLElement>(null);
 
-  useEffect(() => {
-    const el = root.current;
-    const body = el?.querySelector<HTMLElement>("[data-keys-body]");
-    const stage = el?.querySelector<HTMLElement>("[data-keys-stage]");
-    const fitBox = el?.querySelector<HTMLElement>("[data-keys-fit]");
-    const grid = el?.querySelector<HTMLElement>("[data-keys-grid]");
-    if (!el || !body || !stage || !fitBox || !grid) return;
-    if (prefersReducedMotion()) {
-      el.dataset.static = "";
-      return;
-    }
-    const steps = Array.from(el.querySelectorAll<HTMLElement>("[data-keys-step]"));
-    let active = -1;
-    const setStep = (i: number) => {
-      if (i === active) return;
-      active = i;
-      el.dataset.step = String(i);
-      steps.forEach((s, k) => {
-        s.dataset.on = k === i ? "true" : "false";
-        s.dataset.done = k < i ? "true" : "false";
-      });
-    };
+  // Set up when the section comes near the screen, not while the page loads (see whenNear).
+  useEffect(
+    () =>
+      whenNear(root.current, async () => {
+        const { gsap, ScrollTrigger, centerPin } = await loadMotion();
+        const el = root.current;
+        const body = el?.querySelector<HTMLElement>("[data-keys-body]");
+        const stage = el?.querySelector<HTMLElement>("[data-keys-stage]");
+        const fitBox = el?.querySelector<HTMLElement>("[data-keys-fit]");
+        const grid = el?.querySelector<HTMLElement>("[data-keys-grid]");
+        if (!el || !body || !stage || !fitBox || !grid) return;
+        if (prefersReducedMotion()) {
+          el.dataset.static = "";
+          return;
+        }
+        const steps = Array.from(el.querySelectorAll<HTMLElement>("[data-keys-step]"));
+        let active = -1;
+        const setStep = (i: number) => {
+          if (i === active) return;
+          active = i;
+          el.dataset.step = String(i);
+          steps.forEach((s, k) => {
+            s.dataset.on = k === i ? "true" : "false";
+            s.dataset.done = k < i ? "true" : "false";
+          });
+        };
 
-    let pinned: ReturnType<typeof centerPin> | undefined;
+        let pinned: ReturnType<typeof centerPin> | undefined;
 
-    const ctx = gsap.context(() => {
-      setStep(0);
-      // Heading + figure together when they fit the screen; otherwise (phones, short screens) the figure alone.
-      const pin = centerPin(stage, [{ content: fitBox }, { content: grid }], { minFit: 0.62 });
-      pinned = pin;
+        const ctx = gsap.context(() => {
+          setStep(0);
+          // Heading + figure together when they fit the screen; otherwise (phones, short screens) the figure alone.
+          const pin = centerPin(stage, [{ content: fitBox }, { content: grid }], { minFit: 0.62 });
+          pinned = pin;
 
-      // One scrubbed timeline, one unit per step; each step animates in its first ~60% and then holds.
-      const tl = gsap.timeline({ paused: true, defaults: { ease: "power3.out" } });
-      // 1 · the real key goes into the server, then the lock closes on it.
-      tl.fromTo("[data-keys-vault]", { autoAlpha: 0, x: -36 }, { autoAlpha: 1, x: 0, duration: 0.35 }, 0.05)
-        .fromTo("[data-keys-lock]", { scale: 1.6, rotate: -20 }, { scale: 1, rotate: 0, duration: 0.2 }, 0.35)
-        .fromTo("[data-keys-note]", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.15 }, 0.45);
-      // 2 · the four ingredients light up one by one, the wire drops, Maya's placeholder types out.
-      tl.fromTo(
-        "[data-keys-part]",
-        { autoAlpha: 0, y: 10, scale: 0.9 },
-        { autoAlpha: 1, y: 0, scale: 1, duration: 0.14, stagger: 0.07, ease: "back.out(2)" },
-        1.0,
-      )
-        .fromTo("[data-keys-wire]", { scaleY: 0 }, { scaleY: 1, duration: 0.15, ease: "none" }, 1.35)
-        .fromTo("[data-keys-row='0']", { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.12 }, 1.45)
-        .fromTo(
-          "[data-keys-row='0'] [data-keys-value]",
-          { clipPath: "inset(0 100% 0 0)" },
-          { clipPath: "inset(0 0% 0 0)", duration: 0.15, ease: "steps(20)" },
-          1.5,
-        );
-      tl.fromTo("[data-keys-footnote]", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.1 }, 1.7);
-      // 3 · the recipe's device changes to Ravi's, and Ravi's own placeholder appears.
-      tl.to("[data-keys-device='0']", { autoAlpha: 0, yPercent: -60, duration: 0.12 }, 2.05)
-        .fromTo(
-          "[data-keys-device='1']",
-          { autoAlpha: 0, yPercent: 60 },
-          { autoAlpha: 1, yPercent: 0, duration: 0.12 },
-          2.1,
-        )
-        .fromTo("[data-keys-row='1']", { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.12 }, 2.3)
-        .fromTo(
-          "[data-keys-row='1'] [data-keys-value]",
-          { clipPath: "inset(0 100% 0 0)" },
-          { clipPath: "inset(0 0% 0 0)", duration: 0.15, ease: "steps(20)" },
-          2.35,
-        );
-      // 4 · Maya's placeholder, copied to another device, is refused.
-      tl.to("[data-keys-recipe]", { autoAlpha: 0.45, duration: 0.1 }, 3.0)
-        .fromTo("[data-keys-row='2']", { autoAlpha: 0, x: 40 }, { autoAlpha: 1, x: 0, duration: 0.15 }, 3.05)
-        .fromTo(
-          "[data-keys-row='2'] [data-keys-verdict]",
-          { autoAlpha: 0, scale: 0.6 },
-          { autoAlpha: 1, scale: 1, duration: 0.12, ease: "back.out(3)" },
-          3.18,
-        )
-        // Pad the timeline to exactly one unit per step, so progress maps 1:1 to the scroll.
-        .to({}, { duration: 0.01 }, STEPS - 0.01);
+          // One scrubbed timeline, one unit per step; each step animates in its first ~60% and then holds.
+          const tl = gsap.timeline({ paused: true, defaults: { ease: "power3.out" } });
+          // 1 · the real key goes into the server, then the lock closes on it.
+          tl.fromTo("[data-keys-vault]", { autoAlpha: 0, x: -36 }, { autoAlpha: 1, x: 0, duration: 0.35 }, 0.05)
+            .fromTo("[data-keys-lock]", { scale: 1.6, rotate: -20 }, { scale: 1, rotate: 0, duration: 0.2 }, 0.35)
+            .fromTo("[data-keys-note]", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.15 }, 0.45);
+          // 2 · the four ingredients light up one by one, the wire drops, Maya's placeholder types out.
+          tl.fromTo(
+            "[data-keys-part]",
+            { autoAlpha: 0, y: 10, scale: 0.9 },
+            { autoAlpha: 1, y: 0, scale: 1, duration: 0.14, stagger: 0.07, ease: "back.out(2)" },
+            1.0,
+          )
+            .fromTo("[data-keys-wire]", { scaleY: 0 }, { scaleY: 1, duration: 0.15, ease: "none" }, 1.35)
+            .fromTo("[data-keys-row='0']", { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.12 }, 1.45)
+            .fromTo(
+              "[data-keys-row='0'] [data-keys-value]",
+              { clipPath: "inset(0 100% 0 0)" },
+              { clipPath: "inset(0 0% 0 0)", duration: 0.15, ease: "steps(20)" },
+              1.5,
+            );
+          tl.fromTo("[data-keys-footnote]", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.1 }, 1.7);
+          // 3 · the recipe's device changes to Ravi's, and Ravi's own placeholder appears.
+          tl.to("[data-keys-device='0']", { autoAlpha: 0, yPercent: -60, duration: 0.12 }, 2.05)
+            .fromTo(
+              "[data-keys-device='1']",
+              { autoAlpha: 0, yPercent: 60 },
+              { autoAlpha: 1, yPercent: 0, duration: 0.12 },
+              2.1,
+            )
+            .fromTo("[data-keys-row='1']", { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.12 }, 2.3)
+            .fromTo(
+              "[data-keys-row='1'] [data-keys-value]",
+              { clipPath: "inset(0 100% 0 0)" },
+              { clipPath: "inset(0 0% 0 0)", duration: 0.15, ease: "steps(20)" },
+              2.35,
+            );
+          // 4 · Maya's placeholder, copied to another device, is refused.
+          tl.to("[data-keys-recipe]", { autoAlpha: 0.45, duration: 0.1 }, 3.0)
+            .fromTo("[data-keys-row='2']", { autoAlpha: 0, x: 40 }, { autoAlpha: 1, x: 0, duration: 0.15 }, 3.05)
+            .fromTo(
+              "[data-keys-row='2'] [data-keys-verdict]",
+              { autoAlpha: 0, scale: 0.6 },
+              { autoAlpha: 1, scale: 1, duration: 0.12, ease: "back.out(3)" },
+              3.18,
+            )
+            // Pad the timeline to exactly one unit per step, so progress maps 1:1 to the scroll.
+            .to({}, { duration: 0.01 }, STEPS - 0.01);
 
-      ScrollTrigger.create({
-        trigger: body,
-        start: "top 45%",
-        end: pin.end,
-        invalidateOnRefresh: true,
-        onUpdate: (self) => {
-          const t = self.progress * STEPS;
-          tl.progress(t / STEPS);
-          setStep(Math.min(STEPS - 1, Math.floor(t)));
-        },
-      });
-    }, el);
-    return () => {
-      pinned?.destroy();
-      ctx.revert();
-    };
-  }, []);
+          ScrollTrigger.create({
+            trigger: body,
+            start: "top 45%",
+            end: pin.end,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              const t = self.progress * STEPS;
+              tl.progress(t / STEPS);
+              setStep(Math.min(STEPS - 1, Math.floor(t)));
+            },
+          });
+        }, el);
+        return () => {
+          pinned?.destroy();
+          ctx.revert();
+        };
+      }),
+    [],
+  );
 
   const { recipe } = placeholders;
   return (

@@ -3,7 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 /** NFR accessibility (PRD §14, WCAG AA): every text token is readable (≥ 4.5:1) on every surface it sits on. */
-const css = fs.readFileSync(path.resolve(__dirname, "../../src/styles/globals.css"), "utf8");
+const css = fs.readFileSync(path.resolve(__dirname, "../../src/styles/base.css"), "utf8"); // the brand tokens (shared by app.css and globals.css)
 // Dark values come first (@theme); the light ones live in the `:root[data-theme="light"]…` block (PRD v1.73).
 const lightCss = css.slice(css.indexOf(':root[data-theme="light"]:not(:has([data-studio]))'));
 const token = (name: string, from = css) => {

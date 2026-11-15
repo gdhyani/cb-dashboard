@@ -34,6 +34,8 @@ export function centerPin(stage: HTMLElement, options: PinOption[], opts: { minF
   /** Whatever sits above the pinned frame inside the stage (the heading, when the demo alone is pinned). */
   let above: HTMLElement[] = [];
   let fadeAt = 0;
+  let heights: number[] = [];
+  let heightsKey = "";
   const track = stage.parentElement;
 
   const aboveOf = (content: HTMLElement) => {
@@ -64,7 +66,14 @@ export function centerPin(stage: HTMLElement, options: PinOption[], opts: { minF
     const header = Number.parseFloat(getComputedStyle(stage).getPropertyValue("--lp-header")) || 64;
     const vh = window.innerHeight;
     const room = vh - header - GAP * 2;
-    const sized = options.map((o) => ({ o, h: o.measure ? o.measure() : o.content.offsetHeight }));
+    // Heights only change with the width and once the fonts land; refreshes in between reuse them (each measure
+    // forces a full-page layout, and a page load runs several refreshes).
+    const key = `${window.innerWidth}|${document.fonts?.status ?? ""}`;
+    if (key !== heightsKey) {
+      heights = options.map((o) => (o.measure ? o.measure() : o.content.offsetHeight));
+      heightsKey = key;
+    }
+    const sized = options.map((o, i) => ({ o, h: heights[i] ?? 0 }));
     const pick = sized.find(({ h }) => h * 0.85 <= room) ?? sized[sized.length - 1];
     if (!pick) return;
     const { o, h } = pick;

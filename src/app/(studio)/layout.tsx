@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
 import { Splash } from "@/shared/components/splash";
+import { AppProviders } from "@/shared/providers/app-providers";
+import "lenis/dist/lenis.css";
+import "@/styles/app.css";
 
 /**
  * Every dashboard route (sign-in, device approval, invites, the org app) renders inside this layout. The
@@ -8,9 +11,11 @@ import { Splash } from "@/shared/components/splash";
  */
 export default function StudioLayout({ children }: { children: ReactNode }) {
   return (
-    <div data-studio="" className="min-h-dvh bg-background text-foreground">
-      <Splash />
-      {children}
-    </div>
+    <AppProviders>
+      <div data-studio="" className="min-h-dvh bg-background text-foreground">
+        <Splash />
+        {children}
+      </div>
+    </AppProviders>
   );
 }

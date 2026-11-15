@@ -1,4 +1,4 @@
-import { CopyButton } from "@/shared/components/copy-button";
+import { InlineCopyButton } from "@/shared/components/inline-copy-button";
 import { start } from "../content";
 
 /** The developer's onboarding, as the four commands they actually type (PRD J5). */
@@ -16,7 +16,7 @@ export function GetStarted() {
             </span>
             <span className="lp-step__cmd">
               <code>{s.cmd}</code>
-              <CopyButton value={s.cmd} label={`Copy ${s.cmd}`} className="lp-copy" />
+              <InlineCopyButton value={s.cmd} label={`Copy ${s.cmd}`} className="lp-copy" />
             </span>
             <span className="lp-step__text">{s.text}</span>
           </li>

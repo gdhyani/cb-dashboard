@@ -1,14 +1,15 @@
 "use client";
 
-import { Check, Copy } from "lucide-react";
-import { useCopy } from "@/shared/hooks/use-copy";
+import { useMemo } from "react";
+import { toast } from "sonner";
 import { cn } from "@/shared/lib/utils";
+import { InlineCopyButton } from "./inline-copy-button";
 
-/** Icon-only copy control with inline "Copied" confirmation. */
+/** Icon-only copy control with inline "Copied" confirmation and a toast. */
 export function CopyButton({
   value,
   label = "Copy",
-  toastLabel,
+  toastLabel = "Copied to clipboard",
   className,
 }: {
   value: string;
@@ -16,20 +17,12 @@ export function CopyButton({
   toastLabel?: string;
   className?: string;
 }) {
-  const { copied, copy } = useCopy(toastLabel);
-  return (
-    <button
-      type="button"
-      aria-label={copied ? "Copied" : label}
-      onClick={() => void copy(value)}
-      className={cn(
-        "inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-subtle transition-colors hover:bg-accent hover:text-foreground",
-        copied && "text-foreground",
-        className,
-      )}
-    >
-      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-      <span aria-live="polite">{copied ? "Copied" : ""}</span>
-    </button>
+  const handlers = useMemo(
+    () => ({
+      onCopied: () => toast.success(toastLabel),
+      onError: () => toast.error("Couldn't copy. Select the text and copy it manually."),
+    }),
+    [toastLabel],
   );
+  return <InlineCopyButton value={value} label={label} className={className} mergeClasses={cn} {...handlers} />;
 }

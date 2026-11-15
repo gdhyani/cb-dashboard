@@ -80,7 +80,9 @@ cb-dashboard/
 │  │  ├─ components/               # reusable composites (see reuse rules)
 │  │  ├─ hooks/  lib/              # generic hooks/helpers (no feature knowledge)
 │  │  └─ providers/                # QueryClientProvider, theme
-│  ├─ styles/globals.css           # design tokens
+│  ├─ styles/                      # base.css: shared brand tokens/base (Tailwind surfaces); app.css: dashboard
+│  │                               # (+ studio.css); globals.css: docs + blog (+ Fumadocs). The root layout loads
+│  │                               # NO CSS and NO providers: each section's layout does (see "Bundles per section")
 │  ├─ constants.ts                 # product names, CLI command strings — rename here
 │  ├─ proxy.ts                     # Next 16 middleware: app pages → /login when signed out; `/` is not matched (public)
 │  ├─ app/docs/  app/docs-search/  # public documentation (Fumadocs): layout, [[...slug]] page, search index
@@ -107,6 +109,18 @@ cb-dashboard/
 - **Destructive actions are never primary buttons on a page.** Delete project, suspend environment, remove member,
   revoke device… live in a row's "…" menu or a Settings section/tab, always behind a confirmation.
 - Correctness and the npm package come first; the design system above is the only UI vocabulary.
+
+## Bundles per section (PRD v1.81)
+
+- The root layout (`src/app/layout.tsx`) is only `<html>`, the theme boot script and the brand fonts. Each section's
+  layout brings its own CSS and providers: `(landing)` only `landing.css` (Tailwind with `source(none)`: preflight +
+  `base.css`, utilities only from the shared files it lists with `@source`); `(studio)` `app.css` + `AppProviders`;
+  `docs`/`blog` `globals.css` + `AppProviders`. Never add CSS, providers or client code to the root layout.
+- The landing page never imports dashboard code: no `AppProviders`, no `sonner` (use `InlineCopyButton`, not
+  `CopyButton`), no `cn`/tailwind-merge, no React Query. GSAP only through `loadMotion()` (`motion/load.ts` →
+  `motion/kit.ts`) inside `whenNear`, never a static `import "gsap"` in a component. Server-render what needs no state
+  (e.g. `ServicesHub` with a small `ServicesMotion` client part) so brand logos never ship as JavaScript.
+- Sign-in pages load no dashboard features: auth schemas use `zod/mini`; tooltips carry their own provider.
 
 ## Browser testing (required)
 
@@ -182,7 +196,7 @@ on it; deep ochre for links in light), Archivo + Fragment Mono. It applies to da
   fragments without a trailing period; buttons are verbs ("Delete project"); Sign in / Sign out; no "Oops", no exclamation marks.
 - **Docs and blog (PRD v1.74):** same cb brand and the same theme. One saved choice (`cb-theme`: dark / light / system)
   drives every page: the boot script in the root layout sets `data-theme` + the `dark` class before paint, Fumadocs'
-  switch (next-themes, same key) changes it from the docs/blog top bar. Docs/blog colours are tokens in `globals.css`
+  switch (next-themes, same key) changes it from the docs/blog top bar. Docs/blog colours are tokens in `base.css` (shared with the dashboard's fallbacks)
   (dark in `@theme`, light in `:root[data-theme="light"]:not(:has([data-studio]))`); meanings `mark` (yellow highlighter),
   `placeholder`, `hot` (real key). Diagrams use only `var(--dg-*)` (panel, line, ink, arrow, hot, ph, ok, info) so they
   follow the theme — never hex or Tailwind palette colours. Screenshots are framed on the brand panel

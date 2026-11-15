@@ -1,0 +1,6 @@
+/* Dashboard (every (studio) route, sign-in included): Tailwind, the dashboard design system, the shared brand base.
+ * No Fumadocs CSS (docs only, globals.css) and nothing of the landing page. studio.css stays before the shared base, as
+ * it was in the single global stylesheet, so the cascade is unchanged. */
+@import "tailwindcss";
+@import "./studio.css";
+@import "./base.css";
