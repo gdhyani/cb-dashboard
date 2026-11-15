@@ -16,24 +16,24 @@ describe("v1.32 / v1.59 badges and buttons (docs skin + Supabase dashboard skin)
     // Success stays green (success token), never the brass accent (v1.61).
     expect(badge.className).toMatch(/\bstudio:text-success\b/);
     expect(badge.className).not.toMatch(/studio:text-primary/);
-    expect(badge.className).toMatch(/emerald/);
+    expect(badge.className).toMatch(/(^|\s)text-success\b/);
     rerender(<BadgeLabel tone="warning">Retrying</BadgeLabel>);
-    expect(screen.getByText("Retrying").className).toMatch(/amber/);
+    expect(screen.getByText("Retrying").className).toMatch(/(^|\s)text-warning\b/);
     rerender(<BadgeLabel tone="strong">admin</BadgeLabel>);
-    expect(screen.getByText("admin").className).toMatch(/violet/);
+    expect(screen.getByText("admin").className).toMatch(/(^|\s)text-placeholder\b/);
     rerender(<BadgeLabel>developer</BadgeLabel>);
-    expect(screen.getByText("developer").className).toMatch(/sky/);
+    expect(screen.getByText("developer").className).toMatch(/(^|\s)text-muted-foreground\b/);
     rerender(<BadgeLabel tone="muted">No access</BadgeLabel>);
     expect(screen.getByText("No access").className).toMatch(/bg-/);
   });
 
   it("the shared Badge uses the same colour palette (one design system)", () => {
     const { rerender } = render(<Badge>New</Badge>);
-    expect(screen.getByText("New").className).toMatch(/sky/);
+    expect(screen.getByText("New").className).toMatch(/(^|\s)text-muted-foreground\b/);
     rerender(<Badge variant="success">Live</Badge>);
-    expect(screen.getByText("Live").className).toMatch(/emerald/);
+    expect(screen.getByText("Live").className).toMatch(/(^|\s)text-success\b/);
     rerender(<Badge variant="warning">Paused</Badge>);
-    expect(screen.getByText("Paused").className).toMatch(/amber/);
+    expect(screen.getByText("Paused").className).toMatch(/(^|\s)text-warning\b/);
   });
 
   it("logoColor gives the brand colour used by a mark, none for letter badges", () => {

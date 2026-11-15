@@ -6,34 +6,34 @@
  * and any marketing page never render that element and keep their own look.
  *
  * Themes: dark by default; `data-theme="light"` on <html> picks light, and no attribute + a light OS preference
- * (theme "System") picks light too. Values follow Supabase's OKLCH semantic structure (surfaces step up in
- * lightness, borders and washes are foreground at low alpha) with cb's own colours: a deep slate background with a
- * faint cool tint (hue 220), the teal accent (hue ~184), a yellower success green and orange warning (PRD v1.62).
+ * (theme "System") picks light too. Supabase's semantic structure (surfaces step up in lightness, borders and washes
+ * are foreground at low alpha) dressed in the cb brand of the landing page (`/`, PRD v1.73): near-black / paper
+ * ground, warm ink, the yellow highlighter as the accent, the landing red for destructive, Archivo + Fragment Mono.
  */
 
 /* ── Dark (default) ─────────────────────────────────────────────────────────────────────────── */
 :root:has([data-studio]) {
   color-scheme: dark;
-  --sb-fg: oklch(0.95 0.005 220);
+  --sb-fg: #ecece7;
 
   /* Surfaces */
-  --color-background: oklch(0.18 0.012 220);
-  --color-alternative: oklch(0.155 0.012 220);
-  --color-card: oklch(0.205 0.012 220);
-  --color-surface-75: oklch(0.195 0.012 220);
-  --color-surface-100: oklch(0.205 0.012 220);
-  --color-surface-200: oklch(0.218 0.012 220);
-  --color-surface-300: oklch(0.232 0.012 220);
-  --color-dialog: oklch(0.218 0.012 220);
-  --color-popover: oklch(0.232 0.012 220);
-  --color-overlay: oklch(0.232 0.012 220);
-  --color-overlay-hover: oklch(0.95 0.005 220 / 7%);
-  --color-secondary: oklch(0.232 0.012 220);
-  --color-muted: oklch(0.95 0.005 220 / 3.3%);
-  --color-accent: oklch(0.95 0.005 220 / 5.5%);
-  --color-control: oklch(0.95 0.005 220 / 5%);
-  --color-selection: oklch(0.95 0.005 220 / 8%);
-  --color-field: oklch(0 0 0 / 12%);
+  --color-background: #0b0c0e;
+  --color-alternative: #08090b;
+  --color-card: #111317;
+  --color-surface-75: #0f1114;
+  --color-surface-100: #111317;
+  --color-surface-200: #16191d;
+  --color-surface-300: #1c1f24;
+  --color-dialog: #131519;
+  --color-popover: #181b20;
+  --color-overlay: #181b20;
+  --color-overlay-hover: rgb(236 236 231 / 7%);
+  --color-secondary: #181b20;
+  --color-muted: rgb(236 236 231 / 3.3%);
+  --color-accent: rgb(236 236 231 / 5.5%);
+  --color-control: rgb(236 236 231 / 5%);
+  --color-selection: rgb(236 236 231 / 8%);
+  --color-field: rgb(0 0 0 / 22%);
 
   /* Text: four steps */
   --color-foreground: var(--sb-fg);
@@ -41,52 +41,52 @@
   --color-popover-foreground: var(--sb-fg);
   --color-secondary-foreground: var(--sb-fg);
   --color-accent-foreground: var(--sb-fg);
-  --color-foreground-light: oklch(0.798 0.005 220);
-  --color-foreground-lighter: oklch(0.684 0.005 220);
-  --color-foreground-muted: oklch(0.56 0.005 220);
-  --color-foreground-contrast: oklch(0.18 0.012 220);
+  --color-foreground-light: #c3c4c1;
+  --color-foreground-lighter: #a6aab1;
+  --color-foreground-muted: #7d828a;
+  --color-foreground-contrast: #0b0c0e;
   --color-muted-foreground: var(--color-foreground-light);
   --color-subtle: var(--color-foreground-lighter);
 
   /* Borders: foreground at low alpha, so they sit right on every surface */
-  --color-border: oklch(0.95 0.005 220 / 9%);
-  --color-border-muted: oklch(0.95 0.005 220 / 6%);
-  --color-border-strong: oklch(0.95 0.005 220 / 13.5%);
-  --color-border-stronger: oklch(0.95 0.005 220 / 17.5%);
-  --color-border-overlay: oklch(0.95 0.005 220 / 13.5%);
-  --color-border-control: oklch(0.95 0.005 220 / 13.5%);
-  --color-border-control-hover: oklch(0.95 0.005 220 / 28%);
+  --color-border: rgb(236 236 231 / 10%);
+  --color-border-muted: rgb(236 236 231 / 6.5%);
+  --color-border-strong: rgb(236 236 231 / 15%);
+  --color-border-stronger: rgb(236 236 231 / 21%);
+  --color-border-overlay: rgb(236 236 231 / 14%);
+  --color-border-control: rgb(236 236 231 / 15%);
+  --color-border-control-hover: rgb(236 236 231 / 30%);
   --color-input: var(--color-border-control);
 
   /*
-   * cb accent = teal (PRD v1.62, OQ18): ink for links and selected states, a teal plate with dark ink for the one
-   * primary button, bright teal for focus rings, switches and the chart series. Success is a yellower green and
-   * warning orange, so the accent never reads as a status.
+   * cb accent = the landing's yellow highlighter (PRD v1.73): links and selected states, a yellow plate with dark ink
+   * for the one primary button, focus rings, switches and the chart series. Warning is amber, well away from the
+   * yellow, and success green, so the accent never reads as a status.
    */
-  --color-primary: oklch(0.8 0.12 185);
-  --color-primary-foreground: oklch(0.2 0.04 185);
-  --color-primary-solid: oklch(0.68 0.12 183);
-  --color-primary-solid-hover: oklch(0.73 0.12 183);
-  --color-primary-solid-foreground: oklch(0.18 0.04 185);
-  --color-primary-bright: oklch(0.76 0.13 184);
-  --color-brand: oklch(0.7 0.12 183);
-  --color-brand-foreground: oklch(0.18 0.04 185);
+  --color-primary: #ffd84a;
+  --color-primary-foreground: #121212;
+  --color-primary-solid: #ffd84a;
+  --color-primary-solid-hover: #ffe27a;
+  --color-primary-solid-foreground: #121212;
+  --color-primary-bright: #ffd84a;
+  --color-brand: #ffd84a;
+  --color-brand-foreground: #121212;
   --color-success: oklch(0.78 0.17 145);
-  --color-ring: oklch(0.76 0.13 184 / 55%);
+  --color-ring: rgb(255 216 74 / 60%);
 
   /* States */
-  --color-warning: oklch(0.74 0.16 50);
-  --color-warning-foreground: oklch(0.2 0.04 50);
-  --color-destructive: oklch(0.68 0.17 25);
+  --color-warning: oklch(0.74 0.15 62);
+  --color-warning-foreground: #1a1206;
+  --color-destructive: #ff5b3d;
   --color-destructive-foreground: #ffffff;
-  --color-destructive-solid: oklch(0.55 0.14 25);
-  --color-destructive-solid-hover: oklch(0.6 0.15 25);
-  --color-info: oklch(0.7 0.14 288);
+  --color-destructive-solid: #d4402a;
+  --color-destructive-solid-hover: #e24d35;
+  --color-info: oklch(0.72 0.12 288);
 
-  /* Type: Inter body (weight 450), Manrope headings, Source Code Pro mono; Studio's denser scale */
-  --font-sans: var(--studio-font-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--studio-font-heading), var(--studio-font-sans), ui-sans-serif, sans-serif;
-  --font-mono: var(--studio-font-mono), "Office Code Pro", Menlo, ui-monospace, monospace;
+  /* Type: Archivo for text and headings, Fragment Mono for code and micro-labels (as on `/`); Studio's denser scale */
+  --font-sans: var(--brand-font-sans), "Helvetica Neue", Arial, sans-serif;
+  --font-heading: var(--brand-font-sans), "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--brand-font-mono), ui-monospace, Menlo, monospace;
   --text-xs: 0.75rem;
   --text-xs--line-height: 1.35;
   --text-sm: 0.8125rem;
@@ -102,77 +102,85 @@
   --text-display: 1.375rem;
   --text-display--letter-spacing: -0.015em;
 
-  /* Radius ×4/3 (Studio): md 8px for controls, lg ~10.7px for cards and dialogs */
-  --radius-xs: 0.1667rem;
-  --radius-sm: 0.3333rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.6667rem;
-  --radius-xl: 1rem;
+  /* Radius: a little sharper, like the landing's 6px — md 6px for controls, lg 8px for cards and dialogs */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
 
   /* Raised controls and floating surfaces */
   --sb-shadow-control: 0 1px 2px 0 oklch(0 0 0 / 30%), inset 0 1px 0 0 oklch(1 0 0 / 4%);
   --sb-shadow-raised: 0 1px 2px 0 oklch(0 0 0 / 35%), inset 0 1px 0 0 oklch(1 0 0 / 10%);
   --sb-shadow-floating:
     0 0 0 1px oklch(1 0 0 / 9%), 0 4px 12px -2px oklch(0 0 0 / 45%), 0 16px 40px -8px oklch(0 0 0 / 55%);
-  --sb-shimmer-a: oklch(0.95 0.005 220 / 5%);
-  --sb-shimmer-b: oklch(0.95 0.005 220 / 11%);
+  --sb-shimmer-a: rgb(236 236 231 / 4%);
+  --sb-shimmer-b: rgb(236 236 231 / 10%);
   --header-height: 3rem;
 }
 
 /* ── Light (the theme script resolves "System" to light or dark on <html data-theme>) ───────────────── */
 :root[data-theme="light"]:has([data-studio]) {
   color-scheme: light;
-  --sb-fg: oklch(0.18 0.012 230);
-  --color-background: #f7f9fa;
-  --color-alternative: #f1f4f6;
+  --sb-fg: #0f1012;
+  --color-background: #f3f3ef;
+  --color-alternative: #ecece7;
   --color-card: #ffffff;
   --color-surface-75: #ffffff;
   --color-surface-100: #ffffff;
-  --color-surface-200: #f2f5f7;
-  --color-surface-300: #eaeef1;
+  --color-surface-200: #efefea;
+  --color-surface-300: #e7e7e1;
   --color-dialog: #ffffff;
   --color-popover: #ffffff;
   --color-overlay: #ffffff;
-  --color-overlay-hover: oklch(0 0 0 / 5%);
-  --color-secondary: #eef2f4;
-  --color-muted: oklch(0 0 0 / 3%);
-  --color-accent: oklch(0 0 0 / 5%);
-  --color-control: oklch(0 0 0 / 4%);
-  --color-selection: oklch(0 0 0 / 7%);
-  --color-field: oklch(0 0 0 / 1.5%);
-  --color-foreground-light: #48535a;
-  --color-foreground-lighter: #66727a;
-  --color-foreground-muted: #95a0a6;
-  --color-foreground-contrast: #fbfbfb;
-  --color-border: #e2e7ea;
-  --color-border-muted: #ebeff1;
-  --color-border-strong: #d5dce0;
-  --color-border-stronger: #bec7cc;
-  --color-border-overlay: #dfe5e8;
-  --color-border-control: #d2d9dd;
-  --color-border-control-hover: #aeb8be;
-  --color-primary: oklch(0.5 0.09 185);
+  --color-overlay-hover: rgb(15 16 18 / 5%);
+  --color-secondary: #e9e9e4;
+  --color-muted: rgb(15 16 18 / 3%);
+  --color-accent: rgb(15 16 18 / 5%);
+  --color-control: rgb(15 16 18 / 4%);
+  --color-selection: rgb(15 16 18 / 7%);
+  --color-field: rgb(15 16 18 / 1.5%);
+  --color-foreground-light: #3f4248;
+  --color-foreground-lighter: #5a5e65;
+  --color-foreground-muted: #8a8e94;
+  --color-foreground-contrast: #fbfbf8;
+  --color-border: #dfdfd8;
+  --color-border-muted: #e8e8e2;
+  --color-border-strong: #d1d1c9;
+  --color-border-stronger: #b8b8b0;
+  --color-border-overlay: #dbdbd4;
+  --color-border-control: #cfcfc7;
+  --color-border-control-hover: #a7a79f;
+
+  /* Yellow text is unreadable on paper: links and accent text use the landing's deep ochre; the yellow stays the
+   * plate (primary button) and a deeper yellow marks switches, charts and the splash line. Focus = ink, as on `/`. */
+  --color-primary: #7a5c00;
   --color-primary-foreground: #ffffff;
-  --color-primary-solid: oklch(0.56 0.1 184);
-  --color-primary-solid-hover: oklch(0.5 0.1 184);
-  --color-primary-solid-foreground: #ffffff;
-  --color-primary-bright: oklch(0.6 0.11 184);
-  --color-brand: oklch(0.56 0.1 184);
-  --color-brand-foreground: #ffffff;
-  --color-success: oklch(0.55 0.15 145);
-  --color-ring: oklch(0.6 0.11 184 / 50%);
-  --color-warning: oklch(0.56 0.16 45);
+  --color-primary-solid: #ffd84a;
+  --color-primary-solid-hover: #f5ca2a;
+  --color-primary-solid-foreground: #121212;
+  --color-primary-bright: #e3b400;
+  --color-brand: #ffd84a;
+  --color-brand-foreground: #121212;
+  --color-success: oklch(0.51 0.14 145);
+  --color-ring: rgb(15 16 18 / 55%);
+  --color-warning: oklch(0.54 0.15 52);
   --color-warning-foreground: #ffffff;
-  --color-destructive: #c03a36;
-  --color-destructive-solid: #c03a36;
-  --color-destructive-solid-hover: #a83330;
+  --color-destructive: #c8361b;
+  --color-destructive-solid: #c8361b;
+  --color-destructive-solid-hover: #ad2e17;
   --color-info: #6c5eba;
   --sb-shadow-control: 0 1px 2px 0 oklch(0 0 0 / 6%), inset 0 0 0 1px oklch(0 0 0 / 9%);
   --sb-shadow-raised: 0 1px 2px 0 oklch(0 0 0 / 12%), inset 0 1px 0 0 oklch(1 0 0 / 14%);
   --sb-shadow-floating:
     0 0 0 1px oklch(0 0 0 / 7%), 0 4px 12px -2px oklch(0 0 0 / 8%), 0 16px 40px -8px oklch(0 0 0 / 12%);
-  --sb-shimmer-a: oklch(0 0 0 / 4%);
-  --sb-shimmer-b: oklch(0 0 0 / 8%);
+  --sb-shimmer-a: rgb(15 16 18 / 4%);
+  --sb-shimmer-b: rgb(15 16 18 / 8%);
+}
+
+/* Headings in Archivo: a touch tighter, as on `/`. */
+:root:has([data-studio]) :where(h1, h2, h3, h4, .heading-title, .heading-section) {
+  letter-spacing: -0.02em;
 }
 
 /* ── Base (dashboard only) ──────────────────────────────────────────────────────────────────── */
@@ -191,7 +199,7 @@
     background: color-mix(in oklch, var(--color-primary-bright) 28%, transparent);
     color: inherit;
   }
-  /* One focus ring everywhere: green, never animated (Supabase `focus-ring`). */
+  /* One focus ring everywhere: yellow (ink in light), never animated (Supabase `focus-ring`). */
   :root:has([data-studio]) :focus-visible {
     outline: 2px solid var(--color-ring);
     outline-offset: 2px;
@@ -293,7 +301,7 @@
 }
 
 /* ── First-landing splash (shared/components/splash.tsx) ────────────────────────────────────────────────────────
- * ~1.1 s, once per tab: the wordmark settles, a teal line strikes through its middle left→right and leaves to the
+ * ~1.1 s, once per tab: the wordmark settles, a yellow highlighter line strikes through its middle left→right and leaves to the
  * right, then the overlay fades away. Never blocks clicks; skipped on later loads and for reduced motion. */
 .cb-splash {
   position: fixed;

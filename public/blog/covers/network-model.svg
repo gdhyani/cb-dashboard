@@ -1,10 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d28d9"/><stop offset="0.55" stop-color="#a21caf"/><stop offset="1" stop-color="#db2777"/></linearGradient></defs>
+<title>cb network model: nested TCP, TLS, WebSocket and HTTP layers</title>
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b0c0e"/><stop offset="1" stop-color="#111317"/></linearGradient><radialGradient id="glow" cx="0" cy="0" r="1.1"><stop offset="0" stop-color="#ffd84a" stop-opacity="0.1"/><stop offset="0.6" stop-color="#ffd84a" stop-opacity="0.025"/><stop offset="1" stop-color="#ffd84a" stop-opacity="0"/></radialGradient><pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="12" cy="12" r="1.2" fill="#ecece7" fill-opacity="0.06"/></pattern></defs>
 <rect width="1200" height="675" fill="url(#g)"/>
-<rect x="56" y="56" width="1088" height="563" rx="22" fill="#000"/>
-<rect x="150" y="130" width="900" height="380" rx="12" fill="none" stroke="#3a3a3a" stroke-width="3"/><text x="168" y="158" fill="#3a3a3a" font-size="20" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">TCP :443</text>
-<rect x="200" y="180" width="800" height="300" rx="12" fill="none" stroke="#525252" stroke-width="3"/><text x="218" y="208" fill="#525252" font-size="20" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">TLS  agent ↔ cb</text>
-<rect x="250" y="230" width="700" height="220" rx="12" fill="none" stroke="#6d6d6d" stroke-width="3"/><text x="268" y="258" fill="#6d6d6d" font-size="20" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">WebSocket frame</text>
-<rect x="300" y="280" width="600" height="140" rx="12" fill="none" stroke="#a3a3a3" stroke-width="3"/><text x="318" y="308" fill="#a3a3a3" font-size="20" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">TLS  app ↔ gateway</text>
-<rect x="350" y="330" width="500" height="60" rx="12" fill="none" stroke="#34d399" stroke-width="3"/><text x="368" y="358" fill="#34d399" font-size="20" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">HTTP  stand-in</text>
+<rect width="1200" height="675" fill="url(#dots)"/>
+<rect width="1200" height="675" fill="url(#glow)"/>
+<rect x="56" y="56" width="1088" height="563" rx="22" fill="#0b0c0e" fill-opacity="0.9" stroke="#2b2e33" stroke-width="1"/>
+<rect x="150" y="130" width="900" height="380" rx="12" fill="none" stroke="#3d4148" stroke-width="3"/><text x="168" y="158" fill="#3d4148" font-size="20" font-family="Fragment Mono, ui-monospace, Menlo, monospace">TCP :443</text>
+<rect x="200" y="180" width="800" height="300" rx="12" fill="none" stroke="#575b63" stroke-width="3"/><text x="218" y="208" fill="#575b63" font-size="20" font-family="Fragment Mono, ui-monospace, Menlo, monospace">TLS  agent ↔ cb</text>
+<rect x="250" y="230" width="700" height="220" rx="12" fill="none" stroke="#7d828a" stroke-width="3"/><text x="268" y="258" fill="#7d828a" font-size="20" font-family="Fragment Mono, ui-monospace, Menlo, monospace">WebSocket frame</text>
+<rect x="300" y="280" width="600" height="140" rx="12" fill="none" stroke="#a6aab1" stroke-width="3"/><text x="318" y="308" fill="#a6aab1" font-size="20" font-family="Fragment Mono, ui-monospace, Menlo, monospace">TLS  app ↔ gateway</text>
+<rect x="350" y="330" width="500" height="60" rx="12" fill="none" stroke="#ffd84a" stroke-width="3"/><text x="368" y="358" fill="#ffd84a" font-size="20" font-family="Fragment Mono, ui-monospace, Menlo, monospace">HTTP  stand-in</text>
 </svg>

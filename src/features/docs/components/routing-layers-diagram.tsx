@@ -23,15 +23,22 @@ export function RoutingLayersDiagram() {
           const y = 20 + row * 110;
           return (
             <g key={r.tag}>
-              <text x={0} y={y + BOX_H / 2 + 4} fill="#a1a1a1" fontSize={11} fontWeight={600}>
+              <text x={0} y={y + BOX_H / 2 + 4} fill="var(--dg-ink-2)" fontSize={11} fontWeight={600}>
                 {r.tag}
               </text>
               {r.boxes.map((label, i) => {
                 const x = 70 + i * (W + GAP);
                 return (
                   <g key={label}>
-                    <rect x={x} y={y} width={W} height={BOX_H} rx={8} fill="#0a0a0a" stroke="#3a3a3a" />
-                    <text x={x + W / 2} y={y + 43} textAnchor="middle" fill="#ededed" fontSize={13} fontWeight={600}>
+                    <rect x={x} y={y} width={W} height={BOX_H} rx={8} fill="var(--dg-panel)" stroke="var(--dg-line)" />
+                    <text
+                      x={x + W / 2}
+                      y={y + 43}
+                      textAnchor="middle"
+                      fill="var(--dg-ink)"
+                      fontSize={13}
+                      fontWeight={600}
+                    >
                       {label}
                     </text>
                     {i < 3 && <Arrow x1={x + W} x2={x + W + GAP - 2} y={y + BOX_H / 2} marker="arrow-layers" />}

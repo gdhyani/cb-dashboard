@@ -68,7 +68,7 @@ const MODES: { title: string; sub: string; hops: Hop[] }[] = [
   },
 ];
 
-/** FR-DOC-010: the direct path versus cb's two ways in. The amber hop is the only one with the real key. */
+/** FR-DOC-010: the direct path versus cb's two ways in. The red hop is the only one with the real key. */
 export function ConnectionModes() {
   return (
     <DiagramFrame caption="Without cb the real key leaves the laptop. With cb it only exists on the last hop, from the cb server.">

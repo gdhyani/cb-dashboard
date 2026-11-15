@@ -150,8 +150,9 @@ type ApiErrorBody = { success: false; error: { code: string; message: string; st
 
 ## Design system — Supabase Studio (PRD §11.5, v1.59)
 
-The dashboard is a port of the **Supabase design system** (supabase.com/design-system) with cb's own colours: a teal
-accent and a deep slate background (PRD v1.62). It applies to dashboard routes only.
+The dashboard is a port of the **Supabase design system** (supabase.com/design-system) dressed in the **cb brand of the
+landing page** (PRD v1.73): near-black / paper grounds, warm ink, the yellow highlighter `#ffd84a` as the accent (dark ink
+on it; deep ochre for links in light), Archivo + Fragment Mono. It applies to dashboard routes only.
 
 - **Landing page (`/`, PRD §11.6)** has its own look ("marked-up document": highlighter = placeholder key, black bar = real secret;
   Archivo + Fragment Mono; `lp-` classes in `features/landing/landing.css`) and its own motion (GSAP ticker drives Lenis and
@@ -163,12 +164,12 @@ accent and a deep slate background (PRD v1.62). It applies to dashboard routes o
 - **Tokens, never raw colours.** Surfaces `bg-background`, `bg-surface-75/100/200/300`, `bg-overlay`, `bg-dialog`, washes
   `bg-muted`/`bg-accent`/`bg-selection`, fields `bg-field`; text `text-foreground` › `-light` › `-lighter` › `-muted`;
   borders `border-border` (+ `-muted`, `-strong`, `-stronger`, `-control`). Colour carries meaning only: `primary`
-  (cb teal — the one primary action per view, links, focus, switches, charts), `success` (green), `warning`
-  (orange), `destructive`, `info`. No `white/[x]`,
+  (cb yellow — the one primary action per view, links, focus, switches, charts), `success` (green), `warning`
+  (amber, never yellow), `destructive` (the landing red), `info`. No `white/[x]`,
   no hex, no Tailwind palette colours in dashboard code: the light theme must keep working.
 - **Type roles:** `heading-title` (page), `heading-section`, `heading-default`, `heading-meta` (mono uppercase micro-label:
-  table heads, card titles, menu groups). Body `text-sm` = 13 px. Inter / Manrope / Source Code Pro are loaded by the
-  `(studio)` layout only.
+  table heads, card titles, menu groups). Body `text-sm` = 13 px. Archivo / Fragment Mono are loaded by the
+  `(studio)` layout only (the same fonts as the landing page).
 - **Page anatomy:** `PageContainer` (`size="small"` for settings) › `PageHeader` (title, description fragment, actions,
   optional `nav`) › `Section`s (Cards, tables). Settings forms: `Card` + `FormItemLayout` rows + `CardFooter` with Cancel/Save
   (disabled until dirty). Callouts: `Admonition`. Tables: `Table` + `TableToolbar` + `useTableQuery`.
@@ -179,10 +180,19 @@ accent and a deep slate background (PRD v1.62). It applies to dashboard routes o
   Service logos use brand colours (`BRAND_COLORS` in `service-logo.tsx`).
 - **Copy (Supabase):** Title Case page titles and nav; sentence case for buttons, labels, section titles; descriptions are
   fragments without a trailing period; buttons are verbs ("Delete project"); Sign in / Sign out; no "Oops", no exclamation marks.
-- **Docs exception (PRD v1.36):** docs screenshots are framed on one gradient (`scripts/frame-images.mjs`) and docs diagrams use
-  `--docs-frame-gradient`. Nowhere in the dashboard.
+- **Docs and blog (PRD v1.74):** same cb brand and the same theme. One saved choice (`cb-theme`: dark / light / system)
+  drives every page: the boot script in the root layout sets `data-theme` + the `dark` class before paint, Fumadocs'
+  switch (next-themes, same key) changes it from the docs/blog top bar. Docs/blog colours are tokens in `globals.css`
+  (dark in `@theme`, light in `:root[data-theme="light"]:not(:has([data-studio]))`); meanings `mark` (yellow highlighter),
+  `placeholder`, `hot` (real key). Diagrams use only `var(--dg-*)` (panel, line, ink, arrow, hot, ph, ok, info) so they
+  follow the theme — never hex or Tailwind palette colours. Screenshots are framed on the brand panel
+  (`scripts/frame-images.mjs`); diagrams sit on `--docs-frame-gradient`. Reduced motion in client components: use
+  `@/shared/hooks/use-reduced-motion` (hydration-safe), not `motion`'s hook. Docs and blog share one header,
+  `features/docs/components/site-header.tsx` (passed as `nav.component` to both Fumadocs layouts; its theme control is
+  `ThemeMenu`, the dashboard's; its bar is capped at the docs frame width, 97rem). `/docs` and `/blog` open with `SectionHero` (display title, section word on the yellow); the blog index is `BlogIndex` (Latest feature + even grid). Blog posts: Copy link / Copy Markdown / Open (`/blog-md/<slug>`), cover, `BlogToc` rail,
+  CSS reading-progress line, `PostNav`.
 - Subtle, purposeful animation (`cb-enter`, `StaggerItem`, `cb-pop`); respect `prefers-reduced-motion`. Charts in
-  `shared/components/charts` use the teal single-series ramp (`charts/shades.ts`); use `dataviz` for new charts.
+  `shared/components/charts` use the yellow single-series ramp (`charts/shades.ts`); use `dataviz` for new charts.
 - UI work: follow this section and the Supabase research in PRD §11.5; `frontend-design:frontend-design` for anything new.
 
 ## Configuration (env)

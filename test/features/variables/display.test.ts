@@ -21,6 +21,6 @@ describe("value column for protected keys (legacy groups)", () => {
     expect(describeValue(v("host"), true).text).toBe("local URL, set by cb");
     expect(describeValue(v("clientEmail"), true).text).toBe("from the service settings");
     expect(describeValue(v("url"), true).text).toContain("real value hidden");
-    expect(describeValue(v("privateKey"), true).text).toBe("stand-in, made by cb");
+    expect(describeValue(v("privateKey"), true).text).toBe("placeholder, made by cb");
   });
 });
