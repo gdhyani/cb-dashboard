@@ -202,7 +202,7 @@ Everything after `--` is the command to run. `cb run`:
 
 - Starts the background agent if it isn't running and attaches this project's environment to it.
 - Starts your command with the environment's values merged into its environment (cb's values win for keys
-  cb manages) and `NODE_OPTIONS` extended with `--require` for the [preload](/docs/reference/api#preload-cbenvregister).
+  cb manages) and `NODE_OPTIONS` extended with the [preload](/docs/reference/api#preload-cbenvregister) (`--import`, or `--require` when you already use `--import`).
 - Forwards stdin, stdout, stderr and signals, and exits with your command's exit code.
 - Restarts your command when an admin changes the environment's configuration, unless you pass `--no-restart`.
 - Prints a banner when access is revoked and leaves your app running so it reports its own errors. It refuses

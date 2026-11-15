@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ImportEnvDialog } from "@/features/variables/components/import-env-dialog";
 import { ApiError } from "@/shared/api/api-error";
+import { axeViolations } from "../../a11y";
 
 const api = vi.hoisted(() => ({
   createService: vi.fn(),
@@ -110,5 +111,12 @@ describe("Import .env: a secret is never imported as Plain by default (security 
       }),
     );
     expect(api.createVariable).toHaveBeenCalledWith("e1", { type: "plain", key: "APP_NAME", value: "shop" });
+  });
+});
+
+describe("NFR-A11Y Import .env", () => {
+  it("NFR-A11Y import .env dialog has no axe violations", async () => {
+    renderDialog();
+    expect(await axeViolations()).toEqual([]);
   });
 });

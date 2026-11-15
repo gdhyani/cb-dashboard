@@ -11,7 +11,7 @@ cb works with any JavaScript app that runs on Node.js. You don't add a plugin pe
 
 1. It makes sure the local agent is running and your session is valid, and stops with a clear message if it isn't.
 2. It merges your environment's [variables](/docs/overview/concepts#variable) into the process environment. For keys cb manages, cb's value wins over anything already set in your shell.
-3. It adds `--require <path to the cb preload>` to `NODE_OPTIONS`.
+3. It adds the cb preload to `NODE_OPTIONS`: `--import <file URL of the preload>`, or `--require <path>` when your `NODE_OPTIONS` already uses `--import`. Your own options are kept.
 
 Node.js loads the [preload](/docs/guides/develop/preload-and-api) before any of your code runs. The preload routes connections to the hosts your environment protects through the local agent, so official SDKs work unchanged with [stand-in values](/docs/overview/concepts#stand-in-values). Because child processes and worker processes inherit `NODE_OPTIONS`, a dev server's workers, a test runner's workers and a migration CLI all get the same treatment.
 

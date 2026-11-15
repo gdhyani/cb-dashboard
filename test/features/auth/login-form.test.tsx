@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LoginForm } from "@/features/auth";
 import { http } from "@/shared/api/http";
 import { makeQueryClient } from "@/shared/api/query-client";
+import { axeViolations } from "../../a11y";
 
 const replace = vi.fn();
 vi.mock("next/navigation", () => ({
@@ -50,6 +51,28 @@ describe("FR-UI-006 LoginForm", () => {
     expect(await screen.findByText("Email or password is incorrect.")).toBeInTheDocument();
     expect(screen.getByLabelText("Password")).toHaveValue("");
     expect(screen.getByLabelText("Email")).toHaveValue("asha@cp-test.dev");
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("S10 shows the failed-login limit message from the server, with its code", async () => {
+    mock.onPost("/auth/login").reply(
+      429,
+      {
+        success: false,
+        error: {
+          code: "RATE_LIMITED",
+          message: "Too many failed logins. Try again in 15 minute(s).",
+          statusCode: 429,
+          correlationId: "c9",
+        },
+      },
+      { "retry-after": "900" },
+    );
+    renderLogin();
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByText(/Too many failed logins\. Try again in 15 minute\(s\)\./)).toBeInTheDocument();
+    expect(screen.getByText(/RATE_LIMITED/)).toBeInTheDocument();
     expect(replace).not.toHaveBeenCalled();
   });
 
@@ -100,5 +123,12 @@ describe("FR-DOC-003 login links to the docs", () => {
   it("has a Read the docs link to /docs", () => {
     renderLogin();
     expect(screen.getByRole("link", { name: "Read the docs" })).toHaveAttribute("href", "/docs");
+  });
+});
+
+describe("NFR-A11Y LoginForm", () => {
+  it("NFR-A11Y login has no axe violations", async () => {
+    renderLogin();
+    expect(await axeViolations()).toEqual([]);
   });
 });

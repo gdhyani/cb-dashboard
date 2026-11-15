@@ -142,7 +142,7 @@ For Prisma, Drizzle Kit and other migration CLIs, see [Node tooling](/docs/platf
 
 **`cb: this process wasn't started with "cb run"`** — the cb preload was loaded without `cb run`, for example from your own `NODE_OPTIONS` or a debugger configuration. Start the app with `npm run dev`, or `npx cb run -- next dev`.
 
-**Next.js workers fail to start when `NODE_OPTIONS` already has a `--require`.** Next.js splits `NODE_OPTIONS` into one value per flag, so your own `--require` and cb's preload `--require` collapse into one broken path. Remove your own `--require` from `NODE_OPTIONS` while running under cb.
+**Next.js workers fail to start when `NODE_OPTIONS` has both a `--require` and an `--import` of your own.** Next.js splits `NODE_OPTIONS` into one value per flag, so two options with the same flag collapse into one broken path. cb adds its preload with the flag you are not using (`--import` by default, `--require` if you already use `--import`), so one preload of your own of either kind works. If you use both kinds, move one of them into the other (for example, `--import` a small file that also loads your `--require` module).
 
 **A `NEXT_PUBLIC_*` value is empty or out of date in the browser.** These are inlined at build time. Restart `next dev`, or rebuild with `npm run build`, after an admin changes them.
 

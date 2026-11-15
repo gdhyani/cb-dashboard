@@ -41,7 +41,7 @@ over verified TLS from the cb server.
 
 ## Layer 2 in detail
 
-The preload (loaded into the app with `NODE_OPTIONS=--require`) patches Node's `net.connect`,
+The preload (loaded through `NODE_OPTIONS`, with `--import` by default) patches Node's `net.connect`,
 `net.createConnection`, `net.Socket#connect`, `tls.connect` (which `https` and `http2` use) and installs a `fetch`
 dispatcher with the same logic. For each connection it checks a table from the snapshot:
 
@@ -84,7 +84,9 @@ Authorization: Bearer <15-minute access token>
 
 Before the upgrade completes, the gateway checks, in order: the session and device are not revoked, the user is an
 active member, the environment and organisation are not stopped, and an unexpired grant covers this service (Layer 1)
-or a service claiming this host (Layer 2). Every decision is audited. When a tunnel closes, the code tells the agent
+or a service claiming this host (Layer 2). When several services share a host (Google sign-in and Firebase on
+`oauth2.googleapis.com`), each service is checked on its own: a stopped one is left out of the tunnel, and every
+one is watched, so revoking either closes it. Every decision is audited. When a tunnel closes, the code tells the agent
 why:
 
 | Code | Meaning | What the agent does |

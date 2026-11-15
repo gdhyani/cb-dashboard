@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { KeyAccessDialog } from "@/features/access";
 import type { AccessMatrix } from "@/features/access/types";
+import { axeViolations } from "../../a11y";
 
 const access = vi.hoisted(() => ({
   getAccess: vi.fn(),
@@ -124,5 +125,14 @@ describe("Who can use it (D10, J4)", () => {
         ],
       }),
     );
+  });
+});
+
+describe("NFR-A11Y Who can use it", () => {
+  it("NFR-A11Y key access dialog has no axe violations", async () => {
+    resources.listProfiles.mockResolvedValue([{ name: "default", rotatedAt: null, isDefault: true }]);
+    renderDialog();
+    await screen.findByText("Ravi");
+    expect(await axeViolations()).toEqual([]);
   });
 });

@@ -65,7 +65,11 @@ decrypted. How it is used depends on how the service authenticates:
   the real secret, works out which developer's test caused the event, and signs it again with that developer's
   stand-in before delivering it to their app.
 
-The real key exists in memory for that one request and goes to exactly one place: the real service.
+The real key exists in memory for that one request and goes to exactly one place: the real service. "Exactly one"
+is enforced, not assumed: the gateway builds the upstream URL from the address the admin saved and accepts only a
+plain path from the app. A request line that names another host (`GET http://other.example/x`, or a path starting
+with `//`) is refused with `400 cb_bad_request_target` before anything is sent, so no code on the laptop can point
+the real key somewhere else.
 
 ## Step 4: making sure nothing comes back
 

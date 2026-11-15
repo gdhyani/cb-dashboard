@@ -126,7 +126,7 @@ instead of writing the file.
 ## Preload: @cb/env/register
 
 `cb run` and `cb shell` start your command with `NODE_OPTIONS` extended by
-`--require <path to @cb/env/register>`, so every Node process they start, including child processes and worker threads, loads the
+`--import <file URL of @cb/env/register>` (or `--require <path>` when your `NODE_OPTIONS` already uses `--import`), so every Node process they start, including child processes and worker threads, loads the
 preload before any of your code runs. You don't import it yourself.
 
 When it loads, the preload:

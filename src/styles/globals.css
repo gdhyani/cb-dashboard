@@ -17,7 +17,7 @@
   --color-popover-foreground: #fafafa;
   --color-muted: #171717;
   --color-muted-foreground: #a1a1a1;
-  --color-subtle: #6b6b6b;
+  --color-subtle: #808080; /* ≥ 4.5:1 on every surface (NFR accessibility, M7) */
   --color-border: #242424;
   --color-border-strong: #3a3a3a;
   --color-input: #2a2a2a;

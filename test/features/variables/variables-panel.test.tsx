@@ -4,6 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Resource } from "@/features/resources";
 import { VariablesPanel } from "@/features/variables/components/variables-panel";
 import type { Variable } from "@/features/variables/types";
+import { axeViolations } from "../../a11y";
 
 const v = (o: Partial<Variable> & { key: string }): Variable => ({
   id: `id-${o.key}`,
@@ -205,5 +206,29 @@ describe("Variables tab (D1, D4)", () => {
     expect(screen.queryByRole("button", { name: "Add variable" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Actions for/ })).toBeNull();
     expect(screen.getByText("PORT")).toBeInTheDocument();
+  });
+});
+
+describe("NFR-A11Y Variables tab", () => {
+  it("NFR-A11Y variables table has no axe violations", async () => {
+    renderPanel();
+    // Audit the loaded table, not the skeleton.
+    await screen.findAllByText("STRIPE_SECRET_KEY");
+    expect(screen.getAllByText("PORT").length).toBeGreaterThan(0);
+    expect(await axeViolations()).toEqual([]);
+  });
+});
+
+describe("NFR-A11Y keyboard focus", () => {
+  it("NFR-A11Y closing the Add variable dialog with Escape returns focus to the button that opened it", async () => {
+    renderPanel();
+    const button = screen.getByRole("button", { name: "Add variable" });
+    button.focus();
+    fireEvent.click(button);
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog.contains(document.activeElement)).toBe(true);
+    fireEvent.keyDown(document.activeElement ?? dialog, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(button));
   });
 });

@@ -9,6 +9,7 @@ import { EnvCompositionChart } from "./components/blog/env-composition-chart";
 import { EnvPrecedenceDiagram } from "./components/blog/env-precedence-diagram";
 import { EnvTypeExplorer } from "./components/blog/env-type-explorer";
 import { EnvVisibilityDiagram } from "./components/blog/env-visibility-diagram";
+import { GatewayOverheadChart } from "./components/blog/gateway-overhead-chart";
 import { HttpsPathSequence, PostgresLoginSequence, Sequence } from "./components/blog/gateway-sequences";
 import { LeakMapDiagram } from "./components/blog/leak-map-diagram";
 import { LeakScanChart } from "./components/blog/leak-scan-chart";
@@ -58,6 +59,7 @@ export function getMDXComponents(overrides?: MDXComponents): MDXComponents {
     PacketLayers,
     ConnectionModes,
     LeakScanChart,
+    GatewayOverheadChart,
     PostgresLoginSequence,
     LeakMapDiagram,
     SecurePassageDiagram,

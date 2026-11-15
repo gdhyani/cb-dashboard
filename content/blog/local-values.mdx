@@ -32,8 +32,8 @@ agent writes it as a snapshot file only you can read (`~/.cb/run/<project>.<envi
 }
 ```
 
-`cb run` starts your command with those values set, plus `NODE_OPTIONS=--require …/register` so every Node process
-under it loads the preload. Plain values, random secrets and stand-ins all arrive the same way; the difference is
+`cb run` starts your command with those values set, plus the preload in `NODE_OPTIONS` (`--import …/register`, or
+`--require` if you already use `--import`) so every Node process under it loads it. Plain values, random secrets and stand-ins all arrive the same way; the difference is
 only in what the value is.
 
 ## Which value wins

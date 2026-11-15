@@ -25,6 +25,7 @@ missing or invalid. For local development, copy `.env.example` to `.env`. See
 | `PUBLIC_URL` | No | — | The address payment providers reach for [webhooks](/docs/guides/webhooks/public-url). In development this is a tunnel URL. Without it, webhook setup with Stripe or Razorpay fails. |
 | `COOKIE_SECURE` | No | `false` | `true` marks the dashboard session cookie `Secure`. Set it to `true` when the dashboard is served over HTTPS. |
 | `ALLOW_PRIVATE_HTTP_UPSTREAMS` | No | `true` | Allows plain `http://` service URLs on private and loopback addresses (`localhost`, `10.x`, `192.168.x`…). Set `false` on shared, hosted servers. `https://` is always allowed. |
+| `TRUST_PROXY` | No | `false` | Which proxies' `X-Forwarded-For` is believed for the caller's address (per-address login limit). `false` ignores the header. Behind a reverse proxy that sets it, list that proxy with `loopback` (for the dashboard in between), for example `loopback, 10.0.0.0/8`. |
 | `UPSTREAM_EXTRA_CA_FILE` | No | — | Test only: an extra CA file trusted for upstream services. The backend refuses to start with it when `NODE_ENV=production`. |
 | `FILE_STORE` | No | `mongo` | Where uploaded files (service-account JSON, `.p8` keys, CA certificates) are kept: `mongo` (the backend's database) or `supabase` (a private Supabase Storage bucket). Either way cb encrypts them first; the store only ever holds ciphertext. |
 | `SUPABASE_URL` | With `FILE_STORE=supabase` | — | Your Supabase project URL, for example `https://<project>.supabase.co`. Must be `https://`; plain `http://` only for `localhost`, `127.0.0.1` or `[::1]`. |
@@ -74,7 +75,7 @@ The `cb` CLI and the background agent read these. You rarely need any of them.
 
 | Name | Purpose |
 |---|---|
-| `NODE_OPTIONS` | Extended with `--require` for the [preload](/docs/reference/api#preload-cbenvregister). Any options you already set are kept. |
+| `NODE_OPTIONS` | Extended with `--import` (or `--require`, when you already use `--import`) for the [preload](/docs/reference/api#preload-cbenvregister). Any options you already set are kept. |
 | `CB_SNAPSHOT_PATH` | Path of the snapshot the preload reads. Its presence tells `env.NAME` that it runs under `cb run`. |
 | `CB_LISTEN_FILE` | File where the preload records the port your app listens on, for webhook delivery. Set only while the port is being detected. |
 

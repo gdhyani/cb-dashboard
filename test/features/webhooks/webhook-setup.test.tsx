@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Resource } from "@/features/resources";
 import { WebhookSetup } from "@/features/webhooks";
 import { RAZORPAY_WEBHOOKS_LINK, stripeDashboardLink } from "@/features/webhooks/components/webhook-setup";
+import { axeViolations } from "../../a11y";
 
 const hooks = vi.hoisted(() => ({
   listWebhookEvents: vi.fn(),
@@ -215,5 +216,14 @@ describe("FR-WH-001 Razorpay: Connect when a Razorpay key is saved, else URL + c
     renderSetup(<WebhookSetup envId="e1" resource={rzp({ secretOrigin: "generated" })} />);
     fireEvent.click(await screen.findByRole("button", { name: "New secret" }));
     expect(await screen.findByText("fresh_SECRET_abcdefghijklmnopqrstuvwxyz0123")).toBeInTheDocument();
+  });
+});
+
+describe("NFR-A11Y webhook setup", () => {
+  it("NFR-A11Y Stripe webhook setup has no axe violations", async () => {
+    resources.listResources.mockResolvedValue([key("stripe")]);
+    renderSetup(<WebhookSetup envId="e1" resource={webhook(fresh)} />);
+    await screen.findByRole("button", { name: "Connect Stripe" });
+    expect(await axeViolations()).toEqual([]);
   });
 });
