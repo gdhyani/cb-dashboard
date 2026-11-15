@@ -1,15 +1,11 @@
 "use client";
 
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Check, Lock, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { placeholders } from "../content-story";
-import { centerPin } from "../motion/center-pin";
 import { prefersReducedMotion } from "../motion/env";
+import { loadMotion } from "../motion/load";
 import { whenNear } from "../motion/when-near";
-
-gsap.registerPlugin(ScrollTrigger);
 
 const STEPS = placeholders.steps.length;
 
@@ -26,7 +22,8 @@ export function PlaceholderStory() {
   // Set up when the section comes near the screen, not while the page loads (see whenNear).
   useEffect(
     () =>
-      whenNear(root.current, () => {
+      whenNear(root.current, async () => {
+        const { gsap, ScrollTrigger, centerPin } = await loadMotion();
         const el = root.current;
         const body = el?.querySelector<HTMLElement>("[data-keys-body]");
         const stage = el?.querySelector<HTMLElement>("[data-keys-stage]");

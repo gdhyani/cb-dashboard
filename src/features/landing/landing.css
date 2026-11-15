@@ -1,4 +1,14 @@
 /*
+ * Tailwind without scanning the project (source(none)): its preflight reset and the shared brand base (styles/base.css)
+ * exactly as before, but no utility classes except those of the two shared components this page renders. The page ships
+ * none of the app's or the docs' CSS.
+ */
+@import "tailwindcss" source(none);
+@import "../../styles/base.css";
+@source "../../shared/components/inline-copy-button.tsx";
+@source "../../shared/components/service-logo.tsx";
+
+/*
  * Landing page (`/`, PRD §11.6). Its own system, never the dashboard's. Dark by default; light under the shared
  * html[data-theme="light"] (the theme dock at the bottom, same stored choice as the dashboard).
  * Two colours carry all the meaning: RED = a real key / a leak, YELLOW = a cb placeholder key. Every selector is `lp-`.
@@ -26,8 +36,8 @@
   --lp-card-glow: rgb(255 216 74 / 0.05);
   --lp-card-edge: rgb(255 255 255 / 0.05);
 
-  --lp-sans: var(--lp-font-sans), "Helvetica Neue", Arial, sans-serif;
-  --lp-mono: var(--lp-font-mono), ui-monospace, Menlo, monospace;
+  --lp-sans: var(--brand-font-sans), "Helvetica Neue", Arial, sans-serif;
+  --lp-mono: var(--brand-font-mono), ui-monospace, Menlo, monospace;
 
   --lp-t-mega: clamp(2.6rem, 1rem + 5.4vw, 6.25rem);
   --lp-t-xl: clamp(2.05rem, 1.15rem + 3.4vw, 4.25rem);

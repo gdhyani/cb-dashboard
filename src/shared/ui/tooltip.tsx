@@ -8,8 +8,16 @@ function TooltipProvider({ delayDuration = 0, ...props }: React.ComponentProps<t
   return <TooltipPrimitive.Provider data-slot="tooltip-provider" delayDuration={delayDuration} {...props} />;
 }
 
+/**
+ * Each tooltip brings its own provider (shadcn's current pattern), so the Radix tooltip code only loads on pages that
+ * show tooltips, never on the landing or sign-in pages through a provider at the app root.
+ */
 function Tooltip({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
-  return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
+  return (
+    <TooltipProvider delayDuration={200}>
+      <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+    </TooltipProvider>
+  );
 }
 
 function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {

@@ -1,15 +1,10 @@
 "use client";
 
-import { gsap } from "gsap";
-import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useEffect, useRef } from "react";
 import { agent } from "../content-story";
-import { centerPin } from "../motion/center-pin";
 import { prefersReducedMotion } from "../motion/env";
+import { loadMotion } from "../motion/load";
 import { whenNear } from "../motion/when-near";
-
-gsap.registerPlugin(ScrambleTextPlugin, ScrollTrigger);
 
 type Mode = "without" | "with";
 /** Share of the scroll spent typing the session; past SWITCH the same session re-keys into placeholders. */
@@ -30,7 +25,8 @@ export function AgentDemo() {
   // Set up when the section comes near the screen, not while the page loads (see whenNear).
   useEffect(
     () =>
-      whenNear(root.current, () => {
+      whenNear(root.current, async () => {
+        const { gsap, ScrollTrigger, centerPin } = await loadMotion();
         const el = root.current;
         const body = el?.closest<HTMLElement>(".lp-ai__body");
         const stage = el?.closest<HTMLElement>(".lp-ai__pin");

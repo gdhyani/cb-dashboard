@@ -11,17 +11,12 @@
  *   data-row              list row: its [data-row-value] re-keys on hover / focus
  * Returns a cleanup that reverts every tween, trigger, split and listener.
  */
-import { gsap } from "gsap";
-import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { SplitText } from "gsap/SplitText";
 import Lenis from "lenis";
 import { ease, isTouch, MOTION_CLASS, prefersReducedMotion, READY_CLASS } from "./env";
+import { gsap, ScrollTrigger, SplitText } from "./kit";
 import { PACKET, type PacketState, packetStateAt } from "./packet";
 import { rekey, rekeyFrame } from "./rekey";
 import { whenNear } from "./when-near";
-
-gsap.registerPlugin(ScrollTrigger, SplitText, DrawSVGPlugin);
 
 type Off = () => void;
 /** Runs `fn` (inside the page's GSAP context) when `el` comes near the screen; see whenNear. */

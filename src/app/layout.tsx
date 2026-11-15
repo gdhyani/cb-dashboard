@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 import { Archivo, Fragment_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { PRODUCT_NAME, PRODUCT_TAGLINE } from "@/constants";
-import { AppProviders } from "@/shared/providers/app-providers";
 import { THEME_BOOT_SCRIPT } from "@/shared/theme/theme";
-import "lenis/dist/lenis.css";
-import "@/styles/globals.css";
 
+// No CSS and no providers here: each section loads its own (landing: landing.css only; dashboard: app.css +
+// AppProviders; docs and blog: globals.css + AppProviders), so the landing page ships none of the app.
 // The cb brand type on every page (landing, dashboard, docs, blog): Archivo for text, Fragment Mono for code.
 const brandSans = Archivo({ variable: "--brand-font-sans", subsets: ["latin"], axes: ["wdth"], display: "swap" });
 const brandMono = Fragment_Mono({ variable: "--brand-font-mono", subsets: ["latin"], weight: "400", display: "swap" });
@@ -35,9 +34,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: static theme boot script, no user input */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
-      <body className="min-h-dvh">
-        <AppProviders>{children}</AppProviders>
-      </body>
+      <body className="min-h-dvh">{children}</body>
     </html>
   );
 }

@@ -1,15 +1,12 @@
 "use client";
 
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Check, Power } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { admin } from "../content";
-import { type CenterPin, centerPin } from "../motion/center-pin";
+import type { CenterPin } from "../motion/center-pin";
 import { prefersReducedMotion } from "../motion/env";
+import { loadMotion } from "../motion/load";
 import { whenNear } from "../motion/when-near";
-
-gsap.registerPlugin(ScrollTrigger);
 
 const STEP = 0.38; // demo seconds between closed connections (cb's real bound is 5 s)
 /** Scroll windows (share of the pinned scroll): live → the admin's action → connections close → banner. */
@@ -33,7 +30,8 @@ export function RevokeDemo() {
   // Set up when the section comes near the screen, not while the page loads (see whenNear).
   useEffect(
     () =>
-      whenNear(root.current, () => {
+      whenNear(root.current, async () => {
+        const { gsap, ScrollTrigger, centerPin } = await loadMotion();
         const el = root.current;
         if (!el) return;
         const rows = Array.from(el.querySelectorAll<HTMLElement>("[data-revoke-row]"));

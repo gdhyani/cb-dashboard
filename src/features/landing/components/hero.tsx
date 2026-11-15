@@ -1,4 +1,4 @@
-import { CopyButton } from "@/shared/components/copy-button";
+import { InlineCopyButton } from "@/shared/components/inline-copy-button";
 import { hero } from "../content";
 import { FillLink } from "./fill-link";
 import { HeroScene } from "./hero-scene";
@@ -19,7 +19,7 @@ export function Hero() {
           </div>
           <div className="lp-install lp-rise lp-rise--later">
             <code>{hero.install}</code>
-            <CopyButton value={hero.install} label="Copy install command" className="lp-copy" />
+            <InlineCopyButton value={hero.install} label="Copy install command" className="lp-copy" />
           </div>
         </div>
         <div className="lp-hero__scene">

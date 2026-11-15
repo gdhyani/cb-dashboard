@@ -54,6 +54,20 @@ describe("FR-UI-006 LoginForm", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
+  it("checks the fields before calling the server (zod/mini schema)", async () => {
+    render(
+      <QueryClientProvider client={makeQueryClient()}>
+        <LoginForm />
+      </QueryClientProvider>,
+    );
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "not-an-email" } });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByText("Enter a valid email")).toBeInTheDocument();
+    expect(screen.getByText("Enter your password")).toBeInTheDocument();
+    expect(mock.history.post).toHaveLength(0);
+  });
+
   it("S10 shows the failed-login limit message from the server, with its code", async () => {
     mock.onPost("/auth/login").reply(
       429,

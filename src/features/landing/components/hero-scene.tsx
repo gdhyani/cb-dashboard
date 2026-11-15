@@ -1,15 +1,11 @@
 "use client";
 
-import { gsap } from "gsap";
-import { MotionPathPlugin } from "gsap/MotionPathPlugin";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useEffect, useRef } from "react";
 import { scene } from "../content-story";
 import { prefersReducedMotion } from "../motion/env";
+import { loadMotion } from "../motion/load";
 import { whenNear } from "../motion/when-near";
 import { SceneArt } from "./scene-art";
-
-gsap.registerPlugin(MotionPathPlugin, ScrollTrigger);
 
 /**
  * The hero's signature, told by scroll (nothing to click). At rest the scene shows the problem: real keys in a .env,
@@ -25,7 +21,8 @@ export function HeroScene() {
   // Set up when the section comes near the screen, not while the page loads (see whenNear).
   useEffect(
     () =>
-      whenNear(root.current, () => {
+      whenNear(root.current, async () => {
+        const { gsap } = await loadMotion();
         const el = root.current;
         const hero = el?.closest<HTMLElement>(".lp-hero");
         const copy = hero?.querySelector<HTMLElement>(".lp-hero__copy");
@@ -55,6 +52,8 @@ export function HeroScene() {
                 // No `align`: the pulse sits at the SVG origin in the same coordinate space as its leg, so the path's own
                 // points are the right x/y. `align` measured the layout three times per pulse (slow at load on phones).
                 motionPath: { path },
+                // Shown only once its own tween starts (then it is already on its leg), never waiting at the origin.
+                immediateRender: false,
                 onComplete: () => {
                   gsap.set(p, { opacity: 0 });
                 },
