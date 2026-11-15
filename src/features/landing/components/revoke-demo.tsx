@@ -5,6 +5,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Check, Power } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { admin } from "../content";
+import { type CenterPin, centerPin } from "../motion/center-pin";
 import { prefersReducedMotion } from "../motion/env";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -55,38 +56,32 @@ export function RevokeDemo() {
       return;
     }
     const mm = gsap.matchMedia();
-    const pin = (trigger: Element | null) => {
-      if (!trigger) return;
+    // The pinned box is sticky at its own height in the screen's centre (see centerPin); the story runs while pinned.
+    const pin = (trigger: Element | null, stage: HTMLElement | null, content: HTMLElement | null, minFit: number) => {
+      if (!trigger || !stage || !content) return;
       render(0);
+      const p: CenterPin = centerPin(stage, [{ content }], { minFit });
       ScrollTrigger.create({
         trigger,
-        start: "top top",
-        end: "bottom bottom",
+        start: p.start,
+        end: p.end,
         invalidateOnRefresh: true,
         onUpdate: (self) => render(self.progress),
       });
+      return () => p.destroy();
     };
     // Desktop pins the whole section; phones pin only the demo (the copy and cards are too tall to pin with it).
-    mm.add("(min-width: 961px)", () => {
-      // Shrink the pinned section just enough to fit a short screen (never grows it).
-      const stage = el.closest<HTMLElement>(".lp-admin__stage");
-      const inner = el.closest<HTMLElement>(".lp-admin__inner");
-      const fitToScreen = () => {
-        if (!stage || !inner) return;
-        const cs = getComputedStyle(stage);
-        const room = stage.clientHeight - Number.parseFloat(cs.paddingTop) - Number.parseFloat(cs.paddingBottom);
-        const need = inner.offsetHeight;
-        inner.style.setProperty("--fit", String(need > room ? Math.max(0.7, room / need) : 1));
-      };
-      fitToScreen();
-      ScrollTrigger.addEventListener("refresh", fitToScreen);
-      pin(el.closest("[data-revoke-track]"));
-      return () => {
-        ScrollTrigger.removeEventListener("refresh", fitToScreen);
-        inner?.style.removeProperty("--fit");
-      };
-    });
-    mm.add("(max-width: 960px)", () => pin(el.closest(".lp-admin__demo")));
+    mm.add("(min-width: 961px)", () =>
+      pin(
+        el.closest("[data-revoke-track]"),
+        el.closest<HTMLElement>(".lp-admin__stage"),
+        el.closest<HTMLElement>(".lp-admin__inner"),
+        0.7,
+      ),
+    );
+    mm.add("(max-width: 960px)", () =>
+      pin(el.closest(".lp-admin__demo"), el.closest<HTMLElement>(".lp-admin__demo-stage"), el, 1),
+    );
     return () => mm.revert();
   }, []);
 

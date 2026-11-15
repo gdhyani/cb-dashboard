@@ -1357,34 +1357,30 @@ html:not(.lp-motion) .lp-scene__caption[data-caption="with"] {
   transform: scaleX(0);
 }
 
-/* The agent story is told by scroll on every screen: a tall body, and a sticky full-height box that keeps the demo
-   in the vertical centre of the screen while the same session types out and then re-keys. */
+/* The agent story is told by scroll on every screen: a tall body, and the heading + demo sticky at their own height,
+   pinned together in the vertical centre of the screen (--pin-top, set by centerPin) while the same session types out
+   and then re-keys. One full frame while pinned, no empty screen around a lone demo. */
 .lp-ai__body {
-  min-height: 260svh;
+  min-height: 210svh;
   align-items: start;
 }
 
-.lp-ai__demo {
+/* Whatever centerPin chose to pin (see motion/center-pin.ts): sticky at its own height, centred on screen. */
+.lp-root [data-pinned] {
   position: sticky;
-  top: 0;
-  height: 100svh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding-block: calc(var(--lp-header) + 0.75rem) 1rem;
+  top: var(--pin-top);
+  /* Keeps the scaled frame's negative margin-bottom inside the stage, so the stage is as tall as what is drawn. */
+  display: flow-root;
 }
 
+.lp-ai__inner,
 .lp-agent {
-  scale: var(--fit, 1);
-  transform-origin: center center;
+  transform-origin: top center;
 }
 
 @media (max-width: 640px) {
   .lp-ai__body {
-    min-height: 300svh;
-  }
-  .lp-ai__demo {
-    padding-block: calc(var(--lp-header) + 0.5rem) 0.75rem;
+    min-height: 240svh;
   }
   /* Compact phone layout so the terminal and the list fit one screen together. */
   .lp-agent .lp-phases {
@@ -2328,24 +2324,18 @@ html:not(.lp-motion) .lp-leak__scan {
 }
 
 .lp-motion .lp-keys:not([data-static]) .lp-keys__body {
-  min-height: 420svh;
+  min-height: 340svh;
 }
 
-.lp-motion .lp-keys:not([data-static]) .lp-keys__stage {
-  position: sticky;
-  top: 0;
-  height: 100svh;
-  display: flex;
-  align-items: center;
-  padding-block: calc(var(--lp-header) + 1rem) 1.5rem;
+.lp-keys__fit,
+.lp-keys__grid {
+  transform-origin: top center;
 }
 
-.lp-keys__fit {
+.lp-keys__grid {
   width: 100%;
   align-items: center;
   row-gap: 1.5rem;
-  scale: var(--fit, 1);
-  transform-origin: center center;
 }
 
 .lp-keys__steps {
@@ -2634,13 +2624,8 @@ html:not(.lp-motion) .lp-leak__scan {
   .lp-keys__figure {
     grid-column: 1 / -1;
   }
-  .lp-motion .lp-keys:not([data-static]) .lp-keys__stage {
-    align-items: flex-start;
-    padding-top: calc(var(--lp-header) + 0.75rem);
-  }
-  .lp-keys__fit {
+  .lp-keys__grid {
     row-gap: 1.1rem;
-    transform-origin: top center;
   }
   /* One step at a time on phones: all four share one cell and cross-fade in place. */
   .lp-motion .lp-keys:not([data-static]) .lp-keys__steps {
@@ -3088,6 +3073,112 @@ html:not(.lp-motion) .lp-leak__scan {
   color: var(--lp-fg-muted);
 }
 
+/* Phones: the services as one collapsed row per group (name, logos, count), opened by tap. Hidden on wider screens. */
+.lp-svcgroups {
+  display: none;
+}
+
+.lp-svcgroup {
+  border-bottom: 1px solid var(--lp-rule);
+}
+
+.lp-svcgroup__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto 18px;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 56px;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 650;
+}
+
+.lp-svcgroup__head::-webkit-details-marker {
+  display: none;
+}
+
+.lp-svcgroup__head:focus-visible {
+  outline: 2px solid var(--lp-marker);
+  outline-offset: 2px;
+  border-radius: var(--lp-radius);
+}
+
+.lp-svcgroup__logos {
+  display: flex;
+}
+
+.lp-svcgroup__logo {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-left: -6px;
+  border-radius: 8px;
+  border: 1px solid var(--lp-rule);
+  background: var(--lp-surface-2);
+  transition: translate 0.4s var(--lp-ease);
+}
+
+.lp-svcgroup__logo > span {
+  width: 16px;
+  height: 16px;
+  background: none;
+  color: var(--lp-fg);
+}
+
+.lp-svcgroup__logo svg {
+  width: 15px;
+  height: 15px;
+}
+
+.lp-svcgroup__count {
+  min-width: 1.6rem;
+  font-family: var(--lp-mono);
+  font-size: 0.75rem;
+  color: var(--lp-fg-muted);
+  text-align: right;
+}
+
+.lp-svcgroup__chev {
+  color: var(--lp-fg-muted);
+  transition: rotate 0.4s var(--lp-ease);
+}
+
+.lp-svcgroup[open] .lp-svcgroup__chev {
+  rotate: 180deg;
+}
+
+.lp-svcgroup__head:active .lp-svcgroup__logo {
+  translate: 0 1px;
+}
+
+.lp-svcgroup__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0 1.25rem;
+  display: grid;
+  gap: 1.1rem;
+}
+
+/* Rows settle in from the same frame the group opens (no JS: the toggle event comes too late, see services-hub). */
+@keyframes lp-svcrow-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+.lp-svcgroup[open] .lp-svcgroup__list > .lp-svcrow {
+  animation: lp-svcrow-in 0.45s var(--lp-ease) calc(var(--i, 0) * 40ms) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-svcgroup[open] .lp-svcgroup__list > .lp-svcrow {
+    animation: none;
+  }
+}
+
 .lp-more {
   margin-top: clamp(3rem, 6vw, 5rem);
   padding-top: clamp(2rem, 4vw, 3rem);
@@ -3131,34 +3222,17 @@ html:not(.lp-motion) .lp-leak__scan {
 /* Told by scroll: desktop pins the whole section, phones pin only the demo. */
 @media (min-width: 961px) {
   .lp-motion .lp-admin__track {
-    min-height: 280svh;
+    min-height: 230svh;
   }
-  .lp-motion .lp-admin__stage {
-    position: sticky;
-    top: 0;
-    height: 100svh;
-    display: flex;
-    align-items: center;
-    padding-block: calc(var(--lp-header) + 1rem) 1rem;
-  }
+  /* Pinned by centerPin ([data-pinned]): sticky at its own height in the screen's centre. */
   .lp-motion .lp-admin__inner {
-    scale: var(--fit, 1);
-    transform-origin: center center;
+    transform-origin: top center;
   }
 }
 
 @media (max-width: 960px) {
   .lp-motion .lp-admin__demo {
-    min-height: 240svh;
-  }
-  .lp-motion .lp-admin__demo-stage {
-    position: sticky;
-    top: 0;
-    min-height: 100svh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-block: calc(var(--lp-header) + 0.75rem) 1rem;
+    min-height: 190svh;
   }
 }
 
@@ -3910,7 +3984,8 @@ html.lp-scrolling-down .lp-dock--inline {
     background: linear-gradient(
       to bottom,
       var(--lp-bg) 0%,
-      color-mix(in srgb, var(--lp-bg) 85%, transparent) 35%,
+      var(--lp-bg) 30%,
+      color-mix(in srgb, var(--lp-bg) 80%, transparent) 60%,
       transparent 100%
     );
     pointer-events: none;
@@ -4010,8 +4085,14 @@ html.lp-scrolling-down .lp-dock--inline {
 
 /* ---------- Phone ---------- */
 @media (max-width: 640px) {
+  /* The flat 23-row list is too long on a phone: show the grouped, collapsed version instead. */
   .lp-svclist {
-    grid-template-columns: 1fr;
+    display: none;
+  }
+  .lp-svcgroups {
+    display: block;
+    margin-top: 2.25rem;
+    border-top: 1px solid var(--lp-rule);
   }
   .lp-hub {
     aspect-ratio: 1000 / 620;

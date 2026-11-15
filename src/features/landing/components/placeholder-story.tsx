@@ -5,6 +5,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Check, Lock, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { placeholders } from "../content-story";
+import { centerPin } from "../motion/center-pin";
 import { prefersReducedMotion } from "../motion/env";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -14,7 +15,7 @@ const STEPS = placeholders.steps.length;
 /**
  * "Where placeholder keys come from", told by scroll in four steps, the same way on every screen size: the section
  * pins in the middle of the screen and one figure (the cb server card and the devices under it) builds up as the
- * steps advance. 1: the real key goes in, encrypted. 2: Maya's device + environment + service + the server secret
+ * steps advance (the heading and the figure pin together: the stage is sticky at its own height, see centerPin). 1: the real key goes in, encrypted. 2: Maya's device + environment + service + the server secret
  * make her placeholder. 3: Ravi's device gets a different one. 4: Maya's placeholder copied to another device is
  * refused. Scrolling back reverses it. No controls. Under reduced motion everything is shown at once, as a list.
  */
@@ -26,7 +27,8 @@ export function PlaceholderStory() {
     const body = el?.querySelector<HTMLElement>("[data-keys-body]");
     const stage = el?.querySelector<HTMLElement>("[data-keys-stage]");
     const fitBox = el?.querySelector<HTMLElement>("[data-keys-fit]");
-    if (!el || !body || !stage || !fitBox) return;
+    const grid = el?.querySelector<HTMLElement>("[data-keys-grid]");
+    if (!el || !body || !stage || !fitBox || !grid) return;
     if (prefersReducedMotion()) {
       el.dataset.static = "";
       return;
@@ -43,19 +45,13 @@ export function PlaceholderStory() {
       });
     };
 
-    // Shrink the figure just enough to fit short screens (never grows it).
-    const fitToScreen = () => {
-      fitBox.style.setProperty("--fit", "1");
-      const cs = getComputedStyle(stage);
-      const room = stage.clientHeight - Number.parseFloat(cs.paddingTop) - Number.parseFloat(cs.paddingBottom);
-      const need = fitBox.scrollHeight;
-      fitBox.style.setProperty("--fit", String(need > room ? Math.max(0.62, room / need) : 1));
-    };
+    let pinned: ReturnType<typeof centerPin> | undefined;
 
     const ctx = gsap.context(() => {
       setStep(0);
-      fitToScreen();
-      ScrollTrigger.addEventListener("refresh", fitToScreen);
+      // Heading + figure together when they fit the screen; otherwise (phones, short screens) the figure alone.
+      const pin = centerPin(stage, [{ content: fitBox }, { content: grid }], { minFit: 0.62 });
+      pinned = pin;
 
       // One scrubbed timeline, one unit per step; each step animates in its first ~60% and then holds.
       const tl = gsap.timeline({ paused: true, defaults: { ease: "power3.out" } });
@@ -108,8 +104,8 @@ export function PlaceholderStory() {
 
       ScrollTrigger.create({
         trigger: body,
-        start: "top 55%",
-        end: "bottom bottom",
+        start: "top 45%",
+        end: pin.end,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
           const t = self.progress * STEPS;
@@ -119,7 +115,7 @@ export function PlaceholderStory() {
       });
     }, el);
     return () => {
-      ScrollTrigger.removeEventListener("refresh", fitToScreen);
+      pinned?.destroy();
       ctx.revert();
     };
   }, []);
@@ -127,91 +123,93 @@ export function PlaceholderStory() {
   const { recipe } = placeholders;
   return (
     <section ref={root} id="placeholders" className="lp-keys" aria-labelledby="lp-keys-title" data-step="0">
-      <div className="lp-grid lp-section-head lp-section-head--wide" data-rule="cold">
-        <h2 id="lp-keys-title" className="lp-h2" data-split="">
-          {placeholders.title}
-        </h2>
-        <p className="lp-section-head__intro" data-reveal="">
-          {placeholders.intro}
-        </p>
-      </div>
       <div className="lp-keys__body" data-keys-body="">
         <div className="lp-keys__stage" data-keys-stage="">
-          <div className="lp-grid lp-keys__fit" data-keys-fit="">
-            <ol className="lp-keys__steps">
-              {placeholders.steps.map((s, i) => (
-                <li key={s.title} className="lp-keys__step" data-keys-step="" data-on={i === 0} data-done="false">
-                  <span className="lp-keys__num" aria-hidden="true">
-                    {i + 1}
-                  </span>
-                  <div className="lp-keys__copy">
-                    <h3 className="lp-keys__title">{s.title}</h3>
-                    <p className="lp-keys__text">{s.text}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-
-            <div className="lp-keys__figure">
-              <div className="lp-keys__server" aria-hidden="true">
-                <span className="lp-keys__server-name">{placeholders.server}</span>
-                <div className="lp-keys__vault" data-keys-vault="">
-                  <span className="lp-keys__lock" data-keys-lock="">
-                    <Lock size={16} strokeWidth={2.25} />
-                  </span>
-                  <span className="lp-keys__vault-label">{placeholders.vault.label}</span>
-                  <code className="lp-keys__real">{placeholders.vault.value}</code>
-                  <span className="lp-keys__vault-note" data-keys-note="">
-                    {placeholders.vault.note}
-                  </span>
-                </div>
-                <div className="lp-keys__recipe" data-keys-recipe="">
-                  <span className="lp-keys__recipe-label">{recipe.label}</span>
-                  <div className="lp-keys__parts">
-                    <span className="lp-keys__part lp-keys__part--device" data-keys-part="">
-                      {recipe.devices.map((d, i) => (
-                        <span key={d} className="lp-keys__device" data-keys-device={i}>
-                          {d}
-                        </span>
-                      ))}
+          <div className="lp-keys__fit" data-keys-fit="">
+            <div className="lp-grid lp-section-head lp-section-head--wide" data-rule="cold">
+              <h2 id="lp-keys-title" className="lp-h2" data-split="">
+                {placeholders.title}
+              </h2>
+              <p className="lp-section-head__intro" data-reveal="">
+                {placeholders.intro}
+              </p>
+            </div>
+            <div className="lp-grid lp-keys__grid" data-keys-grid="">
+              <ol className="lp-keys__steps">
+                {placeholders.steps.map((s, i) => (
+                  <li key={s.title} className="lp-keys__step" data-keys-step="" data-on={i === 0} data-done="false">
+                    <span className="lp-keys__num" aria-hidden="true">
+                      {i + 1}
                     </span>
-                    <span className="lp-keys__plus">+</span>
-                    <span className="lp-keys__part" data-keys-part="">
-                      {recipe.env}
-                    </span>
-                    <span className="lp-keys__plus">+</span>
-                    <span className="lp-keys__part" data-keys-part="">
-                      {recipe.service}
-                    </span>
-                    <span className="lp-keys__plus">+</span>
-                    <span className="lp-keys__part lp-keys__part--secret" data-keys-part="">
-                      <Lock size={12} strokeWidth={2.5} />
-                      {recipe.secret}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <span className="lp-keys__wire" data-keys-wire="" aria-hidden="true" />
-              <ul className="lp-keys__issued" aria-hidden="true">
-                {placeholders.issued.map((l, i) => (
-                  <li key={l.device} className="lp-keys__row" data-keys-row={i} data-ok={l.ok}>
-                    <span className="lp-keys__device-name">
-                      {l.device}
-                      {l.ok ? null : <em>{placeholders.copied}</em>}
-                    </span>
-                    <code className="lp-keys__value" data-keys-value="">
-                      {l.value}
-                    </code>
-                    <span className="lp-keys__verdict" data-keys-verdict="">
-                      {l.ok ? <Check size={14} strokeWidth={3} /> : <X size={14} strokeWidth={3} />}
-                      {l.verdict}
-                    </span>
+                    <div className="lp-keys__copy">
+                      <h3 className="lp-keys__title">{s.title}</h3>
+                      <p className="lp-keys__text">{s.text}</p>
+                    </div>
                   </li>
                 ))}
-              </ul>
-              <p className="lp-keys__footnote" data-keys-footnote="">
-                {placeholders.footnote}
-              </p>
+              </ol>
+
+              <div className="lp-keys__figure">
+                <div className="lp-keys__server" aria-hidden="true">
+                  <span className="lp-keys__server-name">{placeholders.server}</span>
+                  <div className="lp-keys__vault" data-keys-vault="">
+                    <span className="lp-keys__lock" data-keys-lock="">
+                      <Lock size={16} strokeWidth={2.25} />
+                    </span>
+                    <span className="lp-keys__vault-label">{placeholders.vault.label}</span>
+                    <code className="lp-keys__real">{placeholders.vault.value}</code>
+                    <span className="lp-keys__vault-note" data-keys-note="">
+                      {placeholders.vault.note}
+                    </span>
+                  </div>
+                  <div className="lp-keys__recipe" data-keys-recipe="">
+                    <span className="lp-keys__recipe-label">{recipe.label}</span>
+                    <div className="lp-keys__parts">
+                      <span className="lp-keys__part lp-keys__part--device" data-keys-part="">
+                        {recipe.devices.map((d, i) => (
+                          <span key={d} className="lp-keys__device" data-keys-device={i}>
+                            {d}
+                          </span>
+                        ))}
+                      </span>
+                      <span className="lp-keys__plus">+</span>
+                      <span className="lp-keys__part" data-keys-part="">
+                        {recipe.env}
+                      </span>
+                      <span className="lp-keys__plus">+</span>
+                      <span className="lp-keys__part" data-keys-part="">
+                        {recipe.service}
+                      </span>
+                      <span className="lp-keys__plus">+</span>
+                      <span className="lp-keys__part lp-keys__part--secret" data-keys-part="">
+                        <Lock size={12} strokeWidth={2.5} />
+                        {recipe.secret}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <span className="lp-keys__wire" data-keys-wire="" aria-hidden="true" />
+                <ul className="lp-keys__issued" aria-hidden="true">
+                  {placeholders.issued.map((l, i) => (
+                    <li key={l.device} className="lp-keys__row" data-keys-row={i} data-ok={l.ok}>
+                      <span className="lp-keys__device-name">
+                        {l.device}
+                        {l.ok ? null : <em>{placeholders.copied}</em>}
+                      </span>
+                      <code className="lp-keys__value" data-keys-value="">
+                        {l.value}
+                      </code>
+                      <span className="lp-keys__verdict" data-keys-verdict="">
+                        {l.ok ? <Check size={14} strokeWidth={3} /> : <X size={14} strokeWidth={3} />}
+                        {l.verdict}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="lp-keys__footnote" data-keys-footnote="">
+                  {placeholders.footnote}
+                </p>
+              </div>
             </div>
           </div>
         </div>

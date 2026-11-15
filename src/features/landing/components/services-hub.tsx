@@ -3,10 +3,12 @@
 import { gsap } from "gsap";
 import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ChevronDown } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { ServiceLogo } from "@/shared/components/service-logo";
 import { type Service, services } from "../content";
 import { prefersReducedMotion } from "../motion/env";
+import { ServiceRow } from "./service-row";
 
 gsap.registerPlugin(DrawSVGPlugin, ScrollTrigger);
 
@@ -23,12 +25,21 @@ const wireOut = (y: number) =>
   `M${HUB.x + HUB.half} ${HUB.y} C${HUB.x + HUB.half + 150} ${HUB.y} ${RIGHT_X - 190} ${y} ${RIGHT_X - 30} ${y}`;
 
 // "Any other API" is the closing "and more", not a list row.
-const all: Service[] = services.groups.filter((g) => g.name !== "Any other API").flatMap((g): Service[] => g.items);
+const groups = services.groups.filter((g) => g.name !== "Any other API");
+const all: Service[] = groups.flatMap((g): Service[] => g.items);
+
+/**
+ * Phones: a group opened or closed, so every scroll story below re-measures for the new page height. The rows' entrance
+ * is CSS (`.lp-svcgroup[open]` in landing.css), so it starts in the very frame the rows appear: the toggle event fires
+ * a frame or more after the rows are painted, and hiding them from here made them blink before fading in.
+ */
+const onGroupToggle = () => ScrollTrigger.refresh();
 
 /**
  * "The services your .env already talks to" as one panel: your app on the left, wired through cb in the middle, to
- * the services on the right; under it, every service in one list. Told by scroll: the wires draw in, the tiles light
- * up, the list fills in one service at a time, and it ends on a big "and more."
+ * the services on the right; under it, every service in one list (on phones: one collapsed row per group, opened by
+ * tap, so the page is not 23 rows long). Told by scroll: the wires draw in, the tiles light up, the list fills in one
+ * service at a time, and it ends on a big "and more."
  */
 export function ServicesHub() {
   const root = useRef<HTMLElement>(null);
@@ -73,6 +84,15 @@ export function ServicesHub() {
         stagger: 0.05,
         ease: "power2.out",
         scrollTrigger: { trigger: "[data-svc-list]", start: "top 85%", end: "bottom 70%", scrub: 0.6 },
+      });
+      gsap.from("[data-svc-group]", {
+        autoAlpha: 0,
+        y: 14,
+        stagger: 0.06,
+        ease: "power2.out",
+        // Measured from the list's top only: opening a group makes the list taller, and an end tied to its bottom
+        // would pull the revealed groups back to half opacity on the refresh that follows.
+        scrollTrigger: { trigger: "[data-svc-groups]", start: "top 90%", end: "top 45%", scrub: 0.6 },
       });
       gsap.from("[data-more]", {
         autoAlpha: 0,
@@ -134,20 +154,33 @@ export function ServicesHub() {
 
           <ul className="lp-svclist" data-svc-list="">
             {all.map((s) => (
-              <li key={s.name} className="lp-svcrow" data-svc="" data-beta={s.beta ? "" : undefined}>
-                <span className="lp-svcrow__logo">
-                  <ServiceLogo icon={s.icon} />
-                </span>
-                <span className="lp-svcrow__body">
-                  <span className="lp-svcrow__name">
-                    {s.name}
-                    {s.beta ? <span className="lp-chip lp-chip--beta">{services.legend.beta}</span> : null}
-                  </span>
-                  <span className="lp-svcrow__desc">{s.desc}</span>
-                </span>
-              </li>
+              <ServiceRow key={s.name} service={s} beta={services.legend.beta} motion />
             ))}
           </ul>
+
+          <div className="lp-svcgroups" data-svc-groups="">
+            {groups.map((g) => (
+              <details key={g.name} className="lp-svcgroup" data-svc-group="" onToggle={onGroupToggle}>
+                <summary className="lp-svcgroup__head">
+                  <span className="lp-svcgroup__name">{g.name}</span>
+                  <span className="lp-svcgroup__logos" aria-hidden="true">
+                    {g.items.slice(0, 4).map((s) => (
+                      <span key={s.name} className="lp-svcgroup__logo">
+                        <ServiceLogo icon={s.icon} />
+                      </span>
+                    ))}
+                  </span>
+                  <span className="lp-svcgroup__count">{g.items.length}</span>
+                  <ChevronDown className="lp-svcgroup__chev" size={18} strokeWidth={2} aria-hidden="true" />
+                </summary>
+                <ul className="lp-svcgroup__list">
+                  {g.items.map((s, i) => (
+                    <ServiceRow key={s.name} service={s} beta={services.legend.beta} index={i} />
+                  ))}
+                </ul>
+              </details>
+            ))}
+          </div>
 
           <div className="lp-more" data-more="">
             <p className="lp-more__word">{services.more}</p>

@@ -5,6 +5,7 @@ import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useEffect, useRef } from "react";
 import { agent } from "../content-story";
+import { centerPin } from "../motion/center-pin";
 import { prefersReducedMotion } from "../motion/env";
 
 gsap.registerPlugin(ScrambleTextPlugin, ScrollTrigger);
@@ -16,7 +17,8 @@ const SWITCH = 0.6;
 
 /**
  * An AI coding agent fixing a bug, told by scroll (no controls), on every screen size the same way: the demo pins in
- * the vertical centre of the screen (.lp-ai__body is tall, .lp-ai__demo is a sticky full-height box that centres it).
+ * the vertical centre of the screen together with its heading (.lp-ai__body is tall, .lp-ai__pin is sticky at its
+ * own height, see centerPin).
  * First the session types out (it reads .env, writes a debug line, commits) and "where the key is now" lights up red;
  * past the switch point the SAME session re-keys into placeholders and the list and verdict turn yellow. Scrolling back
  * reverses it. On small screens the demo is scaled down just enough to fit the screen (--fit).
@@ -27,8 +29,9 @@ export function AgentDemo() {
   useEffect(() => {
     const el = root.current;
     const body = el?.closest<HTMLElement>(".lp-ai__body");
-    const stage = el?.closest<HTMLElement>(".lp-ai__demo");
-    if (!el || !body || !stage) return;
+    const stage = el?.closest<HTMLElement>(".lp-ai__pin");
+    const inner = el?.closest<HTMLElement>(".lp-ai__inner");
+    if (!el || !body || !stage || !inner) return;
     const reduced = prefersReducedMotion();
     const steps = Array.from(el.querySelectorAll<HTMLElement>("[data-step]"));
     const values = Array.from(el.querySelectorAll<HTMLElement>("[data-agent-value]"));
@@ -39,11 +42,8 @@ export function AgentDemo() {
     const envSteps = agent.steps.filter((s) => s.kind === "env");
     let mode: Mode = "without";
 
-    // Fit the demo inside the pinned box (scale only ever shrinks it, and only when it would not fit). Measured in its
-    // TALLER state: placeholders and the "with cb" verdict wrap to more lines than the real keys do.
-    const fitToScreen = () => {
-      const cs = getComputedStyle(stage);
-      const room = stage.clientHeight - Number.parseFloat(cs.paddingTop) - Number.parseFloat(cs.paddingBottom);
+    // Measured in the demo's TALLER state: placeholders and the "with cb" verdict wrap to more lines than real keys.
+    const measure = (node: HTMLElement) => () => {
       const saved = values.map((v) => v.textContent);
       const savedVerdict = verdict?.textContent ?? "";
       const heights: number[] = [];
@@ -53,15 +53,15 @@ export function AgentDemo() {
           if (s && s.kind === "env") v.textContent = m === "with" ? s.standIn : s.real;
         });
         if (verdict) verdict.textContent = agent.verdict[m];
-        heights.push(el.offsetHeight);
+        heights.push(node.offsetHeight);
       }
       values.forEach((v, i) => {
         v.textContent = saved[i] ?? "";
       });
       if (verdict) verdict.textContent = savedVerdict;
-      const need = Math.max(...heights) * 1.02;
-      el.style.setProperty("--fit", String(need > room ? Math.max(0.6, room / need) : 1));
+      return Math.max(...heights) + el.offsetHeight * 0.02;
     };
+    let pinned: ReturnType<typeof centerPin> | undefined;
 
     const ctx = gsap.context(() => {
       const write = (m: Mode, animate: boolean) =>
@@ -88,14 +88,18 @@ export function AgentDemo() {
       };
 
       setMode("without", false);
-      fitToScreen();
-      ScrollTrigger.addEventListener("refresh", fitToScreen);
+      // Heading + demo together when they fit the screen; otherwise (phones, short screens) the demo alone.
+      const pin = centerPin(stage, [
+        { content: inner, measure: measure(inner) },
+        { content: el, measure: measure(el) },
+      ]);
+      pinned = pin;
 
       if (reduced) {
         ScrollTrigger.create({
           trigger: body,
-          start: "top 60%",
-          end: "bottom bottom",
+          start: "top 45%",
+          end: pin.end,
           onUpdate: (self) => setMode(self.progress >= SWITCH ? "with" : "without", false),
         });
         return;
@@ -118,8 +122,9 @@ export function AgentDemo() {
 
       ScrollTrigger.create({
         trigger: body,
-        start: "top 60%",
-        end: "bottom bottom",
+        start: "top 45%",
+        end: pin.end,
+        invalidateOnRefresh: true,
         onUpdate: (self) => {
           const p = self.progress;
           typing.progress(Math.min(1, p / TYPE_END));
@@ -129,7 +134,7 @@ export function AgentDemo() {
       });
     }, el);
     return () => {
-      ScrollTrigger.removeEventListener("refresh", fitToScreen);
+      pinned?.destroy();
       ctx.revert();
     };
   }, []);

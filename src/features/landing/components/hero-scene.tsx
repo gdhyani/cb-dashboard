@@ -57,13 +57,17 @@ export function HeroScene() {
         );
       });
 
+      // The scan line stays hidden until the sweep actually moves (it used to sit visible at the top on load, on
+      // phones whose first screen already reaches the scene).
+      gsap.set(scan, { autoAlpha: 0 });
       const sweep = (tl: gsap.core.Timeline, at: number, length: number) => {
         tl.fromTo(
           scan,
-          { y: 0, autoAlpha: 1 },
+          { y: 0 },
           { y: () => layers.offsetHeight, ease: "none", duration: length, immediateRender: false },
           at,
         )
+          .fromTo(scan, { autoAlpha: 0 }, { autoAlpha: 1, duration: length * 0.04, immediateRender: false }, at)
           .fromTo(
             overlay,
             { clipPath: "inset(0% 0% 100% 0%)" },
@@ -110,7 +114,8 @@ export function HeroScene() {
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: layers,
-            start: "top 65%",
+            // Starts once the visitor scrolls, even on tall phones where the scene is on the first screen.
+            start: "top 40%",
             end: "bottom 35%",
             scrub: 0.5,
             invalidateOnRefresh: true,
