@@ -14,7 +14,8 @@ const ACTION = [0.18, 0.4] as const;
 const CLOSE = [0.45, 0.8] as const;
 const BANNER = 0.84;
 
-const span = (p: number, [a, b]: readonly [number, number]) => gsap.utils.clamp(0, 1, (p - a) / (b - a));
+// Plain maths, not gsap.utils: GSAP is loaded on demand (loadMotion), so module-level code cannot use it.
+const span = (p: number, [a, b]: readonly [number, number]) => Math.min(1, Math.max(0, (p - a) / (b - a)));
 
 /**
  * "Access you can take back in seconds", told by scroll (no buttons). While the section is pinned: the three
