@@ -7,6 +7,7 @@ import { useEffect, useRef } from "react";
 import { admin } from "../content";
 import { type CenterPin, centerPin } from "../motion/center-pin";
 import { prefersReducedMotion } from "../motion/env";
+import { whenNear } from "../motion/when-near";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -29,61 +30,71 @@ export function RevokeDemo() {
   const root = useRef<HTMLDivElement>(null);
   const { demo } = admin;
 
-  useEffect(() => {
-    const el = root.current;
-    if (!el) return;
-    const rows = Array.from(el.querySelectorAll<HTMLElement>("[data-revoke-row]"));
-    const clock = el.querySelector<HTMLElement>("[data-revoke-clock]");
-    const fill = el.querySelector<HTMLElement>("[data-revoke-fill]");
-    const action = el.querySelector<HTMLElement>("[data-revoke-action]");
-    if (!clock || !fill || !action) return;
-    const total = rows.length;
+  // Set up when the section comes near the screen, not while the page loads (see whenNear).
+  useEffect(
+    () =>
+      whenNear(root.current, () => {
+        const el = root.current;
+        if (!el) return;
+        const rows = Array.from(el.querySelectorAll<HTMLElement>("[data-revoke-row]"));
+        const clock = el.querySelector<HTMLElement>("[data-revoke-clock]");
+        const fill = el.querySelector<HTMLElement>("[data-revoke-fill]");
+        const action = el.querySelector<HTMLElement>("[data-revoke-action]");
+        if (!clock || !fill || !action) return;
+        const total = rows.length;
 
-    const render = (p: number) => {
-      const a = span(p, ACTION);
-      gsap.set(fill, { scaleX: a });
-      action.dataset.state = a <= 0 ? "idle" : a < 1 ? "pressing" : "done";
-      const c = span(p, CLOSE);
-      clock.textContent = `${(c * STEP * total).toFixed(1)} s`;
-      rows.forEach((r, i) => {
-        r.toggleAttribute("data-closed", c * total >= i + 0.5);
-      });
-      el.dataset.phase = p >= BANNER ? "revoked" : c > 0 ? "revoking" : "live";
-    };
+        const render = (p: number) => {
+          const a = span(p, ACTION);
+          gsap.set(fill, { scaleX: a });
+          action.dataset.state = a <= 0 ? "idle" : a < 1 ? "pressing" : "done";
+          const c = span(p, CLOSE);
+          clock.textContent = `${(c * STEP * total).toFixed(1)} s`;
+          rows.forEach((r, i) => {
+            r.toggleAttribute("data-closed", c * total >= i + 0.5);
+          });
+          el.dataset.phase = p >= BANNER ? "revoked" : c > 0 ? "revoking" : "live";
+        };
 
-    if (prefersReducedMotion()) {
-      render(1);
-      return;
-    }
-    const mm = gsap.matchMedia();
-    // The pinned box is sticky at its own height in the screen's centre (see centerPin); the story runs while pinned.
-    const pin = (trigger: Element | null, stage: HTMLElement | null, content: HTMLElement | null, minFit: number) => {
-      if (!trigger || !stage || !content) return;
-      render(0);
-      const p: CenterPin = centerPin(stage, [{ content }], { minFit });
-      ScrollTrigger.create({
-        trigger,
-        start: p.start,
-        end: p.end,
-        invalidateOnRefresh: true,
-        onUpdate: (self) => render(self.progress),
-      });
-      return () => p.destroy();
-    };
-    // Desktop pins the whole section; phones pin only the demo (the copy and cards are too tall to pin with it).
-    mm.add("(min-width: 961px)", () =>
-      pin(
-        el.closest("[data-revoke-track]"),
-        el.closest<HTMLElement>(".lp-admin__stage"),
-        el.closest<HTMLElement>(".lp-admin__inner"),
-        0.7,
-      ),
-    );
-    mm.add("(max-width: 960px)", () =>
-      pin(el.closest(".lp-admin__demo"), el.closest<HTMLElement>(".lp-admin__demo-stage"), el, 1),
-    );
-    return () => mm.revert();
-  }, []);
+        if (prefersReducedMotion()) {
+          render(1);
+          return;
+        }
+        const mm = gsap.matchMedia();
+        // The pinned box is sticky at its own height in the screen's centre (see centerPin); the story runs while pinned.
+        const pin = (
+          trigger: Element | null,
+          stage: HTMLElement | null,
+          content: HTMLElement | null,
+          minFit: number,
+        ) => {
+          if (!trigger || !stage || !content) return;
+          render(0);
+          const p: CenterPin = centerPin(stage, [{ content }], { minFit });
+          ScrollTrigger.create({
+            trigger,
+            start: p.start,
+            end: p.end,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => render(self.progress),
+          });
+          return () => p.destroy();
+        };
+        // Desktop pins the whole section; phones pin only the demo (the copy and cards are too tall to pin with it).
+        mm.add("(min-width: 961px)", () =>
+          pin(
+            el.closest("[data-revoke-track]"),
+            el.closest<HTMLElement>(".lp-admin__stage"),
+            el.closest<HTMLElement>(".lp-admin__inner"),
+            0.7,
+          ),
+        );
+        mm.add("(max-width: 960px)", () =>
+          pin(el.closest(".lp-admin__demo"), el.closest<HTMLElement>(".lp-admin__demo-stage"), el, 1),
+        );
+        return () => mm.revert();
+      }),
+    [],
+  );
 
   return (
     <div ref={root} className="lp-demo" data-phase="live">

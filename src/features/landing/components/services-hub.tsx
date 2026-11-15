@@ -8,6 +8,7 @@ import { useEffect, useRef } from "react";
 import { ServiceLogo } from "@/shared/components/service-logo";
 import { type Service, services } from "../content";
 import { prefersReducedMotion } from "../motion/env";
+import { whenNear } from "../motion/when-near";
 import { ServiceRow } from "./service-row";
 
 gsap.registerPlugin(DrawSVGPlugin, ScrollTrigger);
@@ -46,63 +47,68 @@ export function ServicesHub() {
   const leftY = spread(services.hubLeft.length);
   const rightY = spread(services.hubRight.length);
 
-  useEffect(() => {
-    const el = root.current;
-    if (!el || prefersReducedMotion()) return;
-    const ctx = gsap.context(() => {
-      const hub = gsap.timeline({
-        scrollTrigger: { trigger: "[data-hub]", start: "top 80%", end: "bottom 45%", scrub: 0.6 },
-      });
-      hub
-        .from(
-          "[data-hub-left]",
-          { autoAlpha: 0, x: -30, scale: 0.7, stagger: 0.08, duration: 0.4, ease: "back.out(2)" },
-          0,
-        )
-        .fromTo(
-          "[data-wire-in]",
-          { drawSVG: "0%" },
-          { drawSVG: "100%", stagger: 0.06, duration: 0.6, ease: "none" },
-          0.2,
-        )
-        .from("[data-hub-core]", { autoAlpha: 0, scale: 0.6, duration: 0.4, ease: "back.out(2)" }, 0.55)
-        .fromTo(
-          "[data-wire-out]",
-          { drawSVG: "0%" },
-          { drawSVG: "100%", stagger: 0.06, duration: 0.6, ease: "none" },
-          0.8,
-        )
-        .from(
-          "[data-hub-right]",
-          { autoAlpha: 0, x: 30, scale: 0.7, stagger: 0.08, duration: 0.4, ease: "back.out(2)" },
-          1,
-        );
+  // Set up when the section comes near the screen, not while the page loads (see whenNear).
+  useEffect(
+    () =>
+      whenNear(root.current, () => {
+        const el = root.current;
+        if (!el || prefersReducedMotion()) return;
+        const ctx = gsap.context(() => {
+          const hub = gsap.timeline({
+            scrollTrigger: { trigger: "[data-hub]", start: "top 80%", end: "bottom 45%", scrub: 0.6 },
+          });
+          hub
+            .from(
+              "[data-hub-left]",
+              { autoAlpha: 0, x: -30, scale: 0.7, stagger: 0.08, duration: 0.4, ease: "back.out(2)" },
+              0,
+            )
+            .fromTo(
+              "[data-wire-in]",
+              { drawSVG: "0%" },
+              { drawSVG: "100%", stagger: 0.06, duration: 0.6, ease: "none" },
+              0.2,
+            )
+            .from("[data-hub-core]", { autoAlpha: 0, scale: 0.6, duration: 0.4, ease: "back.out(2)" }, 0.55)
+            .fromTo(
+              "[data-wire-out]",
+              { drawSVG: "0%" },
+              { drawSVG: "100%", stagger: 0.06, duration: 0.6, ease: "none" },
+              0.8,
+            )
+            .from(
+              "[data-hub-right]",
+              { autoAlpha: 0, x: 30, scale: 0.7, stagger: 0.08, duration: 0.4, ease: "back.out(2)" },
+              1,
+            );
 
-      gsap.from("[data-svc]", {
-        autoAlpha: 0,
-        y: 18,
-        stagger: 0.05,
-        ease: "power2.out",
-        scrollTrigger: { trigger: "[data-svc-list]", start: "top 85%", end: "bottom 70%", scrub: 0.6 },
-      });
-      gsap.from("[data-svc-group]", {
-        autoAlpha: 0,
-        y: 14,
-        stagger: 0.06,
-        ease: "power2.out",
-        // Measured from the list's top only: opening a group makes the list taller, and an end tied to its bottom
-        // would pull the revealed groups back to half opacity on the refresh that follows.
-        scrollTrigger: { trigger: "[data-svc-groups]", start: "top 90%", end: "top 45%", scrub: 0.6 },
-      });
-      gsap.from("[data-more]", {
-        autoAlpha: 0,
-        yPercent: 40,
-        ease: "expo.out",
-        scrollTrigger: { trigger: "[data-more]", start: "top 95%", end: "top 65%", scrub: 0.6 },
-      });
-    }, el);
-    return () => ctx.revert();
-  }, []);
+          gsap.from("[data-svc]", {
+            autoAlpha: 0,
+            y: 18,
+            stagger: 0.05,
+            ease: "power2.out",
+            scrollTrigger: { trigger: "[data-svc-list]", start: "top 85%", end: "bottom 70%", scrub: 0.6 },
+          });
+          gsap.from("[data-svc-group]", {
+            autoAlpha: 0,
+            y: 14,
+            stagger: 0.06,
+            ease: "power2.out",
+            // Measured from the list's top only: opening a group makes the list taller, and an end tied to its bottom
+            // would pull the revealed groups back to half opacity on the refresh that follows.
+            scrollTrigger: { trigger: "[data-svc-groups]", start: "top 90%", end: "top 45%", scrub: 0.6 },
+          });
+          gsap.from("[data-more]", {
+            autoAlpha: 0,
+            yPercent: 40,
+            ease: "expo.out",
+            scrollTrigger: { trigger: "[data-more]", start: "top 95%", end: "top 65%", scrub: 0.6 },
+          });
+        }, el);
+        return () => ctx.revert();
+      }),
+    [],
+  );
 
   return (
     <section ref={root} id="services" className="lp-services" aria-labelledby="lp-services-title">

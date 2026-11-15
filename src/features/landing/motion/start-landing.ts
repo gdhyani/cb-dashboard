@@ -19,10 +19,13 @@ import Lenis from "lenis";
 import { ease, isTouch, MOTION_CLASS, prefersReducedMotion, READY_CLASS } from "./env";
 import { PACKET, type PacketState, packetStateAt } from "./packet";
 import { rekey, rekeyFrame } from "./rekey";
+import { whenNear } from "./when-near";
 
 gsap.registerPlugin(ScrollTrigger, SplitText, DrawSVGPlugin);
 
 type Off = () => void;
+/** Runs `fn` (inside the page's GSAP context) when `el` comes near the screen; see whenNear. */
+type Near = (el: Element, fn: () => void) => void;
 
 function listen<K extends keyof HTMLElementEventMap>(
   el: HTMLElement,
@@ -79,66 +82,75 @@ function header(root: HTMLElement, motion: boolean) {
   });
 }
 
-function reveals(root: HTMLElement, intro: gsap.core.Timeline) {
+function reveals(root: HTMLElement, intro: gsap.core.Timeline, near: Near) {
   for (const el of root.querySelectorAll<HTMLElement>("[data-split]")) {
     const isIntro = el.hasAttribute("data-intro");
     const delay = Number.parseFloat(el.dataset.delay ?? "0");
     let done = false;
-    SplitText.create(el, {
-      type: "lines",
-      mask: "lines",
-      autoSplit: true,
-      linesClass: "lp-split-line",
-      onSplit(self) {
-        gsap.set(el, { visibility: "visible" });
-        if (done) return;
-        const tween = gsap.from(self.lines, {
-          yPercent: 112,
-          duration: 1.15,
-          stagger: 0.08,
-          ease: ease.out,
-          delay,
-          paused: isIntro,
-          onComplete: () => {
-            done = true;
-          },
-          scrollTrigger: isIntro ? undefined : { trigger: el, start: "top 88%", once: true },
-        });
-        if (isIntro) intro.add(() => void tween.play(), 0);
-        return tween;
-      },
-    });
+    const split = () =>
+      SplitText.create(el, {
+        type: "lines",
+        mask: "lines",
+        autoSplit: true,
+        linesClass: "lp-split-line",
+        onSplit(self) {
+          gsap.set(el, { visibility: "visible" });
+          if (done) return;
+          const tween = gsap.from(self.lines, {
+            yPercent: 112,
+            duration: 1.15,
+            stagger: 0.08,
+            ease: ease.out,
+            delay,
+            paused: isIntro,
+            onComplete: () => {
+              done = true;
+            },
+            scrollTrigger: isIntro ? undefined : { trigger: el, start: "top 88%", once: true },
+          });
+          if (isIntro) intro.add(() => void tween.play(), 0);
+          return tween;
+        },
+      });
+    if (isIntro) split();
+    else near(el, split);
   }
 
   for (const el of root.querySelectorAll<HTMLElement>("[data-reveal]")) {
     const isIntro = el.hasAttribute("data-intro");
     const delay = Number.parseFloat(el.dataset.delay ?? "0");
     const targets = el.dataset.reveal === "stagger" ? Array.from(el.children) : [el];
-    gsap.set(el, { visibility: "visible" });
-    const tween = gsap.from(targets, {
-      x: -28,
-      autoAlpha: 0,
-      duration: 1.1,
-      stagger: 0.06,
-      ease: ease.out,
-      delay,
-      paused: isIntro,
-      scrollTrigger: isIntro ? undefined : { trigger: el, start: "top 90%", once: true },
-    });
-    if (isIntro) intro.add(() => void tween.play(), 0);
+    const reveal = () => {
+      gsap.set(el, { visibility: "visible" });
+      const tween = gsap.from(targets, {
+        x: -28,
+        autoAlpha: 0,
+        duration: 1.1,
+        stagger: 0.06,
+        ease: ease.out,
+        delay,
+        paused: isIntro,
+        scrollTrigger: isIntro ? undefined : { trigger: el, start: "top 90%", once: true },
+      });
+      if (isIntro) intro.add(() => void tween.play(), 0);
+    };
+    if (isIntro) reveal();
+    else near(el, reveal);
   }
 
   for (const el of root.querySelectorAll<HTMLElement>("[data-rekey]")) {
     const final = el.textContent ?? "";
-    ScrollTrigger.create({
-      trigger: el,
-      start: "top 92%",
-      once: true,
-      onEnter: () => {
-        el.textContent = rekeyFrame(final, final, 0);
-        rekey(el, final, { duration: 0.9, delay: Number.parseFloat(el.dataset.delay ?? "0.15") });
-      },
-    });
+    near(el, () =>
+      ScrollTrigger.create({
+        trigger: el,
+        start: "top 92%",
+        once: true,
+        onEnter: () => {
+          el.textContent = rekeyFrame(final, final, 0);
+          rekey(el, final, { duration: 0.9, delay: Number.parseFloat(el.dataset.delay ?? "0.15") });
+        },
+      }),
+    );
   }
 }
 
@@ -270,59 +282,61 @@ function path(root: HTMLElement, motion: boolean) {
  *   out     the row fades as the next one takes over.
  * Phones: the same timeline, scrubbed over a shorter distance.
  */
-function leakRows(root: HTMLElement) {
-  for (const row of root.querySelectorAll<HTMLElement>("[data-leak]")) {
-    const stage = row.querySelector<HTMLElement>("[data-leak-stage]");
-    const lines = row.querySelectorAll<HTMLElement>("[data-line]");
-    const wire = row.querySelector<HTMLElement>("[data-leak-wire]");
-    const to = row.querySelectorAll<HTMLElement>("[data-leak-to]");
-    const overlay = row.querySelector<HTMLElement>("[data-leak-overlay]");
-    const scan = row.querySelector<HTMLElement>("[data-leak-scan]");
-    const layers = overlay?.parentElement;
-    if (!stage || !overlay || !scan || !layers) continue;
-    const fromRight = row.dataset.side === "right" ? -1 : 1;
-    const tl = gsap.timeline({
-      scrollTrigger: { trigger: row, start: "top 85%", end: "bottom 20%", scrub: 0.6, invalidateOnRefresh: true },
-    });
-    tl.fromTo(
-      stage,
-      { x: 120 * fromRight, autoAlpha: 0 },
-      { x: 0, autoAlpha: 1, duration: 0.18, ease: "power2.out" },
-      0,
-    ).fromTo(
-      lines,
-      { clipPath: "inset(0 100% 0 0)" },
-      { clipPath: "inset(0 0% 0 0)", duration: 0.04, ease: "steps(20)", stagger: 0.025 },
-      0.06,
-    );
-    if (wire)
-      tl.fromTo(wire, { scaleY: 0 }, { scaleY: 1, duration: 0.08, ease: "none", transformOrigin: "top center" }, 0.24);
-    tl.fromTo(
-      to,
-      { scale: 0.7, autoAlpha: 0 },
-      { scale: 1, autoAlpha: 1, duration: 0.06, ease: "back.out(2.4)", stagger: 0.02 },
-      0.3,
+function leakRows(root: HTMLElement, near: Near) {
+  for (const row of root.querySelectorAll<HTMLElement>("[data-leak]")) near(row, () => leakRow(row));
+}
+
+function leakRow(row: HTMLElement) {
+  const stage = row.querySelector<HTMLElement>("[data-leak-stage]");
+  const lines = row.querySelectorAll<HTMLElement>("[data-line]");
+  const wire = row.querySelector<HTMLElement>("[data-leak-wire]");
+  const to = row.querySelectorAll<HTMLElement>("[data-leak-to]");
+  const overlay = row.querySelector<HTMLElement>("[data-leak-overlay]");
+  const scan = row.querySelector<HTMLElement>("[data-leak-scan]");
+  const layers = overlay?.parentElement;
+  if (!stage || !overlay || !scan || !layers) return;
+  const fromRight = row.dataset.side === "right" ? -1 : 1;
+  const tl = gsap.timeline({
+    scrollTrigger: { trigger: row, start: "top 85%", end: "bottom 20%", scrub: 0.6, invalidateOnRefresh: true },
+  });
+  tl.fromTo(
+    stage,
+    { x: 120 * fromRight, autoAlpha: 0 },
+    { x: 0, autoAlpha: 1, duration: 0.18, ease: "power2.out" },
+    0,
+  ).fromTo(
+    lines,
+    { clipPath: "inset(0 100% 0 0)" },
+    { clipPath: "inset(0 0% 0 0)", duration: 0.04, ease: "steps(20)", stagger: 0.025 },
+    0.06,
+  );
+  if (wire)
+    tl.fromTo(wire, { scaleY: 0 }, { scaleY: 1, duration: 0.08, ease: "none", transformOrigin: "top center" }, 0.24);
+  tl.fromTo(
+    to,
+    { scale: 0.7, autoAlpha: 0 },
+    { scale: 1, autoAlpha: 1, duration: 0.06, ease: "back.out(2.4)", stagger: 0.02 },
+    0.3,
+  )
+    // The sweep: the picture with cb from the top down.
+    .fromTo(
+      scan,
+      { y: 0, autoAlpha: 1 },
+      { y: () => layers.offsetHeight, duration: 0.25, ease: "none", immediateRender: false },
+      0.4,
     )
-      // The sweep: the picture with cb from the top down.
-      .fromTo(
-        scan,
-        { y: 0, autoAlpha: 1 },
-        { y: () => layers.offsetHeight, duration: 0.25, ease: "none", immediateRender: false },
-        0.4,
-      )
-      .fromTo(
-        overlay,
-        { clipPath: "inset(0% 0% 100% 0%)" },
-        { clipPath: "inset(0% 0% 0% 0%)", duration: 0.25, ease: "none" },
-        0.4,
-      )
-      .to(scan, { autoAlpha: 0, duration: 0.02 }, 0.65)
-      .call(() => row.classList.toggle("is-safe", tl.scrollTrigger ? tl.scrollTrigger.direction > 0 : true), [], 0.66)
-      // Hand over to the next row.
-      .to(stage, { autoAlpha: 0.15, x: -60 * fromRight, duration: 0.14, ease: "power2.in" }, 0.86);
-    // A scrubbed .call only fires going forwards; keep the destination state honest in both directions.
-    tl.eventCallback("onUpdate", () => row.classList.toggle("is-safe", tl.progress() >= 0.66));
-  }
+    .fromTo(
+      overlay,
+      { clipPath: "inset(0% 0% 100% 0%)" },
+      { clipPath: "inset(0% 0% 0% 0%)", duration: 0.25, ease: "none" },
+      0.4,
+    )
+    .to(scan, { autoAlpha: 0, duration: 0.02 }, 0.65)
+    .call(() => row.classList.toggle("is-safe", tl.scrollTrigger ? tl.scrollTrigger.direction > 0 : true), [], 0.66)
+    // Hand over to the next row.
+    .to(stage, { autoAlpha: 0.15, x: -60 * fromRight, duration: 0.14, ease: "power2.in" }, 0.86);
+  // A scrubbed .call only fires going forwards; keep the destination state honest in both directions.
+  tl.eventCallback("onUpdate", () => row.classList.toggle("is-safe", tl.progress() >= 0.66));
 }
 
 /** Nav: a highlighter bar slides under the hovered / focused link. */
@@ -429,14 +443,21 @@ export function startLanding(root: HTMLElement): Off {
   html.classList.add(READY_CLASS);
 
   if (motion) smoothScroll(offs);
-  const ctx = gsap.context(() => {
+  // Everything below the first screen is set up when it comes near, not at load (each setup measures the page).
+  let ctx: gsap.Context | undefined;
+  const near: Near = (el, fn) => offs.push(whenNear(el, () => ctx?.add(fn)));
+  ctx = gsap.context(() => {
     header(root, motion);
-    const offPath = path(root, motion);
-    if (offPath) offs.push(offPath);
+    const figure = root.querySelector("[data-path]");
+    if (figure)
+      near(figure, () => {
+        const offPath = path(root, motion);
+        if (offPath) offs.push(offPath);
+      });
     if (!motion) return;
     const intro = gsap.timeline({ paused: true });
-    reveals(root, intro);
-    leakRows(root);
+    reveals(root, intro, near);
+    leakRows(root, near);
     if (!isTouch()) {
       markers(root, offs);
       buttons(root, offs);
@@ -446,12 +467,15 @@ export function startLanding(root: HTMLElement): Off {
     intro.play();
   }, root);
 
-  requestAnimationFrame(() => ScrollTrigger.refresh());
-  document.fonts?.ready.then(() => ScrollTrigger.refresh());
+  // One refresh once the fonts are in (they change line breaks), not one now and another when they land: every
+  // refresh re-measures all pinned stories, which forces full-page layouts (slow on phones).
+  const refresh = () => ScrollTrigger.refresh();
+  if (document.fonts && document.fonts.status !== "loaded") void document.fonts.ready.then(refresh);
+  else requestAnimationFrame(refresh);
 
   return () => {
     for (const off of offs.splice(0)) off();
-    ctx.revert();
+    ctx?.revert();
     html.classList.remove(MOTION_CLASS, READY_CLASS, "lp-scrolling-down");
   };
 }
