@@ -16,7 +16,7 @@ import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import Lenis from "lenis";
-import { ease, isTouch, MOTION_CLASS, prefersReducedMotion } from "./env";
+import { ease, isTouch, MOTION_CLASS, prefersReducedMotion, READY_CLASS } from "./env";
 import { PACKET, type PacketState, packetStateAt } from "./packet";
 import { rekey, rekeyFrame } from "./rekey";
 
@@ -426,6 +426,7 @@ export function startLanding(root: HTMLElement): Off {
   const html = document.documentElement;
   const offs: Off[] = [];
   html.classList.toggle(MOTION_CLASS, motion);
+  html.classList.add(READY_CLASS);
 
   if (motion) smoothScroll(offs);
   const ctx = gsap.context(() => {
@@ -451,6 +452,6 @@ export function startLanding(root: HTMLElement): Off {
   return () => {
     for (const off of offs.splice(0)) off();
     ctx.revert();
-    html.classList.remove(MOTION_CLASS, "lp-scrolling-down");
+    html.classList.remove(MOTION_CLASS, READY_CLASS, "lp-scrolling-down");
   };
 }

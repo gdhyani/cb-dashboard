@@ -155,6 +155,19 @@ fieldset.lp-dock {
   visibility: hidden;
 }
 
+/* Failsafe: if the motion module is slow (phones) or fails, show the content anyway.
+   The rule stops matching once the module marks the page ready, so it never fights GSAP. */
+.lp-motion:not(.lp-motion-ready) .lp-root [data-split],
+.lp-motion:not(.lp-motion-ready) .lp-root [data-reveal] {
+  animation: lp-failsafe 0s 1.5s forwards;
+}
+
+@keyframes lp-failsafe {
+  to {
+    visibility: visible;
+  }
+}
+
 .lp-split-line {
   padding-bottom: 0.18em;
   margin-bottom: -0.18em;
@@ -167,6 +180,10 @@ fieldset.lp-dock {
 
 .lp-motion .lp-rise--late {
   animation-delay: 0.12s;
+}
+
+.lp-motion .lp-rise--later {
+  animation-delay: 0.2s;
 }
 
 @keyframes lp-rise {
